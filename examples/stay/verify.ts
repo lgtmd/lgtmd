@@ -77,6 +77,87 @@ async function snapshotBytes(
   return files;
 }
 
+async function assertRepeat(
+  first: SiteCompilation,
+  repeat: SiteCompilation,
+  mode: "test" | "supplied",
+) {
+  try {
+    assert.equal(
+      repeat.candidate_id,
+      first.candidate_id,
+      `Two fresh ${mode}-owned A collections must match exactly`,
+    );
+    assert.deepEqual(repeat, first);
+  } catch (error) {
+    // Preserve the actual failed pair; diagnostic failures cannot replace it.
+    try {
+      const parent = resolve(root, ".cache/diagnostics");
+      await mkdir(parent, { recursive: true });
+      const retained = await mkdtemp(join(parent, `${mode}-repeat-`));
+      for (const [name, candidate] of [
+        ["first", first],
+        ["repeat", repeat],
+      ] as const) {
+        for (const audience of ["reader", "contributor"] as const) {
+          await storeSite(
+            "build",
+            resolve(retained, name, audience),
+            candidate[audience].files,
+          );
+          await storeSite(
+            "build",
+            resolve(retained, name, `markdown-${audience}`),
+            candidate.markdown[audience],
+            "markdown",
+          );
+        }
+      }
+      const comparisons = {} as Record<string, unknown>;
+      for (const audience of ["reader", "contributor"] as const) {
+        const comparison = await compareSite(
+          first[audience].files,
+          repeat[audience].files,
+        );
+        comparisons[audience] = {
+          before: comparison.before,
+          after: comparison.after,
+          pages: comparison.pages.map(({ id, status }) => ({ id, status })),
+          resources: comparison.resources
+            .filter(({ status }) => status !== "unchanged")
+            .map(({ page_id, id, status, before, after }) => ({
+              page_id,
+              id,
+              status,
+              before,
+              after,
+            })),
+        };
+      }
+      const report = {
+        mode,
+        first: first.candidate_id,
+        repeat: repeat.candidate_id,
+        comparisons,
+      };
+      await writeFile(
+        resolve(retained, "comparison.json"),
+        JSON.stringify(report, null, 2) + "\n",
+      );
+      console.error(
+        `Stay exact repeatability failed; actual candidates retained: ${retained}`,
+      );
+      console.error(JSON.stringify(report));
+    } catch (diagnosticError) {
+      console.error(
+        "Could not retain Stay repeatability diagnostics:",
+        diagnosticError,
+      );
+    }
+    throw error;
+  }
+}
+
 async function handoffFailure(
   fault: "assertion" | "cleanup",
   directory: string,
@@ -155,21 +236,11 @@ try {
   await runAcceptance();
   const first = await complete("test");
   const repeat = await complete("test");
-  assert.equal(
-    repeat.candidate_id,
-    first.candidate_id,
-    "Two fresh test-owned A collections must match exactly",
-  );
-  assert.deepEqual(repeat, first);
+  await assertRepeat(first, repeat, "test");
   privacy(first);
   const supplied = await complete("supplied");
   const suppliedRepeat = await complete("supplied");
-  assert.equal(
-    suppliedRepeat.candidate_id,
-    supplied.candidate_id,
-    "Two fresh supplied A collections must match exactly",
-  );
-  assert.deepEqual(suppliedRepeat, supplied);
+  await assertRepeat(supplied, suppliedRepeat, "supplied");
   privacy(supplied);
   assert.deepEqual(
     supplied.reader,

@@ -366,13 +366,41 @@ async function assistantRecovery(
     page.getByRole("main").getByRole("link").filter({ hasText: "Cedar House" }),
   ).toHaveCount(1);
   await composer.fill("Actually 2 guests and under $150");
-  await send.click();
-  await expect(
-    page
-      .getByTestId("assistant-turn")
-      .last()
-      .getByRole("link", { name: "Courtyard Loft", exact: true }),
-  ).toBeVisible();
+  // Completion must not leave a delayed focus callback that can override the
+  // user's next focus target (or the documentation capture's neutral target).
+  await page.evaluate(() => {
+    const original = window.requestAnimationFrame.bind(window);
+    const pending: FrameRequestCallback[] = [];
+    window.requestAnimationFrame = (callback) => pending.push(callback);
+    window.addEventListener(
+      "stay-test-release-frames",
+      () => {
+        window.requestAnimationFrame = original;
+        for (const callback of pending) original(callback);
+      },
+      { once: true },
+    );
+  });
+  const main = page.getByRole("main");
+  try {
+    await composer.press("Enter");
+    await expect(
+      page
+        .getByTestId("assistant-turn")
+        .last()
+        .getByRole("link", { name: "Courtyard Loft", exact: true }),
+    ).toBeVisible();
+    await main.evaluate((element) => {
+      element.setAttribute("tabindex", "-1");
+      (element as HTMLElement).focus({ preventScroll: true });
+    });
+  } finally {
+    await page.evaluate(() =>
+      window.dispatchEvent(new Event("stay-test-release-frames")),
+    );
+  }
+  await paint(page);
+  await expect(main).toBeFocused();
   await expect(composer).toBeInViewport();
   await expect(send).toBeInViewport();
   await saveReview(page, "acceptance-assistant-mobile");

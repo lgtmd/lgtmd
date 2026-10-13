@@ -523,6 +523,24 @@ def browser_example(root, node, environment, diagnostics_root):
             raise
 
 
+def stay_example(root, node, environment, diagnostics_root):
+    try:
+        run([node, "examples/stay/verify.ts"], cwd=root, environment=environment)
+    except (OSError, VerificationError, KeyboardInterrupt) as error:
+        try:
+            diagnostics_root.mkdir(parents=True, exist_ok=True)
+            retained = Path(tempfile.mkdtemp(prefix="stay-", dir=diagnostics_root))
+            (retained / "failure.txt").write_text(f"{type(error).__name__}: {error}\n", encoding="utf-8")
+            for name in ("diagnostics", "playwright"):
+                output = root / "examples/stay/.cache" / name
+                if output.is_dir():
+                    shutil.copytree(output, retained / name)
+            print(f"Stay verification diagnostics retained: {retained}", file=sys.stderr)
+        except OSError as diagnostic_error:
+            print(f"Could not retain Stay diagnostics: {diagnostic_error}", file=sys.stderr)
+        raise
+
+
 def checks(root, cargo, environment, offline, install_browser, *, diagnostics_root=None):
     node, npm, tag = node_tools(root, environment)
     environment = environment.copy()
@@ -545,7 +563,7 @@ def checks(root, cargo, environment, offline, install_browser, *, diagnostics_ro
     run([node, "--test", "examples/review/fixture.test.mjs"], cwd=root, environment=environment)
     run([npm, "run", "test:api", "--workspace", "@lgtmd/example-stay"], cwd=root, environment=environment)
     run([npm, "run", "test:filters", "--workspace", "@lgtmd/example-stay"], cwd=root, environment=environment)
-    run([node, "examples/stay/verify.ts"], cwd=root, environment=environment)
+    stay_example(root, node, environment, diagnostics_root or root / ".cache/lgtmd-web/diagnostics")
     run([node, "packages/viewer/tests/browser.mjs"], cwd=root, environment=environment)
     run([node, "docs/authoring/verify.mjs", "verify"], cwd=root, environment=environment)
     cargo_consumer(root, cargo, environment, offline)

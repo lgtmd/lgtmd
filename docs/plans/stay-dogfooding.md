@@ -495,3 +495,19 @@ The local and source-only web gates pass, including all 23 API/provider tests,
 10 filter-model tests and the rebuilt viewer's fallback regression at both
 base paths. Formatting and the 42 release-tool tests pass. Publication still follows the exact-version
 and protected-run approval process in [RELEASING.md](../../RELEASING.md).
+
+## 15. CI repeatability follow-up
+
+The first PR CI run passed Ubuntu but rejected a pair of successful Stay
+collections on macOS because their candidate IDs differed. No acceptance or
+tolerance was added. Failed pairs now retain their actual Reader/Contributor
+site and Markdown bytes, resource comparison, and Playwright traces outside
+the temporary source checkout. Diagnostic failure preserves the original error.
+
+A concrete delayed-focus race was corrected by moving completed-chat focus and
+scroll to the DOM commit's layout effect. A controlled frame-gate regression
+checks that no delayed callback steals a later focus target. Host screenshots
+also require rendered terminal controls before capture. Local fresh repeatability
+and 18 portable-harness tests pass; corrected CI is required before merging.
+The original run did not retain its differing bytes, so these fixes are not
+presented as proof of that run's specific changed resource.

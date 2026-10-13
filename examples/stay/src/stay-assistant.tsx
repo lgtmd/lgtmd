@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import {
   ArrowRight,
@@ -44,6 +44,19 @@ export function StayAssistant({
   const generation = useRef(0);
   const composer = useRef<HTMLTextAreaElement>(null);
   const composerForm = useRef<HTMLFormElement>(null);
+  const focusAfterSend = useRef<number | undefined>(undefined);
+
+  useLayoutEffect(() => {
+    const completed = focusAfterSend.current;
+    if (completed === undefined) return;
+    focusAfterSend.current = undefined;
+    if (completed !== generation.current) return;
+    composerForm.current?.scrollIntoView({
+      block: "nearest",
+      behavior: "instant",
+    });
+    composer.current?.focus({ preventScroll: true });
+  }, [conversation]);
 
   useEffect(() => {
     const current = ++generation.current;
@@ -81,16 +94,9 @@ export function StayAssistant({
         { message },
       );
       if (current !== generation.current) return;
+      focusAfterSend.current = current;
       setConversation(next);
       setDraft("");
-      requestAnimationFrame(() => {
-        if (current !== generation.current) return;
-        composerForm.current?.scrollIntoView({
-          block: "nearest",
-          behavior: "instant",
-        });
-        composer.current?.focus({ preventScroll: true });
-      });
     } catch (cause) {
       if (current === generation.current) setError((cause as Error).message);
     } finally {

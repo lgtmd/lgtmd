@@ -234,3 +234,31 @@ The guard now checks all five workspaces and matching private example manifests
 and locks. Archive tests keep example fixtures/photos out of the SDK package.
 All 42 release-tool tests pass. Version selection and publication remain separate
 from these integration fixes.
+
+## CI repeatability diagnostics and focus timing
+
+**Observed:** The first macOS PR CI run rejected two successful Stay collections
+with different candidate IDs. Ubuntu passed. The differing files were lost when
+the standalone workspace was removed, so that run alone cannot identify which
+image changed.
+
+**Fix:** Failed repeat comparisons now retain the actual first/repeat site and
+Markdown files for both audiences, plus a concise page/resource comparison.
+The portable harness copies those files and the last Playwright traces outside
+the disposable workspace before propagating the original failure. Retention
+failure cannot replace the original error, and successful runs retain nothing.
+No tolerance, baseline update or retry is introduced.
+
+Investigation also found a concrete focus race: a pending animation-frame
+callback could focus the chat composer after the capture helper had focused
+its neutral target. Completion now scrolls/focuses in a layout effect after the
+reply commits, before painting. A controlled browser regression holds deferred
+frames, changes focus after the reply, releases them and verifies that focus is
+not stolen. Host captures additionally wait for the rendered acceptance and
+idle reply controls, rather than relying only on server state.
+
+**Status:** The controlled regression, fresh complete Stay repeatability gate,
+and 18 portable-harness tests pass locally. These changes close identified races
+and preserve evidence for any further CI drift; they do not establish which
+resource differed in the original unretained run. Both platform CI jobs must
+pass on the corrected revision before merge.

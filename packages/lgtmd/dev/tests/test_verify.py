@@ -244,6 +244,47 @@ class PackagedCliFailureTests(unittest.TestCase):
 
 
 class BrowserDiagnosticsTests(unittest.TestCase):
+    def test_stay_failed_pair_survives_disposable_workspace_without_rerun(self):
+        failure = VERIFY.VerificationError("Stay exact repeatability failed")
+        with tempfile.TemporaryDirectory() as temporary:
+            durable = Path(temporary) / "retained"
+            with tempfile.TemporaryDirectory() as disposable:
+                root = Path(disposable)
+                cache = root / "examples/stay/.cache"
+                image = cache / "diagnostics/test-repeat-one/first/reader/assets/chat.webp"
+                image.parent.mkdir(parents=True)
+                image.write_bytes(b"RIFF\x00\xffWEBP actual first capture")
+                trace = cache / "playwright/chat/trace.zip"
+                trace.parent.mkdir(parents=True)
+                trace.write_bytes(b"actual failed run trace")
+                with mock.patch.object(VERIFY, "run", side_effect=failure) as run:
+                    with self.assertRaises(VERIFY.VerificationError) as raised:
+                        VERIFY.stay_example(root, "node", {}, durable)
+                self.assertIs(raised.exception, failure)
+                run.assert_called_once_with(["node", "examples/stay/verify.ts"], cwd=root, environment={})
+            retained, = durable.iterdir()
+            self.assertEqual((retained / "diagnostics/test-repeat-one/first/reader/assets/chat.webp").read_bytes(), b"RIFF\x00\xffWEBP actual first capture")
+            self.assertEqual((retained / "playwright/chat/trace.zip").read_bytes(), b"actual failed run trace")
+            self.assertIn("Stay exact repeatability failed", (retained / "failure.txt").read_text())
+
+    def test_stay_retention_failure_keeps_original_error(self):
+        failure = VERIFY.VerificationError("original Stay failure")
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            with mock.patch.object(VERIFY, "run", side_effect=failure), mock.patch.object(VERIFY.Path, "mkdir", side_effect=OSError("retention unavailable")):
+                with self.assertRaises(VERIFY.VerificationError) as raised:
+                    VERIFY.stay_example(root, "node", {}, root / "diagnostics")
+            self.assertIs(raised.exception, failure)
+
+    def test_stay_success_retains_nothing_and_does_not_repeat(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            durable = root / "diagnostics"
+            with mock.patch.object(VERIFY, "run") as run:
+                VERIFY.stay_example(root, "node", {}, durable)
+            run.assert_called_once_with(["node", "examples/stay/verify.ts"], cwd=root, environment={})
+            self.assertFalse(durable.exists())
+
     def test_failed_check_keeps_baseline_and_actual_without_recapture(self):
         failure = VERIFY.VerificationError("artifact changed")
         commands = []

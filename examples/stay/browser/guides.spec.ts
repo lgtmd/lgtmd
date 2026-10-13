@@ -145,6 +145,9 @@ This example filters three supplied listings in the browser. It does not query r
   await maximum.fill("185");
   await guests.selectOption("3");
   await kitchen.check();
+  await expect(
+    dialog.getByRole("button", { name: "Show 1 stay", exact: true }),
+  ).toBeEnabled();
   const controls = await image(doc, page, "filter-controls", "dialog[open]");
   doc.md`Here, a maximum of **$185 per night**, room for **three guests**, and a **Full kitchen** leave one matching stay: Cedar House.
 
@@ -152,6 +155,7 @@ ${controls.embed("Filters preview one stay for the selected budget, guests and k
   await dialog
     .getByRole("button", { name: "Show 1 stay", exact: true })
     .click();
+  await expect(dialog).not.toBeVisible();
   await expect(cards).toHaveCount(1);
   await expect(cards.first()).toContainText("Cedar House");
   const applied = new URL(page.url()).search;
@@ -216,6 +220,7 @@ Inside the panel, **Reset** clears the draft choices. Apply the draft to update 
   await dialog
     .getByRole("button", { name: "Show 0 stays", exact: true })
     .click();
+  await expect(dialog).not.toBeVisible();
   await expect(cards).toHaveCount(0);
   await expect(
     page.getByRole("heading", { name: /^No stays match these filters/ }),
@@ -414,6 +419,14 @@ ${streaming.embed("An unfinished suggestion above the preserved manual draft")}`
       await expect(
         host.getByTestId("conversation").getByText(sentReply, { exact: true }),
       ).toBeVisible();
+      await expect(draft).toHaveValue("");
+      await expect(draft).toBeEnabled();
+      await expect(
+        host.getByRole("button", { name: "Send reply", exact: true }),
+      ).toBeDisabled();
+      await expect(
+        host.getByRole("button", { name: "Suggest a reply", exact: true }),
+      ).toBeEnabled();
       const replied = await readRequest();
       expect(replied.status).toBe("pending");
       expect(replied.messages.map((message) => message.body)).toEqual([
@@ -427,6 +440,15 @@ ${streaming.embed("An unfinished suggestion above the preserved manual draft")}`
       await expect
         .poll(async () => (await readRequest()).status)
         .toBe("accepted");
+      await expect(
+        host.getByTestId("conversation").getByText("Accepted", { exact: true }),
+      ).toBeVisible();
+      await expect(
+        host.getByRole("button", { name: "Accept request", exact: true }),
+      ).toHaveCount(0);
+      await expect(
+        host.getByRole("button", { name: "Suggest a reply", exact: true }),
+      ).toBeEnabled();
       const accepted = await readRequest();
       expect(accepted.messages).toEqual(replied.messages);
       const provider = (
