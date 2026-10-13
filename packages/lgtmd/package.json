@@ -1,9 +1,17 @@
 {
   "name": "lgtmd",
   "version": "0.0.0",
-  "private": true,
   "description": "Code-authored documents compiled by lgtmd's shared Rust engine",
+  "homepage": "https://github.com/lgtmd/lgtmd",
+  "bugs": {
+    "url": "https://github.com/lgtmd/lgtmd/issues"
+  },
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lgtmd/lgtmd.git",
+    "directory": "packages/lgtmd"
+  },
   "files": [
     "dist/src",
     "native",
@@ -21,6 +29,10 @@
       "import": "./dist/src/playwright/index.js"
     },
     "./playwright/reporter": "./dist/src/playwright/reporter.js"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",

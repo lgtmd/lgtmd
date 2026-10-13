@@ -1,0 +1,252 @@
+name: Release packages
+run-name: "${{ inputs.mode }} lgtmd ${{ inputs.version }} (${{ inputs.target }})"
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Verify packages only, or request approval to publish
+        type: choice
+        options: [verify, publish]
+        default: verify
+      version:
+        description: Exact version already committed in the Rust and npm manifests
+        type: string
+        required: true
+      target:
+        description: Registries to publish after approval
+        type: choice
+        options: [both, npm, crates]
+        default: both
+      dist_tag:
+        description: npm distribution tag (ignored for crates-only publication)
+        type: choice
+        options: [next, latest]
+        default: next
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lgtmd-package-release
+  cancel-in-progress: false
+
+env:
+  RELEASE_VERSION: ${{ inputs.version }}
+  RELEASE_TARGET: ${{ inputs.target }}
+  CARGO_HOME: ${{ github.workspace }}/.cache/cargo
+  CARGO_TARGET_DIR: ${{ github.workspace }}/target
+  npm_config_cache: ${{ github.workspace }}/.cache/npm
+
+jobs:
+  preflight:
+    name: Validate source and requested release
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.13"
+      - name: Validate the committed version and publication settings
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RELEASE_MODE: ${{ inputs.mode }}
+        run: |
+          args=()
+          if [ "$RELEASE_MODE" = publish ]; then args+=(--publishing); fi
+          python3 tools/release_gate.py source --version "$RELEASE_VERSION" --target "$RELEASE_TARGET" "${args[@]}"
+      - name: Require the protected approval environment before preparation
+        if: inputs.mode == 'publish'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 tools/release_gate.py gate
+
+  native:
+    name: Prepare native compiler (${{ matrix.os }})
+    needs: preflight
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-15
+            platform: darwin-arm64
+          - os: ubuntu-24.04
+            platform: linux-x64
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.13"
+      - name: Install the declared Rust toolchain
+        run: rustup toolchain install 1.95.0 --profile minimal
+      - name: Build and identify this host's native executable
+        run: python3 tools/release_artifacts.py native --out .cache/release-native
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: native-${{ matrix.platform }}
+          path: .cache/release-native/
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 7
+
+  assemble:
+    name: Assemble reviewed package candidates
+    needs: native
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.13"
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+          package-manager-cache: false
+      - name: Install the declared Rust toolchain
+        run: rustup toolchain install 1.95.0 --profile minimal
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          pattern: native-*
+          path: .cache/release-native
+          merge-multiple: true
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Assemble both native platforms and verify the Cargo package
+        run: python3 tools/release_artifacts.py assemble --native-root .cache/release-native --out .cache/release
+      - name: Verify candidate identity, contents, and checksums
+        run: python3 tools/release_artifacts.py check --dir .cache/release --version "$RELEASE_VERSION"
+      - name: Present the prepared artifacts for review
+        env:
+          RELEASE_MODE: ${{ inputs.mode }}
+          RELEASE_DIST_TAG: ${{ inputs.dist_tag }}
+        run: |
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          receipt = Path('.cache/release/manifest.json').read_text()
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as summary:
+              summary.write(f"Prepared **lgtmd {os.environ['RELEASE_VERSION']}** from `{os.environ['GITHUB_SHA']}`.\n\n")
+              summary.write(f"Mode: `{os.environ['RELEASE_MODE']}`; registries: `{os.environ['RELEASE_TARGET']}`; npm tag: `{os.environ['RELEASE_DIST_TAG']}`.\n\n")
+              summary.write('The next jobs install this same npm archive on both hosts. Publication requires their success and release-environment approval.\n\n```json\n' + receipt + '\n```\n')
+          PY
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: release-candidates
+          path: .cache/release/
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 7
+
+  smoke:
+    name: Install the assembled npm package (${{ matrix.os }})
+    needs: assemble
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-15, ubuntu-24.04]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.13"
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+          package-manager-cache: false
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: release-candidates
+          path: .cache/release
+      - name: Recheck the downloaded artifacts
+        run: python3 tools/release_artifacts.py check --dir .cache/release --version "$RELEASE_VERSION"
+      - name: Run installed core and Playwright consumers without Rust on PATH
+        run: python3 tools/release_artifacts.py smoke --archive ".cache/release/lgtmd-${RELEASE_VERSION}.tgz"
+
+  publish:
+    name: Approve and publish lgtmd ${{ inputs.version }}
+    if: inputs.mode == 'publish'
+    needs: [preflight, assemble, smoke]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: release
+    permissions:
+      contents: read
+      actions: read
+      id-token: write
+    env:
+      NODE_AUTH_TOKEN: ""
+      NPM_TOKEN: ""
+      NPM_CONFIG_USERCONFIG: ${{ github.workspace }}/.cache/npm-oidc.rc
+      NPM_CONFIG_GLOBALCONFIG: ${{ github.workspace }}/.cache/npm-global.rc
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.13"
+      - name: Require this run's human approval before registry authentication
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python3 tools/release_gate.py gate --approved
+          python3 tools/release_gate.py source --version "$RELEASE_VERSION" --target "$RELEASE_TARGET" --publishing
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: release-candidates
+          path: .cache/release
+      - name: Recheck approved candidate artifacts
+        run: python3 tools/release_artifacts.py check --dir .cache/release --version "$RELEASE_VERSION"
+      - name: Install the declared Rust toolchain
+        if: inputs.target != 'npm'
+        run: rustup toolchain install 1.95.0 --profile minimal
+      - name: Repackage the immutable Rust source and require the reviewed bytes
+        if: inputs.target != 'npm'
+        run: |
+          cargo package --package lgtmd --locked
+          cmp ".cache/release/lgtmd-${RELEASE_VERSION}.crate" "target/package/lgtmd-${RELEASE_VERSION}.crate"
+      - name: Obtain a short-lived crates.io credential through OIDC
+        if: inputs.target != 'npm'
+        id: crates-auth
+        uses: rust-lang/crates-io-auth-action@c6f97d42243bad5fab37ca0427f495c86d5b1a18 # v1.0.5
+      - name: Publish the Rust SDK to crates.io
+        if: inputs.target != 'npm'
+        run: cargo publish --package lgtmd --locked --registry crates-io
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.crates-auth.outputs.token }}
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        if: inputs.target != 'crates'
+        with:
+          node-version: "24"
+          package-manager-cache: false
+      - name: Prepare the pinned OIDC-capable npm CLI
+        if: inputs.target != 'crates'
+        run: |
+          touch "$NPM_CONFIG_USERCONFIG" "$NPM_CONFIG_GLOBALCONFIG"
+          npm install --global npm@11.21.0 --ignore-scripts --no-audit --no-fund
+      - name: Publish the reviewed npm archive with provenance
+        if: inputs.target != 'crates'
+        env:
+          RELEASE_DIST_TAG: ${{ inputs.dist_tag }}
+        run: npm publish ".cache/release/lgtmd-${RELEASE_VERSION}.tgz" --registry https://registry.npmjs.org --access public --tag "$RELEASE_DIST_TAG" --provenance --ignore-scripts

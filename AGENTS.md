@@ -93,7 +93,7 @@ separate behavior change is authorized.
 ## Development and verification
 
 Use the root `justfile` and [development guide](docs/development.md). Source
-contributors need Rust 1.95.0 with rustfmt/Clippy, Python 3, Node.js 24/npm, and
+contributors need Rust 1.95.0 with rustfmt/Clippy, Python 3.11+, Node.js 24/npm, and
 just. Setup is explicit:
 
 ```sh
@@ -123,9 +123,15 @@ interaction. Report completed checks and their limits precisely.
 
 A prepared npm package must install without a Rust compiler. Contributors build
 its platform binary from the same source revision before packing. The executed
-local target is macOS arm64 with Node 24 ESM; Linux x64 CI is configured but
-requires a successful run before claiming verification. CommonJS, other platforms,
+local target is macOS arm64 with Node 24 ESM; CI has verified macOS 15 arm64 and
+Ubuntu 24.04 x64. CommonJS, other platforms,
 and browser-hosted authoring have no support promise.
+
+Release packaging uses one npm archive containing both verified native targets.
+Read [releasing](docs/releasing.md) before changing publication. Keep verification
+free of registry credentials and require the protected environment and current
+run approval before OIDC authentication. A verification run never grants release
+authorization.
 
 ## Repository and release conventions
 
