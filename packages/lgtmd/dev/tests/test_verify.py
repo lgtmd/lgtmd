@@ -70,8 +70,9 @@ class PortablePayloadTests(unittest.TestCase):
             cargo.chmod(0o755)
             captured = []
 
-            def consumer_check(source, cargo_command, environment, offline, install_browser):
+            def consumer_check(source, cargo_command, environment, offline, install_browser, *, diagnostics_root):
                 self.assertEqual(source, root)
+                self.assertEqual(diagnostics_root, root / ".cache/lgtmd-web/diagnostics")
                 with tempfile.TemporaryDirectory() as consumer:
                     captured.append(VERIFY.run(cargo_command, cwd=consumer, environment=environment, capture=True))
 
@@ -95,6 +96,80 @@ class PortablePayloadTests(unittest.TestCase):
                 self.assertNotIn("RUSTUP_TOOLCHAIN", VERIFY.environment_for(Path.cwd()))
             with mock.patch.object(VERIFY.shutil, "which", return_value="/optional/rustup"), mock.patch.object(VERIFY.subprocess, "run", return_value=subprocess.CompletedProcess([], 1, stdout="")):
                 self.assertNotIn("RUSTUP_TOOLCHAIN", VERIFY.environment_for(Path.cwd()))
+
+
+class BrowserDiagnosticsTests(unittest.TestCase):
+    def test_failed_check_keeps_baseline_and_actual_without_recapture(self):
+        failure = VERIFY.VerificationError("artifact changed")
+        commands = []
+        with tempfile.TemporaryDirectory() as temporary:
+            durable = Path(temporary) / "diagnostics"
+            with tempfile.TemporaryDirectory() as disposable:
+                root = Path(disposable)
+
+                def browser_run(command, *, cwd, environment):
+                    commands.append(command[2])
+                    self.assertEqual(cwd, root)
+                    if command[2] == "build":
+                        baseline = Path(command[3]) / "reader/assets/matching-records.png"
+                        baseline.parent.mkdir(parents=True)
+                        baseline.write_bytes(b"baseline PNG bytes")
+                    else:
+                        actual = root / "examples/lgtmd-web/.cache/playwright/test/matching-records.png"
+                        actual.parent.mkdir(parents=True)
+                        actual.write_bytes(b"actual PNG bytes from failed check")
+                        (actual.parent / "trace.zip").write_bytes(b"same run trace")
+                        raise failure
+
+                with mock.patch.object(VERIFY, "run", side_effect=browser_run):
+                    with self.assertRaises(VERIFY.VerificationError) as raised:
+                        VERIFY.browser_example(root, "node", {}, durable)
+                self.assertIs(raised.exception, failure)
+            # The original standalone workspace and review temporary are gone.
+            retained, = durable.iterdir()
+            self.assertEqual((retained / "baseline/reader/assets/matching-records.png").read_bytes(), b"baseline PNG bytes")
+            self.assertEqual((retained / "playwright/test/matching-records.png").read_bytes(), b"actual PNG bytes from failed check")
+            self.assertEqual((retained / "playwright/test/trace.zip").read_bytes(), b"same run trace")
+            self.assertIn("artifact changed", (retained / "failure.txt").read_text())
+            self.assertEqual(commands, ["build", "check"])
+
+    def test_standalone_failure_uses_original_checkout_for_diagnostics(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve() / "source"
+            sdk = root / "packages/lgtmd"
+            sdk.mkdir(parents=True)
+            isolated_roots = []
+
+            def failed_checks(isolated, cargo, environment, offline, install_browser, *, diagnostics_root):
+                self.assertNotEqual(isolated, root)
+                isolated_roots.append(isolated)
+                self.assertEqual(diagnostics_root, root / ".cache/lgtmd-web/diagnostics")
+                diagnostics_root.mkdir(parents=True)
+                (diagnostics_root / "same-run.png").write_bytes(b"retained from isolated run")
+                raise VERIFY.VerificationError("standalone browser comparison failed")
+
+            with mock.patch.object(VERIFY, "payload", side_effect=lambda source, destination: destination), mock.patch.object(VERIFY, "run"), mock.patch.object(VERIFY, "checks", side_effect=failed_checks):
+                self.assertEqual(VERIFY.main(["--standalone"], sdk=sdk), 1)
+            self.assertFalse(isolated_roots[0].exists())
+            self.assertEqual((root / ".cache/lgtmd-web/diagnostics/same-run.png").read_bytes(), b"retained from isolated run")
+
+    def test_retention_error_does_not_replace_original_failure(self):
+        failure = VERIFY.VerificationError("original comparison failed")
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            with mock.patch.object(VERIFY, "run", side_effect=failure), mock.patch.object(VERIFY.Path, "mkdir", side_effect=OSError("diagnostics unavailable")):
+                with self.assertRaises(VERIFY.VerificationError) as raised:
+                    VERIFY.browser_example(root, "node", {}, root / "diagnostics")
+            self.assertIs(raised.exception, failure)
+
+    def test_success_has_no_retained_failure_artifacts(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            durable = root / "diagnostics"
+            with mock.patch.object(VERIFY, "run") as run:
+                VERIFY.browser_example(root, "node", {}, durable)
+            self.assertEqual([call.args[0][2] for call in run.call_args_list], ["build", "check", "check", "check"])
+            self.assertFalse(durable.exists())
 
 
 if __name__ == "__main__":

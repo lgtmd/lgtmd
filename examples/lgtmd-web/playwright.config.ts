@@ -8,6 +8,7 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   retries: 0,
+  preserveOutput: "always",
   timeout: 15_000,
   reporter: docsReporter(),
   use: {
@@ -18,7 +19,8 @@ export default defineConfig({
     timezoneId: "UTC",
     colorScheme: "light",
     reducedMotion: "reduce",
-    trace: "retain-on-failure",
+    // Export checks run after the browser test; retain its original evidence.
+    trace: "on",
   },
   projects: [{ name: "chromium" }],
   webServer: [

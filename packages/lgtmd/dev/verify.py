@@ -297,7 +297,38 @@ def prepare(root, cargo, environment, offline, npm, tag):
     run([npm, "run", "build"], cwd=root, environment=environment)
 
 
-def checks(root, cargo, environment, offline, install_browser):
+def retain_browser_diagnostics(root, candidate, destination, error):
+    """Keep the baseline and the same failed run's project-owned captures."""
+    try:
+        destination.mkdir(parents=True, exist_ok=True)
+        retained = Path(tempfile.mkdtemp(prefix="browser-", dir=destination))
+        (retained / "failure.txt").write_text(f"{type(error).__name__}: {error}\n", encoding="utf-8")
+        if candidate.is_dir():
+            shutil.copytree(candidate, retained / "baseline")
+        output = root / "examples/lgtmd-web/.cache/playwright"
+        if output.is_dir():
+            shutil.copytree(output, retained / "playwright")
+        print(f"Browser verification diagnostics retained: {retained}", file=sys.stderr)
+    except OSError as diagnostic_error:
+        # Diagnostic retention must never replace the verification failure.
+        print(f"Could not retain browser diagnostics: {diagnostic_error}", file=sys.stderr)
+
+
+def browser_example(root, node, environment, diagnostics_root):
+    with tempfile.TemporaryDirectory(prefix="lgtmd-web-review-") as temporary:
+        candidate = Path(temporary).resolve() / "candidate"
+        command = [node, "examples/lgtmd-web/run.ts"]
+        try:
+            run([*command, "build", candidate], cwd=root, environment=environment)
+            # Every fresh browser run must match; a failure is never retried.
+            for _ in range(3):
+                run([*command, "check", candidate], cwd=root, environment=environment)
+        except (OSError, VerificationError, KeyboardInterrupt) as error:
+            retain_browser_diagnostics(root, candidate, diagnostics_root, error)
+            raise
+
+
+def checks(root, cargo, environment, offline, install_browser, *, diagnostics_root=None):
     node, npm, tag = node_tools(root, environment)
     environment = environment.copy()
     environment["LGTMD_CONFORMANCE_FIXTURE"] = str(root / "crates/lgtmd/tests/fixtures/portable.json")
@@ -312,11 +343,10 @@ def checks(root, cargo, environment, offline, install_browser):
         run([npm, "exec", "--", "playwright", "install", "chromium"], cwd=root, environment=environment)
     run([npm, "test"], cwd=root, environment=environment)
     run([npm, "run", "typecheck"], cwd=root, environment=environment)
-    with tempfile.TemporaryDirectory(prefix="lgtmd-web-review-") as temporary:
-        candidate = Path(temporary).resolve() / "candidate"
-        command = [node, "examples/lgtmd-web/run.ts"]
-        run([*command, "build", candidate], cwd=root, environment=environment)
-        run([*command, "check", candidate], cwd=root, environment=environment)
+    browser_example(
+        root, node, environment,
+        diagnostics_root or root / ".cache/lgtmd-web/diagnostics",
+    )
     cargo_consumer(root, cargo, environment, offline)
     npm_consumer(root, node, npm, environment, offline)
 
@@ -345,13 +375,19 @@ def main(arguments=None, *, sdk=SDK):
                     _, npm, tag = node_tools(isolated, environment)
                     prepare(isolated, cargo, environment, options.offline, npm, tag)
                 else:
-                    checks(isolated, cargo, environment, options.offline, options.install_browser)
+                    checks(
+                        isolated, cargo, environment, options.offline, options.install_browser,
+                        diagnostics_root=root / ".cache/lgtmd-web/diagnostics",
+                    )
         else:
             if options.prepare:
                 _, npm, tag = node_tools(root, environment)
                 prepare(root, cargo, environment, options.offline, npm, tag)
             else:
-                checks(root, cargo, environment, options.offline, options.install_browser)
+                checks(
+                    root, cargo, environment, options.offline, options.install_browser,
+                    diagnostics_root=root / ".cache/lgtmd-web/diagnostics",
+                )
         print("Web SDK prepared." if options.prepare else "Portable web verification passed.", flush=True)
         return 0
     except (OSError, ValueError, KeyError, VerificationError) as error:

@@ -76,9 +76,16 @@ normal client/API development and documenting the filtering feature.
 
 Build fresh candidates for review. Read both audience exports and inspect their
 resources before `update`. `check` compares exactly and never accepts drift.
-The web verifier builds a temporary candidate and checks a second execution;
-this demonstrates repeatability without creating a retained visual baseline.
+The web verifier builds a temporary candidate and requires three fresh browser
+runs to match it exactly. Every comparison must pass; failures are never retried.
+This checks repeatability without creating a retained visual baseline.
 Projects choose their own baseline location and acceptance policy.
+
+If browser verification fails, the verifier preserves the candidate baseline and
+the failing run's original screenshot and trace under
+`.cache/lgtmd-web/diagnostics/`. These survive standalone workspace cleanup. CI
+uploads this evidence on failure with seven-day retention; the diagnostic
+capture is not a new browser run or an accepted baseline.
 
 ## Distribution and integration
 

@@ -3,7 +3,7 @@ import { test as applicationTest, expect } from "./application-test.ts";
 
 const test = withDocs(applicationTest);
 
-test("Find records by name", async ({ page, workspace, doc }) => {
+test("Find records by name", async ({ page, workspace, doc }, testInfo) => {
   doc.page({ id: "filter-records", title: "Find a record" });
   doc.md`
     Search when you know part of a record's name. This example starts with
@@ -27,7 +27,9 @@ test("Find records by name", async ({ page, workspace, doc }) => {
 
   const screenshot = doc.assets.image(
     "matching-records",
-    await results.screenshot(),
+    await results.screenshot({
+      path: testInfo.outputPath("matching-records.png"),
+    }),
     {
       producer: "playwright/chromium",
       profile: `playwright-1.64.0-${process.platform}-${process.arch}-800x600`,

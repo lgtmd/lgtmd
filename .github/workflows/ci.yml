@@ -41,3 +41,12 @@ jobs:
         run: python3 crates/lgtmd/dev/verify.py --standalone --toolchain 1.95.0
       - name: Verify Node, browser and packaged consumers independently
         run: python3 packages/lgtmd/dev/verify.py --standalone --toolchain 1.95.0
+      - name: Preserve failed browser verification evidence
+        if: failure()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: browser-diagnostics-${{ matrix.os }}
+          path: .cache/lgtmd-web/diagnostics/
+          if-no-files-found: ignore
+          include-hidden-files: true
+          retention-days: 7
