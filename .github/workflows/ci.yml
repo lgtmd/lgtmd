@@ -1,0 +1,43 @@
+name: Verify
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  sdk:
+    name: Rust and Node SDKs (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-15, ubuntu-24.04]
+    env:
+      CARGO_HOME: ${{ github.workspace }}/.cache/cargo
+      CARGO_TARGET_DIR: ${{ github.workspace }}/target
+      npm_config_cache: ${{ github.workspace }}/.cache/npm
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+          package-manager-cache: false
+      - name: Install the declared Rust toolchain
+        run: rustup toolchain install 1.95.0 --profile minimal --component rustfmt --component clippy
+      - name: Prepare the native compiler and Node packages
+        run: python3 packages/lgtmd/dev/verify.py --prepare
+      - name: Prepare the pinned Chromium environment
+        run: npm exec -- playwright install --with-deps chromium
+      - name: Check authored formatting
+        run: python3 tools/format_docs.py --check
+      - name: Verify Rust consumers, doctests and documentation independently
+        run: python3 crates/lgtmd/dev/verify.py --standalone --toolchain 1.95.0
+      - name: Verify Node, browser and packaged consumers independently
+        run: python3 packages/lgtmd/dev/verify.py --standalone --toolchain 1.95.0

@@ -1,0 +1,4 @@
+# Disposable standalone verification output and local review candidates.
+/.cache/
+/target/
+__pycache__/

@@ -1,0 +1,40 @@
+{
+  "name": "lgtmd",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Code-authored documents compiled by lgtmd's shared Rust engine",
+  "license": "MIT",
+  "files": [
+    "dist/src",
+    "native",
+    "LICENSE",
+    "README.md"
+  ],
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "import": "./dist/src/index.js"
+    },
+    "./playwright": {
+      "types": "./dist/src/playwright/index.d.ts",
+      "import": "./dist/src/playwright/index.js"
+    },
+    "./playwright/reporter": "./dist/src/playwright/reporter.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --test dist/tests/*.test.js"
+  },
+  "peerDependencies": {
+    "@playwright/test": "1.64.0"
+  },
+  "peerDependenciesMeta": {
+    "@playwright/test": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "node": ">=24 <25"
+  }
+}

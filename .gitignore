@@ -1,0 +1,7 @@
+/.cache/
+/target/
+/node_modules/
+/build/
+.DS_Store
+**/__pycache__/
+*.pyc

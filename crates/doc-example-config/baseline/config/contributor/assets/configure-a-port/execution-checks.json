@@ -1,0 +1,9 @@
+{
+  "driver": "actual config-demo subprocess",
+  "recovered_port": 8080,
+  "recovery_exit": 0,
+  "rejected_exit": 2,
+  "rejected_output_unchanged": true,
+  "saved_port": 9090,
+  "success_exit": 0
+}

@@ -1,0 +1,3 @@
+$ config-demo input.json --output settings.json
+Configuration rejected: port must be between 1 and 65535 (received 0).
+[exit 2]

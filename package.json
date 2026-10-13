@@ -1,0 +1,22 @@
+{
+  "name": "lgtmd-workspace",
+  "private": true,
+  "workspaces": [
+    "packages/lgtmd",
+    "examples/lgtmd-web"
+  ],
+  "type": "module",
+  "scripts": {
+    "build": "npm run build --workspace lgtmd",
+    "test": "npm run test --workspace lgtmd",
+    "typecheck": "npm run typecheck --workspace @lgtmd/example-web"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.0",
+    "@types/node": "24.19.2",
+    "typescript": "7.0.2"
+  },
+  "engines": {
+    "node": ">=24 <25"
+  }
+}

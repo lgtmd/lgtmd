@@ -1,0 +1,10 @@
+{
+  "printWidth": 80,
+  "proseWrap": "preserve",
+  "embeddedLanguageFormatting": "off",
+  "ignorePatterns": [
+    "/Cargo.lock",
+    "/crates/doc-example-config/baseline/**",
+    "/crates/lgtmd/docs/guide/**"
+  ]
+}

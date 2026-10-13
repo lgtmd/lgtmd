@@ -1,0 +1,6 @@
+{
+  "category": "Data",
+  "column": 11,
+  "line": 1,
+  "message": "invalid type: string \"three\", expected u32 at line 1 column 11"
+}

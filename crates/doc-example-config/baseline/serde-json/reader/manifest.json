@@ -1,0 +1,274 @@
+{
+  "artifacts": [
+    {
+      "bytes": 17,
+      "document": "parse-a-typed-list",
+      "id": "formatted-list",
+      "kind": "resource",
+      "mime": "application/json",
+      "path": "assets/parse-a-typed-list/formatted-list.json",
+      "producer": "serde_json",
+      "profile": "serde-json-1.0.151",
+      "sha256": "80c83a54da142957b5a2b7b8ec8f8396d6cdb2daee1848129b19dba82c88c909"
+    },
+    {
+      "bytes": 15,
+      "document": "parse-a-typed-list",
+      "id": "mismatched-input",
+      "kind": "resource",
+      "mime": "application/json",
+      "path": "assets/parse-a-typed-list/mismatched-input.json",
+      "producer": "serde-json-guide",
+      "profile": "json-fixture-v1",
+      "sha256": "e14fac803c516c4f81b9af6ac11db65e751802c0c495db102f14aa9df774458b"
+    },
+    {
+      "bytes": 62,
+      "document": "parse-a-typed-list",
+      "id": "type-error",
+      "kind": "resource",
+      "mime": "text/plain",
+      "path": "assets/parse-a-typed-list/type-error.txt",
+      "producer": "serde_json",
+      "profile": "serde-json-1.0.151",
+      "sha256": "755ae51b66058706677805b97a062f14ecd1895103bd1dc942782a097aa7acd6"
+    },
+    {
+      "bytes": 9,
+      "document": "parse-a-typed-list",
+      "id": "valid-input",
+      "kind": "resource",
+      "mime": "application/json",
+      "path": "assets/parse-a-typed-list/valid-input.json",
+      "producer": "serde-json-guide",
+      "profile": "json-fixture-v1",
+      "sha256": "40d28069123e2a7d89dd143fd210b66f8ed7fb19ebfc23032c051f4f6aed0381"
+    },
+    {
+      "bytes": 2261,
+      "document": "parse-a-typed-list",
+      "kind": "page",
+      "mime": "text/markdown",
+      "path": "parse-a-typed-list.md",
+      "sha256": "92f2e8c2837c2111f329fbb6f532e14c2bb4b09d4910c9ced0e624f143e6bee7"
+    }
+  ],
+  "audience": "reader",
+  "documents": [
+    {
+      "blocks": [
+        {
+          "id": "block-0001",
+          "kind": "markdown",
+          "references": []
+        },
+        {
+          "id": "block-0002",
+          "kind": "heading",
+          "references": []
+        },
+        {
+          "id": "block-0003",
+          "kind": "paragraph",
+          "references": []
+        },
+        {
+          "id": "block-0004",
+          "kind": "code",
+          "references": [
+            {
+              "id": "valid-input",
+              "kind": "resource"
+            }
+          ]
+        },
+        {
+          "id": "block-0005",
+          "kind": "paragraph",
+          "references": [
+            {
+              "id": "parsed-length",
+              "kind": "value"
+            },
+            {
+              "id": "parsed-sum",
+              "kind": "value"
+            }
+          ]
+        },
+        {
+          "id": "block-0006",
+          "kind": "heading",
+          "references": []
+        },
+        {
+          "id": "block-0007",
+          "kind": "markdown",
+          "references": []
+        },
+        {
+          "id": "block-0008",
+          "kind": "code",
+          "references": [
+            {
+              "id": "mismatched-input",
+              "kind": "resource"
+            }
+          ]
+        },
+        {
+          "id": "block-0009",
+          "kind": "paragraph",
+          "references": []
+        },
+        {
+          "id": "block-0010",
+          "kind": "code",
+          "references": [
+            {
+              "id": "type-error",
+              "kind": "resource"
+            }
+          ]
+        },
+        {
+          "id": "block-0011",
+          "kind": "paragraph",
+          "references": [
+            {
+              "id": "error-line",
+              "kind": "value"
+            },
+            {
+              "id": "error-column",
+              "kind": "value"
+            }
+          ]
+        },
+        {
+          "id": "block-0012",
+          "kind": "heading",
+          "references": []
+        },
+        {
+          "id": "block-0013",
+          "kind": "paragraph",
+          "references": []
+        },
+        {
+          "id": "block-0014",
+          "kind": "code",
+          "references": [
+            {
+              "id": "valid-input",
+              "kind": "resource"
+            }
+          ]
+        },
+        {
+          "id": "block-0015",
+          "kind": "paragraph",
+          "references": [
+            {
+              "id": "corrected-values",
+              "kind": "value"
+            }
+          ]
+        },
+        {
+          "id": "block-0016",
+          "kind": "code",
+          "references": [
+            {
+              "id": "formatted-list",
+              "kind": "resource"
+            }
+          ]
+        },
+        {
+          "id": "block-0017",
+          "kind": "paragraph",
+          "references": [
+            {
+              "id": "formatted-list",
+              "kind": "resource"
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "actual": [
+            2,
+            3,
+            5
+          ],
+          "expected": [
+            2,
+            3,
+            5
+          ],
+          "id": "corrected-values",
+          "kind": "equality",
+          "passed": true
+        },
+        {
+          "actual": 11,
+          "expected": 11,
+          "id": "error-column",
+          "kind": "equality",
+          "passed": true
+        },
+        {
+          "actual": 1,
+          "expected": 1,
+          "id": "error-line",
+          "kind": "equality",
+          "passed": true
+        },
+        {
+          "id": "mismatched-input-has-valid-json-syntax",
+          "kind": "predicate",
+          "passed": true
+        },
+        {
+          "actual": 3,
+          "expected": 3,
+          "id": "parsed-length",
+          "kind": "equality",
+          "passed": true
+        },
+        {
+          "actual": 10,
+          "expected": 10,
+          "id": "parsed-sum",
+          "kind": "equality",
+          "passed": true
+        },
+        {
+          "id": "pretty-json-preserves-values",
+          "kind": "predicate",
+          "passed": true
+        },
+        {
+          "id": "type-mismatch-is-data-error",
+          "kind": "predicate",
+          "passed": true
+        }
+      ],
+      "id": "parse-a-typed-list",
+      "title": "Parse a typed JSON list"
+    }
+  ],
+  "profiles": [
+    {
+      "producer": "serde-json-guide",
+      "profile": "json-fixture-v1"
+    },
+    {
+      "producer": "serde_json",
+      "profile": "serde-json-1.0.151"
+    }
+  ],
+  "schema_version": 1
+}

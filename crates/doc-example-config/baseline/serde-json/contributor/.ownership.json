@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "files": [
+    "assets/parse-a-typed-list/error-observation.json",
+    "assets/parse-a-typed-list/formatted-list.json",
+    "assets/parse-a-typed-list/mismatched-input.json",
+    "assets/parse-a-typed-list/type-error.txt",
+    "assets/parse-a-typed-list/valid-input.json",
+    "manifest.json",
+    "parse-a-typed-list.md"
+  ]
+}

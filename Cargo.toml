@@ -1,0 +1,3 @@
+[workspace]
+members = ["crates/lgtmd", "crates/lgtmd-node", "crates/doc-example-config"]
+resolver = "3"

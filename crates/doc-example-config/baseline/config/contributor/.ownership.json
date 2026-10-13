@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "files": [
+    "assets/configure-a-port/execution-checks.json",
+    "assets/configure-a-port/invalid-input.json",
+    "assets/configure-a-port/recovered-command.txt",
+    "assets/configure-a-port/rejected-command.txt",
+    "assets/configure-a-port/saved-configuration.json",
+    "assets/configure-a-port/successful-command.txt",
+    "assets/configure-a-port/valid-input.json",
+    "configure-a-port.md",
+    "manifest.json"
+  ]
+}

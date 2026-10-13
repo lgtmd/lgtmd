@@ -1,0 +1,24 @@
+[package]
+name = "doc-example-config"
+version = "0.0.0"
+edition = "2024"
+rust-version = "1.95"
+publish = false
+license = "MIT"
+description = "Executable documentation consumers for a configuration CLI and serde_json"
+readme = "README.md"
+
+[lib]
+name = "config_demo"
+
+[[bin]]
+name = "config-demo"
+path = "src/main.rs"
+
+[dependencies]
+serde = { version = "=1.0.229", features = ["derive"] }
+serde_json = "=1.0.151"
+
+[dev-dependencies]
+lgtmd = { path = "../lgtmd" }
+tempfile = "=3.27.0"
