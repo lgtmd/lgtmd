@@ -22,7 +22,10 @@ or a complete alternative distribution.
 
 ## Decision
 
-Use `crates/lgtmd-node` as a thin native executable. The Node facade sends one
+The initial release used `crates/lgtmd-node` as a thin native executable.
+For docs-site v1, this role moves into the single `lgtmd` executable in
+`crates/lgtmd-cli`, alongside the public commands; the coarse protocol and
+compiler ownership described here remain. The Node facade sends one
 schema-v1 request per compilation or publication. Rust validates content and
 calls the same exporter, runner, and strict owned artifact store used by native
 Rust consumers.

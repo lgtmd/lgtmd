@@ -1,8 +1,14 @@
 """Verify lgtmd's web SDK, real browser example, and clean package consumers."""
 
 import argparse
+from contextlib import contextmanager
 import json
 import os
+import selectors
+import time
+import re
+from urllib.request import urlopen
+from urllib.parse import urljoin
 from pathlib import Path, PurePosixPath
 import shutil
 import subprocess
@@ -14,12 +20,16 @@ import tempfile
 SDK = Path(__file__).resolve().parents[1]
 SOURCES = (
     "crates/lgtmd",
-    "crates/lgtmd-node",
+    "crates/lgtmd-cli",
     "packages/lgtmd",
     "examples/lgtmd-web",
+    "packages/viewer",
+    "examples/review",
+    "docs/authoring",
+    "docs/guide",
 )
 WORKSPACE = """[workspace]
-members = ["crates/lgtmd", "crates/lgtmd-node"]
+members = ["crates/lgtmd", "crates/lgtmd-cli"]
 resolver = "3"
 """
 
@@ -54,17 +64,17 @@ def payload(root, destination):
             directory = Path(directory)
             excluded = set()
             if directory == source:
-                excluded.update((".cache", "target", "Cargo.lock", "node_modules", "dist", "native"))
+                excluded.update((".cache", "target", "Cargo.lock", "node_modules", "dist", "native", "viewer"))
             if directory == source / "dev" or source / "dev" in directory.parents:
                 excluded.add("__pycache__")
             return excluded.intersection(names)
 
         shutil.copytree(source, destination / relative, ignore=disposable)
-    for filename in ("package.json", "package-lock.json"):
+    for filename in ("package.json", "package-lock.json", "lgtmd.config.json"):
         shutil.copyfile(root / filename, destination / filename)
     npm = json.loads((destination / "package.json").read_text(encoding="utf-8"))
-    if npm.get("workspaces") != ["packages/lgtmd", "examples/lgtmd-web"]:
-        raise VerificationError("The portable npm manifest must contain only the SDK and web example")
+    if npm.get("workspaces") != ["packages/lgtmd", "packages/viewer", "examples/lgtmd-web", "examples/review"]:
+        raise VerificationError("The portable npm manifest must contain only the SDK, viewer and maintained web examples")
     (destination / "Cargo.toml").write_text(WORKSPACE, encoding="utf-8")
     return destination
 
@@ -109,6 +119,23 @@ def environment_for(root, toolchain=None):
             environment["NPM_CONFIG_CACHE"] = environment[name]
     preserve_toolchain(environment, root, toolchain)
     return environment
+
+
+@contextmanager
+def isolated_target(environment, default):
+    """Keep copied-source artifacts private to this disposable workspace.
+
+    Cargo can reuse local-package fingerprints across copied trees with equal
+    mtimes, including compiled CARGO_MANIFEST_DIR values from a deleted copy.
+    Keep the caller's storage root, but never reuse its native build artifacts
+    or a previous disposable copy's target directory.
+    """
+    root = Path(environment.get("CARGO_TARGET_DIR") or default)
+    root.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix="lgtmd-isolated-", dir=root) as temporary:
+        isolated = environment.copy()
+        isolated["CARGO_TARGET_DIR"] = str(Path(temporary).resolve())
+        yield isolated
 
 
 def extract_package(archive, destination, package_name):
@@ -158,13 +185,83 @@ def cargo_consumer(root, cargo, environment, offline):
             "  let mut doc = Doc::new(\"packaged\", \"Packaged SDK\").unwrap();\n"
             "  let value = doc.observe(\"count\", 3).unwrap();\n"
             "  doc.paragraph((\"There are \", &value, \" records.\")).unwrap();\n"
-            "  let files = Document::render_many(&[doc.finish().unwrap()], Audience::Reader).unwrap();\n"
+            "  let documents = [doc.finish().unwrap()];\n"
+            "  let files = Document::render_many(&documents, Audience::Reader).unwrap();\n"
             "  assert!(String::from_utf8_lossy(&files[\"packaged.md\"]).contains(\"3 records\"));\n"
+            "  if std::env::var_os(\"LGTMD_OUTPUT\").is_some() { lgtmd::handoff::complete_run(&documents).unwrap(); }\n"
             "}\n",
             encoding="utf-8",
         )
         run([*cargo, "generate-lockfile", *(["--offline"] if offline else [])], cwd=consumer, environment=environment)
         run([*cargo, "run", *flags], cwd=consumer, environment=environment)
+        # The same native CLI serves Rust-authored docs with no Node or Rust
+        # toolchain on PATH. Build the application's flow first, then use its
+        # ordinary executable as the project-owned command.
+        installed = directory / "installed-cli"
+        run([*cargo, "install", "--path", root / "crates/lgtmd-cli", "--root", installed, "--locked", *(["--offline"] if offline else [])], cwd=root, environment=environment)
+        executable = installed / "bin/lgtmd"
+        flow = Path(environment["CARGO_TARGET_DIR"]) / "debug/lgtmd-clean-consumer"
+        (consumer / "lgtmd.config.json").write_text(json.dumps({"flow": {"command": [str(flow)]}, "basePath": "/docs/"}), encoding="utf-8")
+        isolated = environment.copy()
+        empty_path = directory / "empty-bin"
+        empty_path.mkdir()
+        isolated["PATH"] = str(empty_path)
+        for tool in ("node", "npm", "cargo", "rustc"):
+            if shutil.which(tool, path=isolated["PATH"]):
+                raise VerificationError("Native runtime smoke must have no language toolchain on PATH")
+        run([executable, "--help"], cwd=consumer, environment=isolated)
+        run([executable, "build"], cwd=consumer, environment=isolated)
+        native_preview(executable, consumer, isolated)
+
+
+
+def native_preview(executable, cwd, environment):
+    """Exercise embedded frontend delivery from a Cargo-installed native CLI."""
+    child = subprocess.Popen([str(executable), "preview", "--port", "0"], cwd=cwd, env=environment,
+                             stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    selector = selectors.DefaultSelector()
+    selector.register(child.stdout, selectors.EVENT_READ)
+    try:
+        deadline = time.monotonic() + 15
+        url = None
+        while time.monotonic() < deadline:
+            if child.poll() is not None:
+                raise VerificationError("Native preview exited: " + child.stderr.read())
+            if not selector.select(timeout=0.2):
+                continue
+            line = child.stdout.readline()
+            try:
+                event = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if event.get("event") == "listening":
+                url = event["url"]
+                break
+        if url is None:
+            raise VerificationError("Native preview startup timed out")
+        with urlopen(url, timeout=5) as response:
+            html = response.read().decode()
+        with urlopen(urljoin(url, "site.json"), timeout=5) as response:
+            state = json.load(response)
+        if state["audience"] != "reader" or state["current"]["pages"][0]["id"] != "packaged":
+            raise VerificationError("Native preview served the wrong completed Rust guide")
+        assets = re.findall(r'(?:src|href)="([^"#]+\.(?:js|css))"', html)
+        if not assets:
+            raise VerificationError("Native preview is missing embedded frontend assets")
+        for asset in assets:
+            with urlopen(urljoin(url, asset), timeout=5) as response:
+                if not response.read():
+                    raise VerificationError("Native frontend asset is empty")
+    finally:
+        selector.close()
+        if child.poll() is None:
+            child.terminate()
+        try:
+            child.communicate(timeout=5)
+        except subprocess.TimeoutExpired:
+            child.kill()
+            child.communicate()
+            raise VerificationError("Native preview did not shut down")
 
 
 CORE_SMOKE = """import assert from 'node:assert/strict';
@@ -190,6 +287,61 @@ const options = { reader: resolve('output/reader'), contributor: resolve('output
 await publish([document], { ...options, command: 'build' });
 await publish([document], { ...options, command: 'check' });
 console.log('Packaged core compiled and published with Rust absent from PATH and Playwright not installed.');
+"""
+
+CLI_SMOKE = r"""import assert from 'node:assert/strict';
+import { readFile, writeFile, realpath } from 'node:fs/promises';
+import { spawn } from 'node:child_process';
+import { resolve } from 'node:path';
+const cli = resolve('node_modules/lgtmd/dist/src/cli.js');
+const executable = await realpath('node_modules/.bin/lgtmd');
+assert.equal(executable, cli);
+await writeFile('flow.mjs', `import { Doc, completeRun } from 'lgtmd';
+import { appendFile } from 'node:fs/promises';
+await appendFile('runs', 'x');
+const doc = new Doc('installed', 'Installed documentation');
+doc.md\`The installed CLI uses its bundled frontend.\`;
+await completeRun([doc.finish()]);
+`);
+await writeFile('lgtmd.config.json', JSON.stringify({flow:{command:[process.execPath,resolve('flow.mjs')]},basePath:'/docs/'}));
+function child(args) { return spawn(process.execPath,[cli,...args],{stdio:['ignore','pipe','pipe']}); }
+async function exit(args) {
+  const proc=child(args); let out='',err='';
+  proc.stdout.on('data',b=>out+=b); proc.stderr.on('data',b=>err+=b);
+  const code=await new Promise((done,reject)=>{proc.once('error',reject);proc.once('close',done);});
+  assert.equal(code,0,err); return out;
+}
+assert.match(await exit(['--help']),/dev/);
+await exit(['build']);
+assert.equal(await readFile('runs','utf8'),'x');
+async function serve(args) {
+  const proc=child([...args,'--port','0']); let buffer=''; let stderr='';
+  proc.stderr.on('data',b=>stderr+=b);
+  try {
+    const url=await new Promise((done,reject)=>{
+      const timer=setTimeout(()=>reject(new Error('CLI startup timeout: '+stderr)),10000);
+      proc.once('error',e=>{clearTimeout(timer);reject(e);});
+      proc.once('close',code=>{clearTimeout(timer);reject(new Error('CLI exited '+code+stderr));});
+      proc.stdout.on('data',b=>{buffer+=b; for(const line of buffer.split('\n')) {try {const event=JSON.parse(line);if(event.event==='listening'){clearTimeout(timer);done(event.url);}}catch{}}});
+    });
+    const html=await (await fetch(url)).text();
+    assert.match(html,/LGTMD|lgtmd/);
+    const script=html.match(/<script[^>]*src="([^"]+)"/)[1];
+    assert.equal((await fetch(new URL(script,url))).status,200);
+  } finally {
+    if (proc.exitCode === null && proc.signalCode === null) {
+      await new Promise(done=>{
+        const timer=setTimeout(()=>proc.kill('SIGKILL'),5000);
+        proc.once('close',()=>{clearTimeout(timer);done();});
+        proc.kill('SIGTERM');
+      });
+    }
+  }
+}
+await serve(['preview']);
+await serve(['dev','--reuse']);
+assert.equal(await readFile('runs','utf8'),'x','Preview and reuse must not execute flow');
+console.log('Packed CLI and bundled frontend started without Rust, Playwright, or authoring during reuse/preview.');
 """
 
 PLAYWRIGHT_SMOKE = """import assert from 'node:assert/strict';
@@ -271,6 +423,8 @@ def npm_consumer(root, node, npm, environment, offline, *, archive=None):
         run(install, cwd=consumer, environment=isolated)
         (consumer / "core.mjs").write_text(CORE_SMOKE, encoding="utf-8")
         run([node, "core.mjs"], cwd=consumer, environment=isolated)
+        (consumer / "cli.mjs").write_text(CLI_SMOKE, encoding="utf-8")
+        run([node, "cli.mjs"], cwd=consumer, environment=isolated)
         version = json.loads((root / "package.json").read_text(encoding="utf-8"))["devDependencies"]["@playwright/test"]
         run([*install, f"@playwright/test@{version}"], cwd=consumer, environment=isolated)
         (consumer / "playwright.mjs").write_text(PLAYWRIGHT_SMOKE, encoding="utf-8")
@@ -291,16 +445,50 @@ def node_tools(root, environment):
     return node, npm, tag
 
 
+def stage_viewer(root):
+    """Stage only the prepared frontend into the private CLI crate for embedding."""
+    source = root / "packages/lgtmd/viewer"
+    target = root / "crates/lgtmd-cli/viewer"
+    if source.is_symlink() or not (source / "index.html").is_file() or not (source / "manifest.json").is_file():
+        raise VerificationError("Prepare the complete viewer before building the native CLI")
+    if any(path.is_symlink() for path in source.rglob("*")) or target.is_symlink():
+        raise VerificationError("Embedded viewer staging must not contain symlinks")
+    if target.exists():
+        shutil.rmtree(target)
+    shutil.copytree(source, target)
+
+
+def stage_native(binary, native):
+    """Replace the executable without mutating an inode a running CLI may map.
+
+    On macOS, overwriting a signed executable in place can leave the kernel's
+    cached code signature attached to changed pages and kill subsequent launches.
+    Staging beside the destination keeps replacement atomic on the same volume.
+    """
+    native.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, name = tempfile.mkstemp(prefix=f".{native.name}.", suffix=".tmp", dir=native.parent)
+    os.close(descriptor)
+    temporary = Path(name)
+    try:
+        shutil.copy2(binary, temporary)
+        os.replace(temporary, native)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
 def prepare(root, cargo, environment, offline, npm, tag):
     flags = ["--locked", *(["--offline"] if offline else [])]
-    run([*cargo, "build", "-p", "lgtmd-node", "--release", *flags], cwd=root, environment=environment)
-    executable = "lgtmd-node.exe" if tag.startswith("win32-") else "lgtmd-node"
-    binary = Path(environment["CARGO_TARGET_DIR"]) / "release" / executable
-    native = root / "packages/lgtmd/native" / tag / executable
-    native.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(binary, native)
     run([npm, "ci", "--no-audit", "--no-fund", *(["--offline"] if offline else [])], cwd=root, environment=environment)
     run([npm, "run", "build"], cwd=root, environment=environment)
+    stage_viewer(root)
+    run([*cargo, "build", "-p", "lgtmd-cli", "--release", *flags], cwd=root, environment=environment)
+    executable = "lgtmd.exe" if tag.startswith("win32-") else "lgtmd"
+    binary = Path(environment["CARGO_TARGET_DIR"]) / "release" / executable
+    native = root / "packages/lgtmd/native" / tag / executable
+    stage_native(binary, native)
+    old_bridge = native.parent / ("lgtmd-node.exe" if tag.startswith("win32-") else "lgtmd-node")
+    if old_bridge.is_file():
+        old_bridge.unlink()
 
 
 def retain_browser_diagnostics(root, candidate, destination, error):
@@ -338,13 +526,13 @@ def checks(root, cargo, environment, offline, install_browser, *, diagnostics_ro
     node, npm, tag = node_tools(root, environment)
     environment = environment.copy()
     environment["LGTMD_CONFORMANCE_FIXTURE"] = str(root / "crates/lgtmd/tests/fixtures/portable.json")
-    selection = ["-p", "lgtmd", "-p", "lgtmd-node"]
+    selection = ["-p", "lgtmd", "-p", "lgtmd-cli"]
     flags = ["--locked", *(["--offline"] if offline else [])]
     run([sys.executable, "-m", "unittest", "discover", "-s", root / "packages/lgtmd/dev/tests"], cwd=root, environment=environment)
+    prepare(root, cargo, environment, offline, npm, tag)
     run([*cargo, "fmt", *selection, "--check"], cwd=root, environment=environment)
     run([*cargo, "clippy", *selection, *flags, "--all-targets", "--", "-D", "warnings"], cwd=root, environment=environment)
     run([*cargo, "test", *selection, *flags, "--all-targets"], cwd=root, environment=environment)
-    prepare(root, cargo, environment, offline, npm, tag)
     if install_browser:
         run([npm, "exec", "--", "playwright", "install", "chromium"], cwd=root, environment=environment)
     run([npm, "test"], cwd=root, environment=environment)
@@ -353,13 +541,16 @@ def checks(root, cargo, environment, offline, install_browser, *, diagnostics_ro
         root, node, environment,
         diagnostics_root or root / ".cache/lgtmd-web/diagnostics",
     )
+    run([node, "--test", "examples/review/fixture.test.mjs"], cwd=root, environment=environment)
+    run([node, "packages/viewer/tests/browser.mjs"], cwd=root, environment=environment)
+    run([node, "docs/authoring/verify.mjs", "verify"], cwd=root, environment=environment)
     cargo_consumer(root, cargo, environment, offline)
     npm_consumer(root, node, npm, environment, offline)
 
 
 def main(arguments=None, *, sdk=SDK):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--standalone", action="store_true", help="copy only portable sources to a minimal temporary workspace")
+    parser.add_argument("--standalone", action="store_true", help="copy portable sources to a temporary workspace with a private Cargo target")
     parser.add_argument("--prepare", action="store_true", help="install npm dependencies and build the local binding without verification or browser installation")
     parser.add_argument("--toolchain", help="select an installed Rust toolchain, e.g. 1.95.0")
     parser.add_argument("--offline", action="store_true", help="use warm Cargo and npm caches; Chromium must already be installed")
@@ -374,7 +565,9 @@ def main(arguments=None, *, sdk=SDK):
         root = Path(sdk).resolve().parents[1]
         environment = environment_for(root, options.toolchain)
         if options.standalone:
-            with tempfile.TemporaryDirectory(prefix="lgtmd-web-standalone-") as temporary:
+            with tempfile.TemporaryDirectory(prefix="lgtmd-web-standalone-") as temporary, isolated_target(
+                environment, root / ".cache/lgtmd-web/target",
+            ) as environment:
                 isolated = payload(root, Path(temporary).resolve())
                 run([*cargo, "generate-lockfile", *(["--offline"] if options.offline else [])], cwd=isolated, environment=environment)
                 if options.prepare:

@@ -12,7 +12,7 @@ pins Rust 1.95.0 with rustfmt/Clippy and uses exact npm dependency versions.
 just setup
 ```
 
-Setup prepares the formatter, npm dependencies, native Node bridge, TypeScript
+Setup prepares the formatter, npm dependencies, native CLI, TypeScript
 SDK, and Chromium explicitly. It does not accept any documentation baseline or
 publish packages. Source development needs Rust; installing a prepared npm tarball
 does not.
@@ -57,6 +57,9 @@ binaries, resolve their own minimal Cargo lockfiles, and exercise Rust 1.95.0.
 `--offline` requires warm Cargo/npm caches. Omit it to allow dependency resolution;
 browser setup remains explicit. Gates honor explicit Cargo/npm cache and target
 overrides. Relative overrides retain their meaning from the invocation directory.
+Each standalone run uses a temporary target beneath the configured target root,
+then removes it. This prevents reuse of binaries containing source paths from a
+deleted temporary workspace; ordinary native verification keeps its target.
 
 ```sh
 just fmt
@@ -89,7 +92,7 @@ capture is not a new browser run or an accepted baseline.
 
 ## Distribution and integration
 
-The SDK manifests identify their public registries; bridge and example packages
+The SDK manifests identify their public registries; CLI and example packages
 remain private. Version 0.1.0 is published on npm under `next` and on crates.io.
 CI verifies macOS 15 arm64 and Ubuntu 24.04 x64 with Node 24 ESM; ordinary
 verification does not publish packages. APIs and schema-v1 compiler input remain
@@ -108,6 +111,98 @@ separate work. Future package publications require explicit authorization for
 the exact version.
 
 Release preparation and publication use the manual, approval-gated
-[release workflow](releasing.md). `just release-test` checks artifact and approval
+[release workflow](../RELEASING.md). `just release-test` checks artifact and approval
 guards without authenticating to registries; these tests also run in `just verify`
 and normal CI. Release tooling needs Python 3.11+; CI uses Python 3.13.
+
+## Develop the docs site and its own guides
+
+After `just setup`, use:
+
+```sh
+just docs-prepare
+just docs
+just docs-demo
+```
+
+`just docs` runs the real own-guide flow and serves completed docs on port 4177.
+`just docs-demo` creates disposable, labeled A/B Git history and serves actual
+review on a free port, without changing this repository's history. Both print
+their local URL. Ctrl-C stops their owned processes.
+
+Own-guide and review-example screenshots use lossless WebP to reduce retained
+media size. `examples/review/capture.mjs` converts Playwright's in-memory PNG
+buffer through the pinned development-only Sharp encoder. The capture profile
+includes Sharp and libwebp versions; encoding changes require fresh review and
+explicit baseline acceptance. A real-browser regression verifies decoded pixel equality against PNG,
+and the real review scenario exercises WebP in Before/After and Regions. The SDK
+continues to accept other image formats and never silently transcodes evidence.
+
+User-facing sources live in `docs/authoring/`; a bounded browser scenario captures
+the actual review UI. The final guide never feeds back into its A/B fixture.
+`just docs-build` makes a static candidate; `just docs-preview` serves it without
+running authoring. Normal commands leave tracked guide files untouched.
+
+After inspecting a candidate, `just docs-record CANDIDATE_ID` records its exact
+Reader Markdown/media, and `node packages/lgtmd/dist/src/cli.js update --candidate
+CANDIDATE_ID` records its Reader site snapshot. Neither reruns authoring or commits.
+`just docs-check` checks the tracked Markdown/media byte for byte using its recorded
+capture profile. The checked-in guide was recorded on macOS arm64 with the pinned
+Chromium and CPU raster arguments; changing platform/fonts is a different capture
+environment and must not silently replace or bypass that baseline.
+
+The portable web gate runs the viewer's real browser tests at `/` and `/docs/`,
+then requires two complete own-guide runs to match exactly on that host. This is
+a repeatability gate, not acceptance of tracked captures. Native `just verify`
+also runs the exact tracked-guide check. CI's standalone lanes retain their
+independent platform capture checks. Failed evidence must be investigated before
+any explicit recording.
+
+The packed npm consumer executes `lgtmd build`, `preview` and `dev --reuse` with
+Rust and Playwright absent, loads bundled assets, and checks that reuse/preview
+never execute authoring. The optional browser peer is exercised separately.
+
+## Native CLI ownership
+
+`crates/lgtmd-cli` builds the one `lgtmd` executable. It embeds the prepared React
+frontend and owns command/configuration, flow execution, retained candidates,
+Git reads, watching and serving. The npm entry only selects the bundled platform
+executable and forwards arguments, streams, signals and exit status. The SDK's
+coarse JSON bridge is an internal mode of that same executable.
+
+`just docs-prepare` builds the frontend, stages it under the CLI crate, builds the
+native executable and prepares npm's local binary. Source preparation needs Node;
+`cargo install --path crates/lgtmd-cli --locked` then installs the native command
+without a frontend build at installation. The CLI crate is private until a
+separately authorized publication. The Rust SDK stays library-only and does not
+pull in the HTTP host or frontend build.
+
+The clean native consumer gate installs that CLI into an isolated prefix and
+runs an already-built Rust flow plus static serving with an empty PATH. The npm
+gate separately installs with only Node available. CLI blackbox cases exercise
+both entry points, including exit codes and signal forwarding. Watch polls every
+500 ms, reuses file metadata/content identities, and debounces changes; it does
+not rebuild the React frontend or reload project configuration.
+
+## Viewer styles and consumer themes
+
+The React viewer uses Tailwind at build time. Its semantic `--lgtmd-*` tokens and
+`data-lgtmd-part` styling hooks are the consumer customization boundary; utility
+classes and exact element nesting are internal. Maintain Light, Dark and System
+appearance together. Consumers supply ordinary browser CSS through optional
+`theme: { css: "docs/theme.css" }` configuration, with no Tailwind or Node
+requirement for a prepared native CLI.
+
+The native host loads overrides after default styles. Dev rereads the file with
+no-store responses on browser reload and excludes it from flow watches. Build
+freezes those bytes into its output; preview does not consult the source. A
+config change still requires restarting dev. Theme path/content are presentation,
+not authored evidence: they are excluded from retained configuration identity,
+site snapshots and exact `check`/`update` comparisons. Both Git versions use the
+active theme.
+
+Theme input validation belongs in the host. Keep path separation and symlink
+checks; do not follow CSS `@import` or copy `url()` dependencies. The browser
+resolves CSS URLs from the published stylesheet. See the
+[authored customization guide](authoring/customize-the-site.mjs) for the supported
+tokens and hooks. Full component customization is deferred.

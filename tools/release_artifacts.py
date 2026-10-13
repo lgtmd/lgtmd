@@ -88,17 +88,25 @@ def native(out, *, root=ROOT):
         raise ReleaseError("Native release builds support macOS arm64 and Linux x64")
     sha, release_version = source_sha(root), version(root)
     target = TARGETS[tag]
-    run(["cargo", "build", "-p", "lgtmd-node", "--release", "--locked", "--target", target], root=root)
+    # Build the frontend once into the executable. Consumers never need Node to
+    # serve native-authored documentation or prepare assets at installation.
+    run(["npm", "ci", "--ignore-scripts", "--no-audit", "--no-fund"], root=root)
+    run(["npm", "run", "build"], root=root)
+    spec = importlib.util.spec_from_file_location("lgtmd_web_prepare", root / "packages/lgtmd/dev/verify.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    module.stage_viewer(root)
+    run(["cargo", "build", "-p", "lgtmd-cli", "--release", "--locked", "--target", target], root=root)
     metadata = json.loads(run(["cargo", "metadata", "--locked", "--no-deps", "--format-version", "1"], root=root, capture=True))
-    binary = Path(metadata["target_directory"]) / target / "release/lgtmd-node"
+    binary = Path(metadata["target_directory"]) / target / "release/lgtmd"
     native_bytes(binary.read_bytes(), tag)
     destination = out / tag
     destination.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(binary, destination / "lgtmd-node")
-    (destination / "lgtmd-node").chmod(0o755)
+    shutil.copyfile(binary, destination / "lgtmd")
+    (destination / "lgtmd").chmod(0o755)
     write_json(destination / "receipt.json", {
         "schema_version": 1, "source_sha": sha, "version": release_version,
-        "tag": tag, "sha256": digest(destination / "lgtmd-node"),
+        "tag": tag, "sha256": digest(destination / "lgtmd"),
     })
 
 
@@ -108,9 +116,9 @@ def native_receipts(directory, sha, release_version):
     checksums = {}
     for tag in TARGETS:
         folder = directory / tag
-        if folder.is_symlink() or not folder.is_dir() or {p.name for p in folder.iterdir()} != {"lgtmd-node", "receipt.json"}:
+        if folder.is_symlink() or not folder.is_dir() or {p.name for p in folder.iterdir()} != {"lgtmd", "receipt.json"}:
             raise ReleaseError(f"Unexpected native artifact inventory for {tag}")
-        binary, receipt_path = folder / "lgtmd-node", folder / "receipt.json"
+        binary, receipt_path = folder / "lgtmd", folder / "receipt.json"
         if binary.is_symlink() or receipt_path.is_symlink() or not binary.is_file() or not receipt_path.is_file():
             raise ReleaseError(f"Native artifact files must be ordinary files: {tag}")
         receipt = json.loads(receipt_path.read_text())
@@ -150,23 +158,28 @@ def archive_files(path, prefix):
 def npm_archive(path, release_version, native_checksums):
     files = archive_files(path, "package")
     required = {"package.json", "LICENSE", "README.md", "dist/src/index.js", "dist/src/index.d.ts", "dist/src/playwright/index.js", "dist/src/playwright/index.d.ts", "dist/src/playwright/reporter.js"}
-    required.update(f"native/{tag}/lgtmd-node" for tag in TARGETS)
+    required.update(f"native/{tag}/lgtmd" for tag in TARGETS)
     if not required.issubset(files):
         raise ReleaseError(f"npm archive is missing required payload: {sorted(required.difference(files))}")
     for name in files:
-        if name not in required and not (name.startswith("dist/src/") and (name.endswith(".js") or name.endswith(".d.ts"))):
+        if name.startswith("dist/src/cli/") or (name not in required and not (name.startswith("dist/src/") and (name.endswith(".js") or name.endswith(".d.ts")))):
             raise ReleaseError(f"Unexpected npm archive payload: {name}")
+    cli = files.get("dist/src/cli.js")
+    if cli is None or cli[1] & 0o777 != 0o755 or not cli[0].startswith(b"#!/usr/bin/env node\n"):
+        raise ReleaseError("npm CLI requires its executable entry and Node shebang")
     package = json.loads(files["package.json"][0])
     if not isinstance(package, dict) or package.get("name") != "lgtmd" or package.get("version") != release_version or package.get("private") is True:
         raise ReleaseError("npm package name, version or publication metadata mismatch")
     if package.get("repository") != {"type": "git", "url": REPOSITORY, "directory": "packages/lgtmd"}:
         raise ReleaseError("npm package repository must identify lgtmd/lgtmd and packages/lgtmd")
+    if package.get("bin") != {"lgtmd": "./dist/src/cli.js"}:
+        raise ReleaseError("npm package must expose the lgtmd CLI")
     if package.get("type") != "module" or package.get("license") != "MIT":
         raise ReleaseError("npm package must retain ESM and MIT metadata")
     if set(package.get("scripts", {})).intersection({"preinstall", "install", "postinstall", "prepare"}):
         raise ReleaseError("Release package must not require an installation script")
     for tag in TARGETS:
-        data, mode = files[f"native/{tag}/lgtmd-node"]
+        data, mode = files[f"native/{tag}/lgtmd"]
         native_bytes(data, tag)
         if mode & 0o777 != 0o755:
             raise ReleaseError(f"npm native executable permissions must be 0755: {tag}")
@@ -226,8 +239,8 @@ def assemble(native_root, out, *, root=ROOT):
     for tag in TARGETS:
         destination = root / "packages/lgtmd/native" / tag
         destination.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(native_root / tag / "lgtmd-node", destination / "lgtmd-node")
-        (destination / "lgtmd-node").chmod(0o755)
+        shutil.copyfile(native_root / tag / "lgtmd", destination / "lgtmd")
+        (destination / "lgtmd").chmod(0o755)
     run(["npm", "run", "build"], root=root)
     packed = json.loads(run(["npm", "pack", "--json", "--pack-destination", out], root=root / "packages/lgtmd", capture=True))
     if len(packed) != 1 or packed[0]["filename"] != f"lgtmd-{release_version}.tgz":
@@ -256,7 +269,7 @@ def smoke(archive, *, root=ROOT):
 def main(arguments=None):
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
-    build = commands.add_parser("native", help="build and receipt the current host's native bridge")
+    build = commands.add_parser("native", help="build and receipt the current host's native CLI")
     build.add_argument("--out", type=Path, required=True)
     assembly = commands.add_parser("assemble", help="assemble both native targets and verified registry archives")
     assembly.add_argument("--native-root", type=Path, required=True)

@@ -5,3 +5,10 @@
 .DS_Store
 **/__pycache__/
 *.pyc
+
+/packages/lgtmd/viewer/
+/examples/review/dist/
+/examples/review/.cache/
+/docs/authoring/.cache/
+
+/crates/lgtmd-cli/viewer/

@@ -237,6 +237,31 @@ fn validate(files: &Files, ownership: Ownership) -> Result<()> {
     Ok(())
 }
 
+/// Validate a portable tree's optional ownership receipt before removing it.
+/// Useful for Git object stores and other hosts that already collected bytes.
+pub fn strip_ownership(files: &Files) -> Result<Files> {
+    let Some(bytes) = files.get(OWNERSHIP) else {
+        return Ok(files.clone());
+    };
+    let record: OwnershipRecord = serde_json::from_slice(bytes)
+        .map_err(|error| format!("Invalid ownership marker: {error}"))?;
+    if record.schema_version != 1 {
+        return Err("Unsupported ownership schema".into());
+    }
+    let mut expected = BTreeSet::new();
+    for path in record.files {
+        validate_path(&path)?;
+        if path.split('/').next() == Some(OWNERSHIP) || !expected.insert(path) {
+            return Err("Duplicate or reserved ownership path".into());
+        }
+    }
+    let mut result = files.clone();
+    result.remove(OWNERSHIP);
+    check_inventory(&expected, &result.keys().cloned().collect())?;
+    validate(&result, Ownership::Recorded)?;
+    Ok(result)
+}
+
 fn owned_tree(path: &Path, ownership: Ownership) -> Result<Files> {
     let (files, missing) = owned_tree_inventory(path, ownership)?;
     require_complete_ownership(&missing)?;
@@ -532,6 +557,7 @@ pub fn update(
             validate_current(current, candidate)
         },
         || Ok(()),
+        false,
     )
 }
 
@@ -548,6 +574,28 @@ pub(crate) fn update_with_retirement(
         Ownership::Recorded,
         validate_current,
         || Ok(()),
+        false,
+    )
+}
+
+/// Site policy may retire complete previously owned files in the replacement
+/// transaction. It must validate the whole retained tree; missing ownership is
+/// never treated as authorization to delete unrecorded content.
+pub(crate) fn replace_owned(
+    path: &Path,
+    files: &Files,
+    validate_current: impl FnOnce(&Files, &Files) -> Result<()>,
+) -> Result<()> {
+    update_inner(
+        path,
+        files,
+        Ownership::Recorded,
+        |current, candidate, missing| {
+            require_complete_ownership(missing)?;
+            validate_current(current, candidate)
+        },
+        || Ok(()),
+        true,
     )
 }
 
@@ -557,6 +605,7 @@ fn update_inner(
     ownership: Ownership,
     validate_current: impl FnOnce(&Files, &Files, &BTreeSet<String>) -> Result<()>,
     before_publish: impl FnOnce() -> Result<()>,
+    replace_owned: bool,
 ) -> Result<()> {
     validate(files, ownership)?;
     let transaction = Transaction::acquire(path)?;
@@ -569,7 +618,7 @@ fn update_inner(
             .keys()
             .filter(|name| !files.contains_key(*name))
             .collect();
-        if !obsolete.is_empty() {
+        if !replace_owned && !obsolete.is_empty() {
             return Err(format!(
                 "Obsolete owned files require explicit removal before update: {obsolete:?}"
             ));
@@ -656,6 +705,36 @@ mod tests {
     }
 
     #[test]
+    fn failed_site_replacement_restores_retired_owned_files() {
+        let temp = tempfile::tempdir().unwrap();
+        let root = temp.path().canonicalize().unwrap().join("site");
+        let before = Files::from([
+            ("old-resource.png".into(), vec![1]),
+            ("bundle.json".into(), vec![2]),
+        ]);
+        let after = Files::from([
+            ("new-resource.png".into(), vec![3]),
+            ("bundle.json".into(), vec![4]),
+        ]);
+        replace_owned(&root, &before, |_, _| Ok(())).unwrap();
+        let error = update_inner(
+            &root,
+            &after,
+            Ownership::Recorded,
+            |_, _, missing| require_complete_ownership(missing),
+            || Err("injected replacement failure".into()),
+            true,
+        )
+        .unwrap_err();
+        assert!(error.contains("injected"));
+        check(&root, &before, Ownership::Recorded, |_, _| Ok(())).unwrap();
+        assert!(root.join("old-resource.png").exists());
+        assert!(!root.join("new-resource.png").exists());
+        assert!(!root.parent().unwrap().join(".site.backup").exists());
+        assert!(!root.parent().unwrap().join(".site.staging").exists());
+    }
+
+    #[test]
     fn failed_publication_restores_previous_baseline() {
         let temp = tempfile::tempdir().unwrap();
         let root = temp.path().canonicalize().unwrap().join("baseline");
@@ -676,6 +755,7 @@ mod tests {
             Ownership::Dedicated,
             |_, _, _| Ok(()),
             || Err("injected publish I/O failure".into()),
+            false,
         )
         .unwrap_err();
         assert!(error.contains("injected"));

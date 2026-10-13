@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "title": "lgtmd",
+  "flow": {
+    "command": ["node", "docs/authoring/run.mjs"],
+    "watch": ["docs/authoring", "examples/review/src"],
+    "timeoutMs": 180000
+  },
+  "snapshots": "docs/snapshots",
+  "cacheDir": ".cache/lgtmd",
+  "outDir": "build/docs",
+  "basePath": "/",
+  "navigation": [
+    "getting-started",
+    "develop-and-record",
+    "review-changes",
+    "customize-the-site"
+  ],
+  "git": { "base": "HEAD" }
+}

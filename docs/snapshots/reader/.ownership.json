@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "files": [
+    "assets/review-changes/before-after.webp",
+    "assets/review-changes/changed-regions.webp",
+    "bundle.json"
+  ]
+}

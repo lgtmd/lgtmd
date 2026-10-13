@@ -3,7 +3,7 @@
 lgtmd combines native-language document authoring with one Rust compiler and
 artifact lifecycle. Application actions and assertions run in the project's
 runtime. The compiler receives completed prose, observations, checks, bindings,
-and frozen resources, then produces audience-specific Markdown/resource bundles.
+and frozen resources, then produces audience-specific Markdown exports and site bundles.
 
 ```text
 Rust authoring ----------------------> completed Document
@@ -16,12 +16,15 @@ Node authoring -> schema-v1 frozen input ------+-> Rust validation and export
 ```
 
 The [Rust SDK](../../crates/lgtmd/README.md) and
-[Node SDK](../../packages/lgtmd/README.md) are the API references. The current
-exporter produces Markdown; the included static preview is a review utility.
-A built-in docs site with contributor notes and text/screenshot change review is
-[planned](../../TODO.md#2-built-in-docs-site-and-change-review), not yet
-implemented. An alternate public exporter interface also remains future work.
-Artifact inventory manifests are not a complete viewer protocol.
+[Node SDK](../../packages/lgtmd/README.md) are the API references. The checkout
+exports both Markdown/resources and a built-in docs site with Contributor notes, Git revision
+review, and browser-side image comparison. The
+[docs-site decision](../decisions/0002-docs-site-and-git-review.md) explains the
+boundaries, and the [user guide](../guide/develop-and-record.md) explains the
+workflow. This CLI is not part of the published 0.1.0 packages yet. The versioned
+site bundle is separate from the Markdown inventory manifest; both exports
+consume the same completed frozen documents. An alternate public exporter
+interface remains future work.
 
 ## Authoring and evidence
 
@@ -48,16 +51,19 @@ pixels, and artifact existence does not establish application correctness.
 
 The core remains one crate with focused modules:
 
-| Module                        | Responsibility                                                                             |
-| ----------------------------- | ------------------------------------------------------------------------------------------ |
-| `model`, `authoring`, `prose` | Frozen content, typed ownership, builder operations, observations/checks, and composition. |
-| `artifact`                    | Resource snapshots, explicit file acquisition, and shared UTF-8/JSON encoders.             |
-| `markdown`, `validation`      | Authored Markdown, reference integrity, resource use, and intrinsic audience visibility.   |
-| `paths`, `layout`             | Safe bundle paths, configurable page/resource placement, and collision checks.             |
-| `render`, `manifest`          | Audience projection, Markdown/resource exports, and typed inventory receipts.              |
-| `lifecycle`, `store`          | Owned-tree comparison, staged publication, rollback/recovery, and receipt compatibility.   |
-| `runner`                      | Project-owned generation and configured build/check/update orchestration.                  |
-| `transport`                   | Schema-v1 frozen input, native round trips, and coarse shared compilation.                 |
+| Module                        | Responsibility                                                                                 |
+| ----------------------------- | ---------------------------------------------------------------------------------------------- |
+| `model`, `authoring`, `prose` | Frozen content, typed ownership, builder operations, observations/checks, and composition.     |
+| `artifact`                    | Resource snapshots, explicit file acquisition, and shared UTF-8/JSON encoders.                 |
+| `markdown`, `validation`      | Authored Markdown, reference integrity, resource use, and intrinsic audience visibility.       |
+| `paths`, `layout`             | Safe bundle paths, configurable page/resource placement, and collision checks.                 |
+| `render`, `manifest`          | Audience projection, Markdown/resource exports, and typed inventory receipts.                  |
+| `lifecycle`, `store`          | Owned-tree comparison, staged publication, rollback/recovery, and receipt compatibility.       |
+| `runner`                      | Project-owned generation and configured build/check/update orchestration.                      |
+| `transport`                   | Schema-v1 frozen input, native round trips, and coarse shared compilation.                     |
+| `site`                        | Versioned audience bundles, navigation, resource inventory, and exact snapshot/static storage. |
+| `review`                      | Exact page/resource change classification independent of frontend presentation.                |
+| `handoff`                     | Guarded completion receipts shared by native and Node-authored flows.                          |
 
 Finishing validates the document's intrinsic contract. Export additionally
 validates configured paths, complete references, resource use, and audience
@@ -69,8 +75,9 @@ own whole-guide validation.
 
 `packages/lgtmd` provides Node 24 ESM authoring, immutable runtime handles,
 project-owned async lifecycle integration, and optional Playwright support.
-`crates/lgtmd-node` accepts one serialized request per compile/publication through
-a native executable bundled with a prepared npm tarball.
+The `lgtmd` executable from `crates/lgtmd-cli` accepts one serialized request per
+compile/publication through its internal `__bridge` mode. The same executable
+owns the public commands, with npm forwarding to it through a thin launcher.
 
 Schema-v1 input contains ordered authored content and resource snapshots. It
 contains no callbacks, browser objects, or process-local handle owners. The
@@ -188,3 +195,38 @@ The [development guide](../development.md) lists commands. Historical N3
 and
 [incubation](https://github.com/gridaco/n3/blob/a4cf59b8955b00eadfb61d19fecff4a99559f288/rfcs/0004-lgtmd-web-incubation.md)
 records retain the original application-specific rationale.
+
+## Docs-site v1 contracts
+
+The Rust `site` compiler parses completed validated Markdown into a safe content
+AST, retaining typed resource references and Contributor note targets. Reader
+and Contributor projections have independent digests. A comparison matches page
+IDs and `(page ID, resource ID)` pairs, reports exact changes and capture
+compatibility, and carries each revision's own title/navigation. Presentation
+modes are absent from that protocol. Automatic block anchors are positional,
+so v1 promises whole-page Previous/Current review rather than paragraph matching.
+
+The Rust CLI invokes an explicit argv flow. `completeRun` or Rust
+`handoff::complete_run` writes a unique guarded handoff; successful process exit
+is also required. A private content-addressed candidate includes both exports
+and Markdown from that completed run. Public delivery selects one audience.
+Default dev executes once; watch reruns the entire flow; reuse runs nothing.
+
+Git reads are exact object reads without checkout, fetch or historical execution.
+Snapshots must already exist at the selected revision. UI state identifies
+unavailable evidence separately from unchanged content. Site/static stores reuse
+the guarded lifecycle with a narrow owned-file retirement policy; legacy Markdown
+publication semantics remain unchanged. Update accepts immutable reviewed bytes
+without running the flow. Static export replaces the complete owned audience.
+
+The private React frontend is embedded in the native executable. It renders the same safe
+content in development and static output, with hash routing for simple hosting.
+Before/After and bounded worker-based Regions are review aids. Exact decoded
+pixel grouping never changes byte-level engine results. Git review stays local;
+public static output contains only explicitly exported reading content.
+
+The CLI is a separate Rust host crate so SDK-only consumers do not inherit an
+HTTP runtime or frontend build. Its embedded frontend is prepared during source
+builds. The installed native executable needs no Node to serve or preview docs;
+only a configured JS flow brings a Node requirement. Private candidates remain
+validated by Rust before reuse or explicit acceptance.

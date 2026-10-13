@@ -46,3 +46,34 @@ release-test:
 verify *args: fmt-check release-test
     python3 crates/lgtmd/dev/verify.py "$@"
     python3 packages/lgtmd/dev/verify.py "$@"
+    node docs/authoring/verify.mjs check
+
+# Build the SDK, reusable frontend, and controlled review app before local use.
+docs-prepare:
+    python3 packages/lgtmd/dev/verify.py --prepare
+
+# Run own executable guides and serve their completed documentation.
+docs *args:
+    node packages/lgtmd/dist/src/cli.js dev "$@"
+
+docs-build:
+    node packages/lgtmd/dist/src/cli.js build
+
+docs-preview *args:
+    node packages/lgtmd/dist/src/cli.js preview "$@"
+
+# Demonstrate real Git-backed review without modifying source repository history.
+docs-demo:
+    node examples/review/demo.mjs
+
+# Record exactly the reviewed own-guide candidate, without another flow run.
+docs-record candidate:
+    node docs/authoring/verify.mjs record "{{candidate}}"
+
+# Compare the tracked guide exactly; use its declared capture environment.
+docs-check:
+    node docs/authoring/verify.mjs check
+
+# Browser controls and exact repeated-run evidence on the current supported host.
+docs-test:
+    node docs/authoring/verify.mjs verify

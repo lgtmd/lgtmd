@@ -1,5 +1,4 @@
-//! One request per process, never one request per authoring operation. The Node
-//! facade owns execution; Rust owns compilation and the existing strict store.
+//! Internal coarse JSON bridge carried by the same executable as the public CLI.
 use lgtmd::{
     Audience, Result,
     runner::{self, RunMode, RunnerConfig},
@@ -15,6 +14,37 @@ use std::{
 #[derive(Deserialize)]
 #[serde(tag = "operation", rename_all = "lowercase", deny_unknown_fields)]
 enum Request {
+    #[serde(rename = "load-candidate")]
+    LoadCandidate {
+        config: PathBuf,
+        candidate_id: String,
+    },
+    #[serde(rename = "compile-site")]
+    CompileSite {
+        input: Input,
+        title: String,
+        #[serde(default)]
+        navigation: Option<Vec<String>>,
+    },
+    #[serde(rename = "validate-site")]
+    ValidateSite {
+        files: lgtmd::lifecycle::Files,
+        #[serde(default)]
+        kind: lgtmd::site::store::StoreKind,
+    },
+    #[serde(rename = "compare-site")]
+    CompareSite {
+        before: lgtmd::lifecycle::Files,
+        after: lgtmd::lifecycle::Files,
+    },
+    #[serde(rename = "site-store")]
+    SiteStore {
+        command: String,
+        path: PathBuf,
+        files: lgtmd::lifecycle::Files,
+        #[serde(default)]
+        kind: lgtmd::site::store::StoreKind,
+    },
     Compile {
         input: Input,
         #[serde(default)]
@@ -32,6 +62,37 @@ enum Request {
 
 fn execute(request: Request) -> Result<Value> {
     match request {
+        Request::LoadCandidate {
+            config,
+            candidate_id,
+        } => {
+            let config = lgtmd_cli::config::load_config(Some(&config), false)?;
+            serde_json::to_value(lgtmd_cli::candidate::load_candidate(
+                &config,
+                &candidate_id,
+            )?)
+            .map_err(|e| e.to_string())
+        }
+        Request::CompileSite {
+            input,
+            title,
+            navigation,
+        } => serde_json::to_value(lgtmd::site::compile(&input, &title, navigation.as_deref())?)
+            .map_err(|e| e.to_string()),
+        Request::ValidateSite { files, kind } => {
+            serde_json::to_value(lgtmd::site::store::validate_files(&files, kind)?)
+                .map_err(|e| e.to_string())
+        }
+        Request::CompareSite { before, after } => {
+            serde_json::to_value(lgtmd::review::compare(&before, &after)?)
+                .map_err(|e| e.to_string())
+        }
+        Request::SiteStore {
+            command,
+            path,
+            files,
+            kind,
+        } => Ok(json!({"files":lgtmd::site::store::publish(&command, &path, &files, kind)?})),
         Request::Compile { input, layout } => {
             let exports = transport::compile(&input, &layout.export_layout()?)?;
             serde_json::to_value(exports).map_err(|e| e.to_string())
@@ -80,7 +141,7 @@ fn execute(request: Request) -> Result<Value> {
     }
 }
 
-fn main() {
+pub fn run() {
     let outcome = (|| {
         let mut input = String::new();
         io::stdin()

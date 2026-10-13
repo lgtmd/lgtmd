@@ -2,6 +2,7 @@
 
 mod artifact;
 mod authoring;
+pub mod handoff;
 mod layout;
 pub mod lifecycle;
 mod manifest;
@@ -10,7 +11,9 @@ mod model;
 mod paths;
 mod prose;
 mod render;
+pub mod review;
 pub mod runner;
+pub mod site;
 pub mod store;
 pub mod transport;
 mod validation;

@@ -5,6 +5,11 @@
   "ignorePatterns": [
     "/Cargo.lock",
     "/crates/doc-example-config/baseline/**",
-    "/crates/lgtmd/docs/guide/**"
+    "/crates/lgtmd/docs/guide/**",
+    "/docs/guide/**",
+    "/packages/lgtmd/viewer/**",
+    "/examples/review/dist/**",
+    "/docs/snapshots/**",
+    "/crates/lgtmd-cli/viewer/**"
   ]
 }
