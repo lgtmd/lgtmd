@@ -18,8 +18,10 @@ Node authoring -> schema-v1 frozen input ------+-> Rust validation and export
 The [Rust SDK](../../crates/lgtmd/README.md) and
 [Node SDK](../../packages/lgtmd/README.md) are the API references. The current
 exporter produces Markdown; the included static preview is a review utility.
-A canonical interactive viewer and alternate public exporter interface remain
-future work. Artifact inventory manifests are not a complete viewer protocol.
+A built-in docs site with contributor notes and text/screenshot change review is
+[planned](../../TODO.md#2-built-in-docs-site-and-change-review), not yet
+implemented. An alternate public exporter interface also remains future work.
+Artifact inventory manifests are not a complete viewer protocol.
 
 ## Authoring and evidence
 
@@ -176,9 +178,9 @@ cross-platform pixel identity. Projects deliberately select and accept their own
 baselines. Prose, visual legibility, meaningful coverage, and physical interaction
 still need review.
 
-Rust 1.95 is the declared minimum. Node 24 ESM on macOS arm64 is locally verified.
-Linux x64 CI is configured and needs its own successful execution. Public binary
-distribution, registry consumption, and a stable API guarantee are deferred.
+Rust 1.95 is the declared minimum. CI has verified Node 24 ESM on macOS 15 arm64
+and Ubuntu 24.04 x64. Public binary distribution, registry consumption, and a
+stable API guarantee are deferred.
 N3's separate native replay remains its consumer acceptance gate.
 
 The [development guide](../development.md) lists commands. Historical N3

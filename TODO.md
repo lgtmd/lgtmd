@@ -32,3 +32,33 @@ Application architecture, authentication, backend/database provisioning, mocks,
 seeds, and deployment remain project responsibilities. The guide and examples
 should make these integration choices understandable while keeping lgtmd's
 authoring and lifecycle interfaces agnostic to the project's stack and topology.
+
+## 2. Built-in docs site and change review
+
+**Planned product scope; not implemented.** Deliver a first-party docs website
+for reading guides and reviewing changes to their text and screenshots. This
+carries forward the intended canonical viewer and makes change review an explicit
+roadmap commitment. Markdown exports remain a supported choice.
+
+- [ ] Read compiled guides with navigation, prose, images, code, and downloads.
+      Opening a page must not execute its authoring script or rerun the application.
+- [ ] Show contributor notes attached to the content they explain. Reader exports
+      must exclude contributor-only content, resources, and metadata before delivery;
+      a viewer toggle is presentation, not access control.
+- [ ] Compare a retained candidate with an accepted baseline, including text
+      changes and before/after screenshots. Choose additional image views through
+      concrete review examples; an overlay or pixel-difference mode is not yet a
+      fixed interface commitment.
+- [ ] Preserve stable page and resource identities and show missing historical
+      evidence as unavailable. Do not silently recapture an older revision or
+      represent unmatched content as unchanged.
+- [ ] Keep comparison separate from acceptance. Visual review must not weaken
+      exact checks or automatically accept a baseline. Demonstrate reading a guide,
+      inspecting its notes, and reviewing an intentional text and screenshot change
+      with a complete example before claiming the viewer is available.
+
+The viewer consumes completed document bundles through an explicitly designed
+contract. The current inventory manifest alone is not that contract. Git may
+later supply revisions, while local baselines and build artifacts remain valid
+sources. Git integration, managed hosting, collaboration services, and a general
+plugin system are separate decisions, not requirements of this milestone.

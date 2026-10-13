@@ -92,7 +92,8 @@ separate behavior change is authorized.
 
 ## Development and verification
 
-Use the root `justfile` and [development guide](docs/development.md). Source
+Start with [CONTRIBUTING.md](CONTRIBUTING.md), the root `justfile`, and the
+[development guide](docs/development.md). Source
 contributors need Rust 1.95.0 with rustfmt/Clippy, Python 3.11+, Node.js 24/npm, and
 just. Setup is explicit:
 
@@ -136,9 +137,13 @@ authorization.
 ## Repository and release conventions
 
 - Keep code, identifiers, comments, tests, logs, and authored UI strings in English.
-- Keep the README focused on product value, current capabilities, setup, and
-  consumers. Put implementation contracts and decisions in their owning docs.
-- Keep the requested follow-up backlog in [LTGMD-TODO.md](LTGMD-TODO.md). Record
+- Keep the README focused on the user's documentation problem, a real authoring
+  example, adoption, and current availability. Lead with the useful result; use
+  direct statements and avoid question-style headings or unverified guarantees.
+  Preserve the cover artwork and N3 usage link. Put contributor setup in
+  CONTRIBUTING.md and the development guide, and implementation contracts and
+  decisions in their owning docs.
+- Keep the requested follow-up backlog in [TODO.md](TODO.md). Record
   proposal status explicitly; a TODO or decision document is not implementation
   approval.
 - Ignore build output, dependencies, caches, native binaries, and disposable
