@@ -1,4 +1,4 @@
-![lgtmd — LGTM Docs](.github/assets/cover.png)
+![lgtmd — LGTM Docs](.github/assets/cover.webp)
 
 # lgtmd
 
