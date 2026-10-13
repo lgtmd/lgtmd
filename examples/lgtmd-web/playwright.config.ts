@@ -14,6 +14,10 @@ export default defineConfig({
   use: {
     baseURL: "http://127.0.0.1:4183",
     browserName: "chromium",
+    // Keep rounded-edge painting on one raster path across fresh captures.
+    launchOptions: {
+      args: ["--disable-gpu-rasterization", "--disable-partial-raster"],
+    },
     viewport: { width: 800, height: 600 },
     locale: "en-US",
     timezoneId: "UTC",

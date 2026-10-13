@@ -157,9 +157,12 @@ about Vite itself.
 
 [The configuration](playwright.config.ts) selects one Chromium project, no retries,
 and a fixed viewport, locale, timezone, color scheme, and reduced-motion preference.
-The image receipt includes the pinned Playwright version and host platform. Exact
-screenshots still depend on their capture environment; this example makes no
-cross-platform pixel-identity claim.
+It also selects CPU rasterization and disables partial-raster reuse: fresh macOS
+CI captures otherwise differed at rounded-border antialiasing pixels despite
+identical application content. The image receipt identifies this capture profile,
+the pinned Playwright version, and host platform. These are example-owned browser
+settings, not SDK defaults. Exact screenshots still depend on their capture
+environment; this example makes no cross-platform pixel-identity claim.
 
 Use `docsReporter()` as the sole configured reporter and run through
 `runPlaywright()`, as [the entry point](run.ts) does. The SDK stages document

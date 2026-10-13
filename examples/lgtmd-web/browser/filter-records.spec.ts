@@ -32,7 +32,7 @@ test("Find records by name", async ({ page, workspace, doc }, testInfo) => {
     }),
     {
       producer: "playwright/chromium",
-      profile: `playwright-1.64.0-${process.platform}-${process.arch}-800x600`,
+      profile: `playwright-1.64.0-${process.platform}-${process.arch}-800x600-cpu-full-raster`,
     },
   );
   const explanation = doc.md`
