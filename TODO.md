@@ -39,6 +39,41 @@ seeds, and deployment remain project responsibilities. The guide and examples
 should make these integration choices understandable while keeping lgtmd's
 authoring and lifecycle interfaces agnostic to the project's stack and topology.
 
+### Proposed dogfooding example: guest and host stay requests
+
+Direction agreed on 2026-10-14; implementation and verification are deferred.
+The [five-hour execution plan](docs/plans/stay-dogfooding.md) fixes scope,
+ownership, autonomous decisions, and acceptance gates.
+Use an Airbnb-inspired accommodation workflow with original branding, fictional
+listings, and a polished responsive React/Vite interface. One application should
+cover both the guest journey and the support-style host inbox; a separate inbox
+example is unnecessary for this milestone.
+
+- [ ] Build one complete workflow: a guest opens a listing, chooses dates, and
+      submits a stay request with a message; the host reviews the request, edits
+      a mocked AI reply, responds, and accepts the request; the guest sees the
+      persisted response and updated status. Use a small real HTTP API and an
+      isolated in-memory store. Scope excludes payments, maps, production
+      authentication, and a full marketplace or property-management system.
+- [ ] Keep the AI boundary project-owned, using a pinned mock provider with
+      scripted output, controlled streaming, and a failure/retry scenario.
+      Demonstrate explicit control of scenario data, visible times and IDs, and
+      two declared response variants whose changed evidence fails exact
+      comparison. Do not claim that mocks make live model output deterministic.
+- [ ] Demonstrate both supplied sandbox state and test-owned API preparation and
+      cleanup. Verify guest/host state transitions, workspace isolation, reload
+      persistence within the running server, and unsuccessful-run/cleanup
+      behavior. No real database or external model calls are required.
+- [ ] Author natural guest and host guides alongside the scenarios, with a
+      separate adoption explanation for fixture ownership and verification
+      limits. Guest and host are application roles; both need Reader guides.
+      They must not be represented by lgtmd's Reader/Contributor audience split.
+- [ ] Keep an example-local `feedbacks.md` recording authoring friction,
+      reproductions, workarounds, fixes, deferred proposals, and verification.
+      Prioritize the application and guides; bound product fixes to demonstrated
+      bugs and small compatible improvements. Record ambiguous contracts or
+      larger features for later review rather than expanding this milestone.
+
 ## 2. Built-in docs site and change review
 
 **V1 implemented and verified with one native CLI; not yet released.**
@@ -64,8 +99,8 @@ authoring and lifecycle interfaces agnostic to the project's stack and topology.
 - [x] Add Git-backed revision selection and text/before-and-after screenshot
       review over retained completed bundles. Keep missing history/evidence and
       incompatible captures explicit; never rerun historical code silently.
-- [x] Provide Previous/Current document review, Before/After images, and optional
-      client-computed Regions boxes with honest format/size/profile fallbacks.
+- [x] Provide Previous/Current document review, slider and side-by-side image
+      views, and optional client-computed annotations with honest format/size/profile fallbacks.
       Keep presentation choices out of the engine comparison contract.
 - [x] Make the review guide executable using lgtmd and real browser assertions
       against fixed public example history. Capture the review interface once;
@@ -80,6 +115,47 @@ authoring and lifecycle interfaces agnostic to the project's stack and topology.
 - [ ] Offer optional editable viewer components or a custom frontend build path
       for structural and behavioral customization, without requiring an engine
       fork. Keep ordinary CSS theming independent of this later interface.
+- [ ] Research text-level change highlighting: align document blocks, then show
+      word insertions/deletions and useful line diffs for code. Current review
+      only switches between **Previous / Current** documents; it does not render
+      inline text edits. Keep the UI authored in lgtmd; evaluate reusing a diff
+      algorithm core rather than embedding another product's diff viewer.
+
+### Text diff research (2026-10-14; proposal, no dependency selected)
+
+Initial shortlist and references:
+
+| Candidate or precedent                                                                                                                                                        | Evidence and fit to investigate                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [jsdiff (`diff`)](https://github.com/kpdecker/jsdiff)                                                                                                                         | BSD-3-Clause core with word, line and token-array comparison. A starting candidate for block alignment plus inline edits in our existing content tree. Word mode ignores whitespace by default; choose explicit policies for prose and code. Evaluate Unicode segmentation and consistency across browsers.                                                                                                                                                                        |
+| [Sanity's `@sanity/diff-match-patch`](https://github.com/sanity-io/diff-match-patch)                                                                                          | Apache-2.0 TypeScript fork with diff functions, semantic cleanup and surrogate-pair fixes. [Sanity documents use of the algorithm](https://www.sanity.io/docs/changelog/7847d0f0-521b-4766-b8b3-4d4b91868fee). Compare its readable edit ranges with jsdiff; plain-text comparison still needs our block/markup mapping. The [original Google repository](https://github.com/google/diff-match-patch) is archived, so evaluate the fork rather than assuming upstream maintenance. |
+| [Read the Docs Visual Diff](https://docs.readthedocs.com/platform/stable/visual-diff.html)                                                                                    | A documentation precedent for highlights in rendered content and next/previous change navigation. Its [addon dependency manifest](https://github.com/readthedocs/addons/blob/main/package.json) lists `visual-dom-diff` and `diff-match-patch`. Study the approach and documented table/link limitations; dependency presence alone does not establish each package's exact role. Prefer evaluating our structured content before adopting DOM mutation.                           |
+| [ProseMirror changeset](https://github.com/ProseMirror/prosemirror-changeset) and [Tiptap Snapshot Compare](https://tiptap.dev/docs/collaboration/documents/snapshot-compare) | Rich-text references, not the default integration choice. The MIT changeset module consumes document editing steps/maps; lgtmd retains completed snapshots, not editor history. Tiptap's comparison extension is distributed through its private registry and tied to its editor model. Do not assume it uses the changeset package internally or import an editor stack just for review.                                                                                          |
+
+Proposed evaluation, pending implementation approval:
+
+- [ ] Compare jsdiff and Sanity's core on the same retained A/B document pairs.
+      Measure readable results, installed/bundled size, runtime on long documents,
+      cancellation/budgets, maintenance and license notices before selecting one.
+- [ ] Design a small custom adapter for block alignment and mapping edit ranges
+      back to safe content nodes. Cover headings, paragraphs, lists, tables,
+      links, emphasis, code and adjacent images. Treat generated positional IDs
+      as insufficient proof of matching blocks; test insertions near the start,
+      repeated paragraphs, reordered sections and formatting-only changes.
+- [ ] Compare rendered inline highlighting with an optional line-oriented source
+      view using complete examples. Keep our image widgets and comment markers,
+      accessible additions/deletions, change navigation, themes and mobile layout.
+      Avoid raw HTML injection and distinguish changed link destinations from
+      unchanged visible labels.
+- [ ] Exercise whitespace, Korean/CJK, emoji and combining characters, whole
+      added/removed pages, and both audiences. Diff only the already-filtered
+      bundles. Client display heuristics must not alter Rust's exact comparison,
+      candidate identity, snapshot acceptance or recorded evidence.
+
+Working recommendation: own the alignment/rendering layer and reuse a small diff
+core if the fixtures justify it. A fully custom core remains an option if these
+libraries do not meet the measured requirements. This research does not authorize
+implementation or change the current support claim.
 
 Git supplies revisions; the frontend consumes completed documents. Managed
 hosting, collaborative comments, remote evidence storage, and additional image
@@ -101,3 +177,13 @@ comparison modes remain separate work.
 
 The first static landing page and guides can ship before the full comparison
 viewer.
+
+## 4. Native application integration research
+
+- [ ] Investigate React Native as a later dogfooding target. Evaluate native
+      execution, automation, capture, project-owned preparation/cleanup, and
+      delivery of completed evidence to the existing compiler boundary. Treat
+      React Native Web/Expo web and actual iOS/Android execution as separate
+      verification targets. This is a research proposal, not a support promise
+      or part of the first guest/host web example; no native adapter or mobile
+      app implementation is selected yet.

@@ -135,7 +135,7 @@ media size. `examples/review/capture.mjs` converts Playwright's in-memory PNG
 buffer through the pinned development-only Sharp encoder. The capture profile
 includes Sharp and libwebp versions; encoding changes require fresh review and
 explicit baseline acceptance. A real-browser regression verifies decoded pixel equality against PNG,
-and the real review scenario exercises WebP in Before/After and Regions. The SDK
+and the real review scenario exercises WebP in slider and side-by-side views with annotations. The SDK
 continues to accept other image formats and never silently transcodes evidence.
 
 User-facing sources live in `docs/authoring/`; a bounded browser scenario captures

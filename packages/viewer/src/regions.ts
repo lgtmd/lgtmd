@@ -40,14 +40,14 @@ function dimensions(
   )
     fail("Invalid image dimensions.");
   if (width * height > MAX_PIXELS)
-    fail("Regions supports at most 8 million pixels per image.");
+    fail("Image alignment supports at most 8 million pixels per image.");
   return { width, height, format };
 }
 
 /** Inspect complete bounded encoded input before allocating decoded pixel buffers. */
 export function inspectImage(bytes: Uint8Array): ImageHeader {
   if (bytes.byteLength > MAX_ENCODED_BYTES)
-    fail("Regions supports at most 32 MiB of encoded data per image.");
+    fail("Image alignment supports at most 32 MiB of encoded data per image.");
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   if (
     bytes.length >= 8 &&
@@ -73,7 +73,7 @@ export function inspectImage(bytes: Uint8Array): ImageHeader {
         );
       }
       if (kind === "acTL" || kind === "fcTL" || kind === "fdAT")
-        fail("Animated PNG images use Before / After only.");
+        fail("Animated PNG images display side by side without annotations.");
       offset += length + 12;
       if (kind === "IEND") {
         if (length !== 0 || offset !== bytes.length)
@@ -102,11 +102,13 @@ export function inspectImage(bytes: Uint8Array): ImageHeader {
       const start = offset + 8;
       if (length > bytes.length - start) fail("Truncated WebP chunk.");
       if (kind === "ANIM" || kind === "ANMF")
-        fail("Animated WebP images use Before / After only.");
+        fail("Animated WebP images display side by side without annotations.");
       if (kind === "VP8X") {
         if (length !== 10) fail("Invalid extended WebP header.");
         if (bytes[start] & 2)
-          fail("Animated WebP images use Before / After only.");
+          fail(
+            "Animated WebP images display side by side without annotations.",
+          );
         const u24 = (p: number) =>
           bytes[p] + bytes[p + 1] * 256 + bytes[p + 2] * 65536;
         header = dimensions(1 + u24(start + 4), 1 + u24(start + 7), "webp");
@@ -138,7 +140,7 @@ export function inspectImage(bytes: Uint8Array): ImageHeader {
     if (!header || !image) fail("WebP dimensions or frame data are missing.");
     return header;
   }
-  fail("Regions supports static PNG and WebP images only.");
+  fail("Image alignment supports static PNG and WebP images only.");
 }
 
 /** All differing RGBA pixels mark a tile. Four-connected tile groups form boxes. */

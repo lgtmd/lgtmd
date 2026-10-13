@@ -8,7 +8,6 @@ import {
 } from "react";
 import { createRoot } from "react-dom/client";
 import { DocumentContent, pageHref } from "./content.tsx";
-import { ImageComparison } from "./image-comparison.tsx";
 import type { Boot, SiteState } from "./protocol.ts";
 import { ThemeSelect } from "./theme.tsx";
 import "./style.css";
@@ -48,6 +47,22 @@ function App() {
   const [connected, setConnected] = useState(true);
   const [currentRoute, setRoute] = useState(route);
   const [diff, setDiff] = useState(false);
+  const [toolsOpen, setToolsOpen] = useState(false);
+  const toolsRef = useRef<HTMLDivElement>(null);
+  const toolsButton = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!toolsOpen) return;
+    const dismiss = (event: PointerEvent) => {
+      if (
+        event.target instanceof Node &&
+        !toolsRef.current?.contains(event.target)
+      ) {
+        setToolsOpen(false);
+      }
+    };
+    document.addEventListener("pointerdown", dismiss);
+    return () => document.removeEventListener("pointerdown", dismiss);
+  }, [toolsOpen]);
   const [mobileOpen, setMobileOpen] = useState(false);
   useEffect(() => setMobileOpen(false), [currentRoute.page]);
   const [side, setSide] = useState<"previous" | "current">("current");
@@ -113,7 +128,6 @@ function App() {
     currentRoute.page && allIds.includes(currentRoute.page)
       ? currentRoute.page
       : allIds[0];
-  const pageChange = comparison?.pages.find((p) => p.id === pageId);
   const selectedBundle = diff && side === "previous" ? previous : current;
   const selectedPage = selectedBundle?.pages.find((p) => p.id === pageId);
   const hasTitle =
@@ -132,9 +146,8 @@ function App() {
   const imagePairs =
     comparison?.resources.filter(
       (pair) =>
-        pair.page_id === pageId &&
-        (pair.before?.mime.startsWith("image/") ||
-          pair.after?.mime.startsWith("image/")),
+        pair.before?.mime.startsWith("image/") ||
+        pair.after?.mime.startsWith("image/"),
     ) ?? [];
   const visibleIds = allIds.filter(
     (id) =>
@@ -275,16 +288,6 @@ function App() {
         aria-label="Documentation pages"
       >
         <div className="sidebar-heading">Documentation</div>
-        {diff && comparison ? (
-          <label className="filter-label">
-            <input
-              type="checkbox"
-              checked={changedOnly}
-              onChange={(event) => setChangedOnly(event.target.checked)}
-            />
-            Changed pages
-          </label>
-        ) : null}
         <ul>
           {visibleIds.map((id) => {
             const change = comparison?.pages.find((p) => p.id === id);
@@ -311,9 +314,33 @@ function App() {
                   }}
                 >
                   <span>{page?.title ?? id}</span>
-                  {diff && change ? (
-                    <span className={`badge ${change.status}`}>
-                      {change.status}
+                  {diff && change && change.status !== "unchanged" ? (
+                    <span
+                      className={`nav-change ${change.status}`}
+                      title={
+                        {
+                          changed: "Modified",
+                          added: "Added",
+                          removed: "Removed",
+                        }[change.status]
+                      }
+                    >
+                      <span aria-hidden="true">
+                        {
+                          { changed: "M", added: "A", removed: "D" }[
+                            change.status
+                          ]
+                        }
+                      </span>
+                      <span className="sr-only">
+                        {
+                          {
+                            changed: "Modified",
+                            added: "Added",
+                            removed: "Removed",
+                          }[change.status]
+                        }
+                      </span>
                     </span>
                   ) : null}
                 </a>
@@ -328,7 +355,12 @@ function App() {
               : "Pages will appear when the flow completes."}
           </p>
         ) : null}
-        <div className="powered">Built with lgtmd</div>
+        <footer className="sidebar-footer" data-lgtmd-part="footer">
+          {!isDev && state?.audience === "contributor" ? (
+            <div>Contributor documentation</div>
+          ) : null}
+          <div>Built with lgtmd</div>
+        </footer>
       </nav>
       <div className="page-frame" data-lgtmd-part="frame">
         <div className="page-toolbar" data-lgtmd-part="toolbar">
@@ -339,138 +371,15 @@ function App() {
           </div>
           <div className="header-actions flex items-center gap-3">
             <ThemeSelect />
-            <span className="audience">
-              {state?.audience === "contributor" ? "Contributor" : "Reader"}
-            </span>
-            {isDev ? (
-              <label className="diff-toggle">
-                <input
-                  type="checkbox"
-                  checked={diff}
-                  onChange={(event) => setDiff(event.target.checked)}
-                />
-                View diff
-              </label>
-            ) : null}
           </div>
         </div>
-        {isDev ? (
-          <div className="run-bar" aria-live="polite">
-            <div>
-              <span className={`status-dot ${state?.run.status ?? "idle"}`} />
-              <strong>
-                {state?.run.status === "running"
-                  ? "Running flow…"
-                  : state?.run.retained
-                    ? "Retained output"
-                    : state?.run.status === "succeeded"
-                      ? "Flow completed"
-                      : state?.run.status === "failed"
-                        ? "Flow failed"
-                        : state?.run.status === "cancelled"
-                          ? "Flow cancelled"
-                          : "Waiting for documentation"}
-              </strong>
-              {state?.run.retained ? <span>Not freshly verified.</span> : null}
-              {state?.run.stale ? (
-                <span className="stale">
-                  Showing the previous successful result.
-                </span>
-              ) : null}
-              {state?.run.message ? (
-                <span className="run-message">{state.run.message}</span>
-              ) : null}
-            </div>
-            <button
-              type="button"
-              onClick={() => void rerun()}
-              disabled={
-                !state?.canRun || running || state.run.status === "running"
-              }
-            >
-              Run again
-            </button>
-          </div>
-        ) : null}
-        {!connected && isDev ? (
-          <div className="notice warning" role="status">
-            Connection interrupted. Displayed documentation may be stale;
-            reconnecting automatically.
-          </div>
-        ) : null}
-        {failure ? (
+        {failure && !isDev ? (
           <div className="notice warning" role="alert">
             {failure}
             <button type="button" onClick={() => void refresh()}>
               Retry loading
             </button>
           </div>
-        ) : null}
-        {diff && isDev ? (
-          <section className="review-toolbar" aria-label="Review revisions">
-            <form onSubmit={(event) => void chooseRef(event)}>
-              <label htmlFor="revision">Compare against Git revision</label>
-              <div>
-                <input
-                  id="revision"
-                  name="revision"
-                  value={ref}
-                  onChange={(event) => setRef(event.target.value)}
-                  spellCheck={false}
-                  autoComplete="off"
-                  required
-                />
-                <button type="submit" disabled={selecting}>
-                  {selecting ? "Loading…" : "Compare"}
-                </button>
-              </div>
-            </form>
-            <div className="revision-identities">
-              <span>
-                Previous:{" "}
-                <code title={state?.baseline?.revision}>
-                  {state?.baseline?.revision?.slice(0, 12) ??
-                    state?.baseline?.ref ??
-                    "unavailable"}
-                </code>
-              </span>
-              <span>
-                Candidate:{" "}
-                <code title={state?.candidateId}>
-                  {state?.candidateId?.slice(0, 12) ?? "pending"}
-                </code>
-              </span>
-              <span>{state?.audience ?? "reader"} evidence</span>
-              {state?.candidateId ? (
-                <button type="button" onClick={() => void copyCandidate()}>
-                  Copy candidate ID
-                </button>
-              ) : null}
-              {copyResult === "copied" ? (
-                <span role="status">Candidate ID copied.</span>
-              ) : null}
-              {copyResult === "unavailable" ? (
-                <label>
-                  Copy this candidate ID
-                  <input
-                    aria-label="Candidate ID"
-                    readOnly
-                    value={state?.candidateId}
-                    onFocus={(event) => event.currentTarget.select()}
-                  />
-                </label>
-              ) : null}
-            </div>
-            {state?.baseline?.status !== "available" ? (
-              <p className="notice">
-                {state?.baseline?.message ??
-                  "No recorded docs at this revision."}
-              </p>
-            ) : null}
-            {comparison?.site_changed ? (
-              <p className="site-change">Site title or navigation changed.</p>
-            ) : null}
-          </section>
         ) : null}
 
         <main id="main-content" data-lgtmd-part="content" tabIndex={-1}>
@@ -491,44 +400,7 @@ function App() {
             <div data-testid="review-panel" className="review-panel">
               <div className="page-heading">
                 {!hasTitle ? <h1>{pageTitle}</h1> : null}
-                {diff && pageChange ? (
-                  <span className={`badge ${pageChange.status}`}>
-                    {pageChange.status}
-                  </span>
-                ) : null}
               </div>
-              {diff ? (
-                <div
-                  className="segmented page-tabs"
-                  role="tablist"
-                  aria-label="Document version"
-                >
-                  <button
-                    type="button"
-                    id="tab-previous"
-                    role="tab"
-                    aria-selected={side === "previous"}
-                    aria-controls="document-version"
-                    tabIndex={side === "previous" ? 0 : -1}
-                    onKeyDown={tabKeys}
-                    onClick={() => setSide("previous")}
-                  >
-                    Previous
-                  </button>
-                  <button
-                    type="button"
-                    id="tab-current"
-                    role="tab"
-                    aria-selected={side === "current"}
-                    aria-controls="document-version"
-                    tabIndex={side === "current" ? 0 : -1}
-                    onKeyDown={tabKeys}
-                    onClick={() => setSide("current")}
-                  >
-                    Current
-                  </button>
-                </div>
-              ) : null}
               <article
                 id="document-version"
                 role={diff ? "tabpanel" : undefined}
@@ -540,6 +412,19 @@ function App() {
                     page={selectedPage}
                     bundle={selectedBundle}
                     resourceBase={resourceBase}
+                    imageReview={
+                      comparison
+                        ? {
+                            enabled: diff,
+                            pairs: imagePairs,
+                            beforeBase: state?.baseline?.resourceBase ?? "",
+                            afterBase: state?.currentResourceBase ?? "",
+                            previousRevision:
+                              state?.baseline?.ref ?? "Previous",
+                            currentRevision: "Current",
+                          }
+                        : undefined
+                    }
                   />
                 ) : (
                   <div className="missing-side">
@@ -551,25 +436,279 @@ function App() {
                   </div>
                 )}
               </article>
-              {diff && comparison && imagePairs.length ? (
-                <section className="image-reviews" aria-label="Image changes">
-                  <h2>Image comparison</h2>
-                  {imagePairs.map((pair) => (
-                    <ImageComparison
-                      key={`${pair.page_id}:${pair.id}:${comparison.before}:${comparison.after}`}
-                      pair={pair}
-                      beforeBase={state?.baseline?.resourceBase ?? ""}
-                      afterBase={state?.currentResourceBase ?? ""}
-                      previousRevision={state?.baseline?.ref ?? "Previous"}
-                      currentRevision="Current"
-                    />
-                  ))}
-                </section>
-              ) : null}
             </div>
           )}
         </main>
       </div>
+      {isDev ? (
+        <div
+          ref={toolsRef}
+          className="dev-tools fixed z-50 flex flex-col items-center gap-2"
+          onKeyDown={(event) => {
+            if (event.key === "Escape" && toolsOpen) {
+              event.preventDefault();
+              setToolsOpen(false);
+              toolsButton.current?.focus();
+            }
+          }}
+        >
+          {diff ? (
+            <div
+              className="segmented dev-context"
+              role="tablist"
+              aria-label="Document version"
+            >
+              <button
+                type="button"
+                id="tab-previous"
+                role="tab"
+                aria-selected={side === "previous"}
+                aria-controls="document-version"
+                tabIndex={side === "previous" ? 0 : -1}
+                onKeyDown={tabKeys}
+                onClick={() => setSide("previous")}
+              >
+                Previous
+              </button>
+              <button
+                type="button"
+                id="tab-current"
+                role="tab"
+                aria-selected={side === "current"}
+                aria-controls="document-version"
+                tabIndex={side === "current" ? 0 : -1}
+                onKeyDown={tabKeys}
+                onClick={() => setSide("current")}
+              >
+                Current
+              </button>
+            </div>
+          ) : null}
+          <div
+            className="dev-dock flex items-center gap-3"
+            aria-label="Development toolbar"
+          >
+            <button
+              ref={toolsButton}
+              type="button"
+              className="dev-tools-toggle flex items-center gap-2"
+              aria-label="Development tools"
+              aria-expanded={toolsOpen}
+              aria-controls="development-panel"
+              onClick={() => setToolsOpen(!toolsOpen)}
+            >
+              <strong>lgtmd</strong>
+              <span
+                className={`status-dot ${!connected || failure ? "failed" : (state?.run.status ?? "idle")}`}
+              />
+              <span className="dev-status" role="status">
+                {!connected
+                  ? "Disconnected"
+                  : failure
+                    ? "Error"
+                    : state?.run.status === "running"
+                      ? "Running…"
+                      : state?.run.status === "failed"
+                        ? state.run.stale
+                          ? "Failed · stale"
+                          : "Failed"
+                        : state?.run.status === "cancelled"
+                          ? state.run.stale
+                            ? "Cancelled · stale"
+                            : "Cancelled"
+                          : state?.run.retained
+                            ? "Retained"
+                            : state?.run.stale
+                              ? "Stale"
+                              : state?.run.status === "succeeded"
+                                ? "Ready"
+                                : "Waiting…"}
+              </span>
+              <span aria-hidden="true" className="dev-chevron">
+                {toolsOpen ? "⌄" : "⌃"}
+              </span>
+            </button>
+            <label className="diff-toggle">
+              <input
+                type="checkbox"
+                checked={diff}
+                onChange={(event) => setDiff(event.target.checked)}
+              />
+              View diff
+            </label>
+          </div>
+          {toolsOpen ? (
+            <section
+              id="development-panel"
+              className="dev-panel"
+              aria-label="Development tools"
+            >
+              <header className="dev-panel-heading flex items-center justify-between gap-3">
+                <div>
+                  <strong>Development tools</strong>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Audience:{" "}
+                    {state?.audience === "contributor"
+                      ? "Contributor"
+                      : "Reader"}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  aria-label="Close development tools"
+                  onClick={() => {
+                    setToolsOpen(false);
+                    toolsButton.current?.focus();
+                  }}
+                >
+                  Close
+                </button>
+              </header>
+              <div className="run-bar" aria-live="polite">
+                <div>
+                  <span
+                    className={`status-dot ${state?.run.status ?? "idle"}`}
+                  />
+                  <strong>
+                    {state?.run.status === "running"
+                      ? "Running flow…"
+                      : state?.run.retained
+                        ? "Retained output"
+                        : state?.run.status === "succeeded"
+                          ? "Flow completed"
+                          : state?.run.status === "failed"
+                            ? "Flow failed"
+                            : state?.run.status === "cancelled"
+                              ? "Flow cancelled"
+                              : "Waiting for documentation"}
+                  </strong>
+                  {state?.run.retained ? (
+                    <span>Not freshly verified.</span>
+                  ) : null}
+                  {state?.run.stale ? (
+                    <span className="stale">
+                      Showing the previous successful result.
+                    </span>
+                  ) : null}
+                  {state?.run.message ? (
+                    <span className="run-message">{state.run.message}</span>
+                  ) : null}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void rerun()}
+                  disabled={
+                    !state?.canRun || running || state.run.status === "running"
+                  }
+                >
+                  Run again
+                </button>
+              </div>
+              {!connected ? (
+                <div className="notice warning" role="status">
+                  Connection interrupted. Displayed documentation may be stale;
+                  reconnecting automatically.
+                </div>
+              ) : null}
+              {failure ? (
+                <div className="notice warning" role="alert">
+                  {failure}
+                  <button type="button" onClick={() => void refresh()}>
+                    Retry loading
+                  </button>
+                </div>
+              ) : null}
+              {diff ? (
+                <section
+                  className="review-toolbar"
+                  aria-label="Review revisions"
+                >
+                  {comparison ? (
+                    <label className="filter-label">
+                      <input
+                        type="checkbox"
+                        checked={changedOnly}
+                        onChange={(event) =>
+                          setChangedOnly(event.target.checked)
+                        }
+                      />
+                      Changed pages
+                    </label>
+                  ) : null}
+                  <form onSubmit={(event) => void chooseRef(event)}>
+                    <label htmlFor="revision">
+                      Compare against Git revision
+                    </label>
+                    <div>
+                      <input
+                        id="revision"
+                        name="revision"
+                        value={ref}
+                        onChange={(event) => setRef(event.target.value)}
+                        spellCheck={false}
+                        autoComplete="off"
+                        required
+                      />
+                      <button type="submit" disabled={selecting}>
+                        {selecting ? "Loading…" : "Compare"}
+                      </button>
+                    </div>
+                  </form>
+                  <div className="revision-identities">
+                    <span>
+                      Previous:{" "}
+                      <code title={state?.baseline?.revision}>
+                        {state?.baseline?.revision?.slice(0, 12) ??
+                          state?.baseline?.ref ??
+                          "unavailable"}
+                      </code>
+                    </span>
+                    <span>
+                      Candidate:{" "}
+                      <code title={state?.candidateId}>
+                        {state?.candidateId?.slice(0, 12) ?? "pending"}
+                      </code>
+                    </span>
+                    {state?.candidateId ? (
+                      <button
+                        type="button"
+                        onClick={() => void copyCandidate()}
+                      >
+                        Copy candidate ID
+                      </button>
+                    ) : null}
+                    {copyResult === "copied" ? (
+                      <span role="status">Candidate ID copied.</span>
+                    ) : null}
+                    {copyResult === "unavailable" ? (
+                      <label>
+                        Copy this candidate ID
+                        <input
+                          aria-label="Candidate ID"
+                          readOnly
+                          value={state?.candidateId}
+                          onFocus={(event) => event.currentTarget.select()}
+                        />
+                      </label>
+                    ) : null}
+                  </div>
+                  {state?.baseline?.status !== "available" ? (
+                    <p className="notice">
+                      {state?.baseline?.message ??
+                        "No recorded docs at this revision."}
+                    </p>
+                  ) : null}
+                  {comparison?.site_changed ? (
+                    <p className="site-change">
+                      Site title or navigation changed.
+                    </p>
+                  ) : null}
+                </section>
+              ) : null}
+            </section>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }

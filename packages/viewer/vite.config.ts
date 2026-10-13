@@ -10,5 +10,6 @@ export default defineConfig({
     emptyOutDir: true,
     manifest: "manifest.json",
     sourcemap: false,
+    license: { fileName: "assets/licenses.txt" },
   },
 });

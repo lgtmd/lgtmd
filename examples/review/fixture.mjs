@@ -43,7 +43,7 @@ export function exampleGit(root) {
       { cwd: root, env: exampleEnvironment() },
     );
 }
-export async function prepareDemo() {
+export async function prepareDemo({ playground = false } = {}) {
   const root = await realpath(
     await mkdtemp(join(tmpdir(), "lgtmd-review-demo-")),
   );
@@ -54,9 +54,15 @@ export async function prepareDemo() {
       JSON.stringify(
         {
           schemaVersion: 1,
-          title: "Review demonstration",
+          title: playground
+            ? "Image comparison playground"
+            : "Review demonstration",
           flow: {
-            command: [process.execPath, join(here, "run.mjs")],
+            command: [
+              process.execPath,
+              join(here, "run.mjs"),
+              ...(playground ? ["--playground"] : []),
+            ],
             cwd: ".",
           },
           snapshots: "snapshots",
@@ -72,9 +78,14 @@ export async function prepareDemo() {
     await git("init", "--initial-branch=main", "--object-format=sha1");
     let before;
     for (const version of ["A", "B"]) {
-      const compiled = await compileSite(await collectReview(version), {
-        title: "Review demonstration",
-      });
+      const compiled = await compileSite(
+        await collectReview(version, { playground }),
+        {
+          title: playground
+            ? "Image comparison playground"
+            : "Review demonstration",
+        },
+      );
       for (const audience of ["reader", "contributor"])
         await storeSite(
           "update",
@@ -99,8 +110,12 @@ export async function prepareDemo() {
     throw error;
   }
 }
-export async function startDemo({ audience = "contributor", port = 0 } = {}) {
-  const fixture = await prepareDemo();
+export async function startDemo({
+  audience = "contributor",
+  port = 0,
+  playground = false,
+} = {}) {
+  const fixture = await prepareDemo({ playground });
   const child = spawn(
     process.execPath,
     [

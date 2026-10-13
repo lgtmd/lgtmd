@@ -13,7 +13,7 @@ just docs-demo
 ```
 
 Open the printed URL and enable **View diff**. Switch **Previous / Current** to
-read the guide, then choose **Before / After** or **Regions** for the image.
+read the guide, then choose **Slider** or **Side by side** on each image widget. **Annotations** independently toggles change boxes in either view.
 The Contributor session includes intentionally public sample notes. Ctrl-C stops
 the owned server and removes the disposable history.
 
@@ -38,3 +38,15 @@ Playwright's PNG buffer with the pinned development encoder before registering
 it with `mediaType: "image/webp"`. The profile records encoder versions; tests
 check decoded pixel preservation. This is an example policy, not an SDK format
 requirement.
+
+## Image comparison playground
+
+Run `just docs-playground` for a separate local review site with deliberately
+obvious A/B changes: purple and green backgrounds, different headings, statuses,
+and button colors. Enable **View diff**, drag the slider, scroll the side-by-side images,
+and toggle annotations independently. The slider also supports arrow keys,
+Home and End.
+
+This opt-in scenario uses the actual React app and guarded screenshot flow in
+disposable Git history. It is not part of lgtmd's own navigation, static docs
+build or bundled viewer assets. Ctrl-C removes its temporary history.

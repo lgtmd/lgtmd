@@ -52,3 +52,18 @@ button {
   background: #334bd3;
   font-size: 14px;
 }
+
+/* The opt-in playground makes visual changes obvious without changing the guide fixture. */
+main.playground {
+  background: #eef0ff;
+  border-color: #a0a9e9;
+  box-shadow: inset 0 8px #6366f1;
+}
+main.playground[data-version="B"] {
+  background: #e2f7ed;
+  border-color: #83c9a7;
+  box-shadow: inset 0 8px #15966c;
+}
+.playground[data-version="B"] button {
+  background: #157a59;
+}

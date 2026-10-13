@@ -1,6 +1,6 @@
 {
   "audience": "reader",
-  "digest": "3049a0b6ea667651fa12fab983be41ef761f453e449d879ab4c10b11b12192e7",
+  "digest": "2d59eda138254f9b1ad99a7881a44b193294c1ef16e5cb54810db996867b6bf0",
   "navigation": [
     "getting-started",
     "develop-and-record",
@@ -1363,16 +1363,33 @@
         {
           "children": [
             {
+              "text": "Open the small controls button in the image corner to choose ",
+              "type": "text"
+            },
+            {
               "children": [
                 {
-                  "text": "Before / After",
+                  "text": "Slider",
                   "type": "text"
                 }
               ],
               "type": "strong"
             },
             {
-              "text": " displays the retained captures side by side. This real example changes the project status from ",
+              "text": " or ",
+              "type": "text"
+            },
+            {
+              "children": [
+                {
+                  "text": "Side by side",
+                  "type": "text"
+                }
+              ],
+              "type": "strong"
+            },
+            {
+              "text": ". Slider overlays the aligned captures: drag the divider to reveal Before and After, or focus it and use the arrow keys, Home and End. Side by side preserves the frame height and each capture’s proportions in a horizontal strip. Scroll sideways to inspect either image without shrinking it into a narrow column. This real example changes the project status from ",
               "type": "text"
             },
             {
@@ -1418,20 +1435,33 @@
         {
           "children": [
             {
-              "text": "Choose ",
+              "text": "Turn ",
               "type": "text"
             },
             {
               "children": [
                 {
-                  "text": "Regions",
+                  "text": "Annotations",
                   "type": "text"
                 }
               ],
               "type": "strong"
             },
             {
-              "text": " to outline groups of changed pixels on compatible static PNG or WebP screenshots.",
+              "text": " on independently to outline groups of changed pixels in either view. Turn it off to inspect the images without the marks. The boxes use compatible static PNG or WebP screenshots. Open ",
+              "type": "text"
+            },
+            {
+              "children": [
+                {
+                  "text": "Details",
+                  "type": "text"
+                }
+              ],
+              "type": "strong"
+            },
+            {
+              "text": " for capture profiles, changed-pixel counts and any alignment limitations. Controls overlay the image so toggling review does not add header or footer rows to the document.",
               "type": "text"
             }
           ],
@@ -1451,7 +1481,7 @@
         {
           "children": [
             {
-              "text": "Boxes group changed pixels; they do not recognize semantic controls. Different dimensions or capture profiles, animations, unsupported formats and large images retain the side-by-side view with an explanation. Visual modes never change the exact artifact check result.",
+              "text": "Boxes group changed pixels; they do not recognize semantic controls. Different dimensions or capture profiles, animations, unsupported formats and large images use the side-by-side view with an explanation when alignment or annotations are requested. Visual modes never change the exact artifact check result.",
               "type": "text"
             }
           ],
@@ -1547,24 +1577,24 @@
   ],
   "resources": [
     {
-      "bytes": 17744,
+      "bytes": 7572,
       "id": "before-after",
       "mime": "image/webp",
       "page_id": "review-changes",
       "path": "assets/review-changes/before-after.webp",
       "producer": "playwright/chromium+sharp",
       "profile": "playwright-1.64.0-darwin-arm64-1200x1000-cpu-full-raster-sharp-0.35.5-libwebp-1.6.0-lossless-effort6",
-      "sha256": "54bd71dd02bc27a017b572f50b2a4fda2001e401f9d261b4e5ef0b352ff2c2c1"
+      "sha256": "2adc1d5068400111d9bac793575a80f87132ccfecfdc080cfbcef01d03346422"
     },
     {
-      "bytes": 15418,
+      "bytes": 7474,
       "id": "changed-regions",
       "mime": "image/webp",
       "page_id": "review-changes",
       "path": "assets/review-changes/changed-regions.webp",
       "producer": "playwright/chromium+sharp",
       "profile": "playwright-1.64.0-darwin-arm64-1200x1000-cpu-full-raster-sharp-0.35.5-libwebp-1.6.0-lossless-effort6",
-      "sha256": "d1c06bd0e7dec309c43dfdd05e7cb6ca6bb7f1f7b516704e24e9dc29c8eb8bdf"
+      "sha256": "5467b73358c4b91a14bc42010aae3f985100c5dc1a9261b5a0fe8fcec5ddc833"
     }
   ],
   "schema_version": 1,

@@ -221,7 +221,7 @@ without running the flow. Static export replaces the complete owned audience.
 
 The private React frontend is embedded in the native executable. It renders the same safe
 content in development and static output, with hash routing for simple hosting.
-Before/After and bounded worker-based Regions are review aids. Exact decoded
+Slider and side-by-side image views with bounded worker-based annotations are review aids. Exact decoded
 pixel grouping never changes byte-level engine results. Git review stays local;
 public static output contains only explicitly exported reading content.
 

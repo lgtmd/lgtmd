@@ -1,3 +1,5 @@
+import { ImageComparison } from "./image-comparison.tsx";
+import { ContributorComments } from "./contributor-comments.tsx";
 import { Fragment, useState, type ReactNode } from "react";
 import {
   resourceUrl,
@@ -5,6 +7,7 @@ import {
   type ContentNode,
   type Note,
   type Page,
+  type ResourcePair,
 } from "./protocol.ts";
 
 export function pageHref(page: string, anchor?: string): string {
@@ -43,12 +46,59 @@ export function DocumentContent({
   bundle,
   resourceBase,
   notes = true,
+  imageReview,
 }: {
   page: Page;
   bundle: Bundle;
   resourceBase: string;
   notes?: boolean;
+  imageReview?: {
+    enabled: boolean;
+    pairs: ResourcePair[];
+    beforeBase: string;
+    afterBase: string;
+    previousRevision: string;
+    currentRevision: string;
+  };
 }) {
+  const imagePair = (node: ContentNode) =>
+    node.type === "image"
+      ? imageReview?.pairs.find(
+          (pair) =>
+            pair.id === node.resource_id &&
+            pair.page_id === (node.page_id ?? page.id),
+        )
+      : undefined;
+  // Lift interactive comparisons out of paragraph/link/emphasis wrappers while
+  // preserving the surrounding authored text and its original inline markup.
+  type InlinePart =
+    | { image: ContentNode; link?: ContentNode }
+    | { nodes: ContentNode[] };
+  function splitImages(nodes: ContentNode[]): InlinePart[] {
+    const parts: InlinePart[] = [];
+    const append = (node: ContentNode) => {
+      const last = parts.at(-1);
+      if (last && "nodes" in last) last.nodes.push(node);
+      else parts.push({ nodes: [node] });
+    };
+    for (const node of nodes) {
+      if (imagePair(node)) parts.push({ image: node });
+      else if (
+        node.children &&
+        ["link", "emphasis", "strong", "strikethrough"].includes(node.type)
+      ) {
+        for (const part of splitImages(node.children)) {
+          if ("image" in part)
+            parts.push({
+              ...part,
+              link: part.link ?? (node.type === "link" ? node : undefined),
+            });
+          else append({ ...node, children: part.nodes });
+        }
+      } else append(node);
+    }
+    return parts;
+  }
   const attached = new Map<string, Note[]>();
   const loose: Note[] = [];
   for (const note of notes && bundle.audience === "contributor"
@@ -65,32 +115,20 @@ export function DocumentContent({
   ];
   const renderNotes = (items: Note[]) =>
     items.length ? (
-      <aside
-        data-lgtmd-part="notes"
-        className="contributor-notes"
-        aria-label="Contributor notes"
-      >
+      <ContributorComments count={items.length}>
         {items.map((note) => (
           <div className="contributor-note" key={note.id}>
-            <div className="note-label">
-              Contributor note
-              {note.target ? (
-                <span>
-                  {" "}
-                  · {note.target.kind}: {note.target.id}
-                </span>
-              ) : null}
-            </div>
             {render(note.content, false)}
           </div>
         ))}
-      </aside>
+      </ContributorComments>
     ) : null;
   function render(
     nodes: ContentNode[],
     attach = true,
     header = false,
     align: string[] = [],
+    imageLink?: ContentNode,
   ): ReactNode {
     return nodes.map((node, index) => {
       const ownsNotes = attach && node.type !== "document";
@@ -116,6 +154,14 @@ export function DocumentContent({
           : node.url
             ? safeHref(node.url)
             : undefined;
+      const inlineChildren = () =>
+        splitImages(node.children ?? []).map((part, partIndex) => (
+          <Fragment key={partIndex}>
+            {"image" in part
+              ? render([part.image], false, header, align, part.link)
+              : render(part.nodes, attach && !ownsNotes, header, align)}
+          </Fragment>
+        ));
       switch (node.type) {
         case "document":
           content = children();
@@ -124,7 +170,19 @@ export function DocumentContent({
           content = node.text;
           break;
         case "paragraph":
-          content = <p>{children()}</p>;
+          content = imageReview ? (
+            splitImages(node.children ?? []).map((part, partIndex) => (
+              <Fragment key={partIndex}>
+                {"image" in part ? (
+                  render([part.image], false, false, [], part.link)
+                ) : (
+                  <p>{render(part.nodes, attach && !ownsNotes)}</p>
+                )}
+              </Fragment>
+            ))
+          ) : (
+            <p>{children()}</p>
+          );
           break;
         case "heading": {
           const Tag = `h${Math.min(6, Math.max(1, node.level ?? 2))}` as "h1";
@@ -133,10 +191,10 @@ export function DocumentContent({
             (nodes[index - 1]?.type === "anchor"
               ? nodes[index - 1].id
               : undefined);
-          content = (
-            <Tag id={node.id}>
-              {children()}
-              {anchor ? (
+          const heading = (body: ReactNode, first = true) => (
+            <Tag id={first ? node.id : undefined}>
+              {body}
+              {anchor && first ? (
                 <a
                   className="heading-link"
                   href={pageHref(page.id, anchor)}
@@ -147,6 +205,18 @@ export function DocumentContent({
               ) : null}
             </Tag>
           );
+          content = imageReview
+            ? splitImages(node.children ?? []).map((part, partIndex) => (
+                <Fragment key={partIndex}>
+                  {"image" in part
+                    ? render([part.image], false, false, [], part.link)
+                    : heading(
+                        render(part.nodes, attach && !ownsNotes),
+                        partIndex === 0,
+                      )}
+                </Fragment>
+              ))
+            : heading(children());
           break;
         }
         case "anchor":
@@ -164,7 +234,7 @@ export function DocumentContent({
             );
           break;
         case "item":
-          content = <li>{children()}</li>;
+          content = <li>{imageReview ? inlineChildren() : children()}</li>;
           break;
         case "emphasis":
           content = <em>{children()}</em>;
@@ -211,23 +281,61 @@ export function DocumentContent({
             <span>{children()}</span>
           );
           break;
-        case "image":
-          content = resource ? (
-            <ResourceImage
-              src={resourceUrl(resourceBase, resource)}
-              alt={node.text ?? ""}
-              title={node.title}
-            />
-          ) : href ? (
-            <a href={href} rel="noopener noreferrer">
-              {node.text || node.title || "External image"}
-            </a>
-          ) : (
-            <span className="notice warning">
-              Image reference is unavailable.
-            </span>
-          );
+        case "image": {
+          const pair = imagePair(node);
+          const linkedResource = imageLink?.resource_id
+            ? bundle.resources.find(
+                (item) =>
+                  item.id === imageLink.resource_id &&
+                  item.page_id === (imageLink.page_id ?? page.id),
+              )
+            : undefined;
+          const imageHref = linkedResource
+            ? resourceUrl(resourceBase, linkedResource)
+            : imageLink?.page_id
+              ? pageHref(imageLink.page_id, imageLink.id)
+              : imageLink?.url
+                ? safeHref(imageLink.url)
+                : undefined;
+          content =
+            pair && imageReview && resource ? (
+              <ImageComparison
+                pair={pair}
+                active={imageReview.enabled}
+                source={resourceUrl(resourceBase, resource)}
+                alt={node.text ?? ""}
+                title={node.title}
+                link={
+                  imageHref
+                    ? {
+                        href: imageHref,
+                        title: imageLink?.title,
+                        download: linkedResource?.path.split("/").at(-1),
+                      }
+                    : undefined
+                }
+                beforeBase={imageReview.beforeBase}
+                afterBase={imageReview.afterBase}
+                previousRevision={imageReview.previousRevision}
+                currentRevision={imageReview.currentRevision}
+              />
+            ) : resource ? (
+              <ResourceImage
+                src={resourceUrl(resourceBase, resource)}
+                alt={node.text ?? ""}
+                title={node.title}
+              />
+            ) : href ? (
+              <a href={href} rel="noopener noreferrer">
+                {node.text || node.title || "External image"}
+              </a>
+            ) : (
+              <span className="notice warning">
+                Image reference is unavailable.
+              </span>
+            );
           break;
+        }
         case "table":
           content = (
             <div className="table-scroll">
@@ -255,10 +363,12 @@ export function DocumentContent({
             : undefined;
           content = header ? (
             <th scope="col" style={{ textAlign }}>
-              {children()}
+              {imageReview ? inlineChildren() : children()}
             </th>
           ) : (
-            <td style={{ textAlign }}>{children()}</td>
+            <td style={{ textAlign }}>
+              {imageReview ? inlineChildren() : children()}
+            </td>
           );
           break;
         }

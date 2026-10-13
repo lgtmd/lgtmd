@@ -12,15 +12,15 @@ Use **Previous** and **Current** to read the rendered guide. Changed-page naviga
 
 ## Compare the screenshots
 
-**Before / After** displays the retained captures side by side. This real example changes the project status from **In progress** to **Ready for review** in both its explanation and screenshot.
+Open the small controls button in the image corner to choose **Slider** or **Side by side**. Slider overlays the aligned captures: drag the divider to reveal Before and After, or focus it and use the arrow keys, Home and End. Side by side preserves the frame height and each capture’s proportions in a horizontal strip. Scroll sideways to inspect either image without shrinking it into a narrow column. This real example changes the project status from **In progress** to **Ready for review** in both its explanation and screenshot.
 
 ![Before and after captures of a project's review status](assets/review-changes/before-after.webp)
 
-Choose **Regions** to outline groups of changed pixels on compatible static PNG or WebP screenshots.
+Turn **Annotations** on independently to outline groups of changed pixels in either view. Turn it off to inspect the images without the marks. The boxes use compatible static PNG or WebP screenshots. Open **Details** for capture profiles, changed-pixel counts and any alignment limitations. Controls overlay the image so toggling review does not add header or footer rows to the document.
 
 ![Changed regions outlined on the current project screenshot](assets/review-changes/changed-regions.webp)
 
-Boxes group changed pixels; they do not recognize semantic controls. Different dimensions or capture profiles, animations, unsupported formats and large images retain the side-by-side view with an explanation. Visual modes never change the exact artifact check result.
+Boxes group changed pixels; they do not recognize semantic controls. Different dimensions or capture profiles, animations, unsupported formats and large images use the side-by-side view with an explanation when alignment or annotations are requested. Visual modes never change the exact artifact check result.
 
 ## Keep history honest
 

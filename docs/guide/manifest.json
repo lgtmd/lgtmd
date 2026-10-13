@@ -1,7 +1,7 @@
 {
   "artifacts": [
     {
-      "bytes": 17744,
+      "bytes": 7572,
       "document": "review-changes",
       "id": "before-after",
       "kind": "resource",
@@ -9,10 +9,10 @@
       "path": "assets/review-changes/before-after.webp",
       "producer": "playwright/chromium+sharp",
       "profile": "playwright-1.64.0-darwin-arm64-1200x1000-cpu-full-raster-sharp-0.35.5-libwebp-1.6.0-lossless-effort6",
-      "sha256": "54bd71dd02bc27a017b572f50b2a4fda2001e401f9d261b4e5ef0b352ff2c2c1"
+      "sha256": "2adc1d5068400111d9bac793575a80f87132ccfecfdc080cfbcef01d03346422"
     },
     {
-      "bytes": 15418,
+      "bytes": 7474,
       "document": "review-changes",
       "id": "changed-regions",
       "kind": "resource",
@@ -20,7 +20,7 @@
       "path": "assets/review-changes/changed-regions.webp",
       "producer": "playwright/chromium+sharp",
       "profile": "playwright-1.64.0-darwin-arm64-1200x1000-cpu-full-raster-sharp-0.35.5-libwebp-1.6.0-lossless-effort6",
-      "sha256": "d1c06bd0e7dec309c43dfdd05e7cb6ca6bb7f1f7b516704e24e9dc29c8eb8bdf"
+      "sha256": "5467b73358c4b91a14bc42010aae3f985100c5dc1a9261b5a0fe8fcec5ddc833"
     },
     {
       "bytes": 4142,
@@ -47,12 +47,12 @@
       "sha256": "4e9ce53e18ee5e84ae433c12c5b5aba2222f6590ccbcaf607ce4c064d8a071ac"
     },
     {
-      "bytes": 2405,
+      "bytes": 3075,
       "document": "review-changes",
       "kind": "page",
       "mime": "text/markdown",
       "path": "review-changes.md",
-      "sha256": "be24d9ddac9cdcd9dffbb7b8e05734b489b4b41dbfc749acc20447f4f491569c"
+      "sha256": "7450a233f6d75a703e78fde0b234f3a1714f81193184ad34c3b03fe2ad2a8fc5"
     }
   ],
   "audience": "reader",

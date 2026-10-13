@@ -4,7 +4,10 @@ import { fileURLToPath } from "node:url";
 import { resolve, extname, sep } from "node:path";
 import { collectPlaywright } from "lgtmd/playwright";
 const directory = fileURLToPath(new URL(".", import.meta.url));
-export async function collectReview(version = "B") {
+export async function collectReview(
+  version = "B",
+  { playground = false } = {},
+) {
   const root = resolve(directory, "dist");
   await readFile(resolve(root, "index.html"));
   const server = createServer(async (request, response) => {
@@ -34,9 +37,11 @@ export async function collectReview(version = "B") {
   const previous = {
     url: process.env.REVIEW_APP_URL,
     version: process.env.REVIEW_VERSION,
+    playground: process.env.REVIEW_PLAYGROUND,
   };
   process.env.REVIEW_APP_URL = `http://127.0.0.1:${server.address().port}/`;
   process.env.REVIEW_VERSION = version;
+  process.env.REVIEW_PLAYGROUND = playground ? "1" : "0";
   try {
     return await collectPlaywright({
       config: new URL("./playwright.config.ts", import.meta.url),
@@ -46,6 +51,7 @@ export async function collectReview(version = "B") {
     for (const [key, value] of [
       ["REVIEW_APP_URL", previous.url],
       ["REVIEW_VERSION", previous.version],
+      ["REVIEW_PLAYGROUND", previous.playground],
     ]) {
       if (value === undefined) delete process.env[key];
       else process.env[key] = value;

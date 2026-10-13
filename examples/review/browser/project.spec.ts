@@ -4,14 +4,26 @@ import { captureWebp, webpProfile } from "../capture.mjs";
 const test = withDocs(base);
 test("Save a project", async ({ page, doc }) => {
   const version = process.env.REVIEW_VERSION === "A" ? "A" : "B";
-  doc.page({ id: "project", title: "Save a project" });
-  await page.goto(`${process.env.REVIEW_APP_URL}?version=${version}`);
+  const playground = process.env.REVIEW_PLAYGROUND === "1";
+  doc.page({
+    id: "project",
+    title: playground ? "Image comparison playground" : "Save a project",
+  });
+  await page.goto(
+    `${process.env.REVIEW_APP_URL}?version=${version}${playground ? "&playground" : ""}`,
+  );
   await page.getByRole("button", { name: "Save project" }).click();
   await expect(
     page.getByRole("button", { name: "Saved", exact: true }),
   ).toBeVisible();
   const status = version === "A" ? "In progress" : "Ready for review";
   await expect(page.getByText(status, { exact: true })).toBeVisible();
+  if (playground) {
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+      version === "A" ? "Website refresh" : "Ready to launch",
+    );
+    doc.md`This local playground intentionally changes the card background, heading, status and button color. Turn on **View diff**, then try **Slider**, **Side by side** and **Annotations** on the image comparison widget. These captures are demonstration fixtures, not product evidence.`;
+  }
   const image = doc.assets.image(
     "project-card",
     await captureWebp(page.getByRole("main")),

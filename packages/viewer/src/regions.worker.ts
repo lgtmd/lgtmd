@@ -14,7 +14,7 @@ async function boundedImage(
   const declared = Number(response.headers.get("content-length"));
   if (declared > MAX_ENCODED_BYTES)
     throw new Error(
-      "Regions supports at most 32 MiB of encoded data per image.",
+      "Image alignment supports at most 32 MiB of encoded data per image.",
     );
   const reader = response.body.getReader();
   const chunks: Uint8Array[] = [];
@@ -26,7 +26,7 @@ async function boundedImage(
       total += value.byteLength;
       if (total > MAX_ENCODED_BYTES)
         throw new Error(
-          "Regions supports at most 32 MiB of encoded data per image.",
+          "Image alignment supports at most 32 MiB of encoded data per image.",
         );
       chunks.push(value);
     }
@@ -57,7 +57,7 @@ async function decode(
     const canvas = new OffscreenCanvas(header.width, header.height);
     const context = canvas.getContext("2d", { willReadFrequently: true });
     if (!context)
-      throw new Error("This browser cannot read image pixels for Regions.");
+      throw new Error("This browser cannot read image pixels for annotations.");
     context.drawImage(bitmap, 0, 0);
     return context.getImageData(0, 0, header.width, header.height).data;
   } finally {
@@ -66,12 +66,13 @@ async function decode(
 }
 
 self.onmessage = async (
-  event: MessageEvent<{ before: string; after: string }>,
+  event: MessageEvent<{ before: string; after: string; analyze?: boolean }>,
 ) => {
   try {
     if (
-      typeof OffscreenCanvas === "undefined" ||
-      typeof createImageBitmap === "undefined"
+      event.data.analyze !== false &&
+      (typeof OffscreenCanvas === "undefined" ||
+        typeof createImageBitmap === "undefined")
     )
       throw new Error("This browser does not support worker image analysis.");
     const [before, after] = await Promise.all([
@@ -82,11 +83,19 @@ self.onmessage = async (
       before.header.width !== after.header.width ||
       before.header.height !== after.header.height
     )
-      throw new Error("Different image dimensions use Before / After only.");
+      throw new Error(
+        "Different image dimensions cannot be aligned. Showing side by side without annotations.",
+      );
+    const size = { width: before.header.width, height: before.header.height };
+    if (event.data.analyze === false) {
+      self.postMessage({ ok: true, size });
+      return;
+    }
     const first = await decode(before.bytes, before.header);
     const second = await decode(after.bytes, after.header);
     self.postMessage({
       ok: true,
+      size,
       result: comparePixels(
         first,
         second,
@@ -100,7 +109,7 @@ self.onmessage = async (
       message:
         error instanceof Error
           ? error.message
-          : "Image decoding failed. Use Before / After.",
+          : "Image decoding failed. Showing side by side.",
     });
   }
 };

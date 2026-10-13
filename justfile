@@ -66,6 +66,10 @@ docs-preview *args:
 docs-demo:
     node examples/review/demo.mjs
 
+# Try pronounced A/B image changes in a disposable local review site.
+docs-playground *args:
+    node examples/review/demo.mjs --playground "$@"
+
 # Record exactly the reviewed own-guide candidate, without another flow run.
 docs-record candidate:
     node docs/authoring/verify.mjs record "{{candidate}}"
