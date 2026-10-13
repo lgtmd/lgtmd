@@ -101,6 +101,7 @@ export interface SiteReview {
   audience: Audience;
   before: string;
   after: string;
+  /** Title/navigation changes only; content changes use page/resource statuses. */
   site_changed: boolean;
   pages: SitePagePair[];
   resources: SiteResourcePair[];

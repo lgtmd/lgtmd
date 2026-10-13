@@ -28,18 +28,19 @@ baseline.
 
 ## Find the owning code
 
-| Location                     | Responsibility                                      |
-| ---------------------------- | --------------------------------------------------- |
-| `crates/lgtmd/`              | Rust SDK, compiler, exports, and artifact lifecycle |
-| `crates/lgtmd-cli/`          | Shared native CLI and coarse SDK bridge             |
-| `crates/doc-example-config/` | Rust CLI/library consumers and retained baselines   |
-| `packages/lgtmd/`            | Node SDK and optional Playwright integration        |
-| `examples/lgtmd-web/`        | React/Vite app, HTTP API, fixtures, and guides      |
-| `packages/viewer/`           | Bundled reading/review frontend and image worker    |
-| `examples/review/`           | Controlled Git/browser review demonstration         |
-| `docs/authoring/`            | Sole sources of generated user guides               |
-| `docs/architecture/`         | Maintained contracts and boundaries                 |
-| `docs/decisions/`            | Decisions and alternatives                          |
+| Location                     | Responsibility                                           |
+| ---------------------------- | -------------------------------------------------------- |
+| `crates/lgtmd/`              | Rust SDK, compiler, exports, and artifact lifecycle      |
+| `crates/lgtmd-cli/`          | Shared native CLI and coarse SDK bridge                  |
+| `crates/doc-example-config/` | Rust CLI/library consumers and retained baselines        |
+| `packages/lgtmd/`            | Node SDK and optional Playwright integration             |
+| `examples/lgtmd-web/`        | React/Vite app, HTTP API, fixtures, and guides           |
+| `examples/stay/`             | Guest/host app, mock AI, fixtures, and executable guides |
+| `packages/viewer/`           | Bundled reading/review frontend and image worker         |
+| `examples/review/`           | Controlled Git/browser review demonstration              |
+| `docs/authoring/`            | Sole sources of generated user guides                    |
+| `docs/architecture/`         | Maintained contracts and boundaries                      |
+| `docs/decisions/`            | Decisions and alternatives                               |
 
 Rust owns shared document validation, exports, and the artifact store. Authoring,
 application callbacks, preparation, and cleanup stay in the host runtime. The

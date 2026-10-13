@@ -9,6 +9,7 @@
     "/docs/guide/**",
     "/packages/lgtmd/viewer/**",
     "/examples/review/dist/**",
+    "/examples/stay/dist/**",
     "/docs/snapshots/**",
     "/crates/lgtmd-cli/viewer/**"
   ]

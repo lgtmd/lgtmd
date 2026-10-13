@@ -2,7 +2,7 @@
 
 Date: 2026-10-14
 
-Status: **Deferred at the user's request; plan retained and example implementation has not started.**
+Status: **Completed locally on 2026-10-14 following the user's explicit GO. All required acceptance gates passed on macOS arm64; changes remain uncommitted.**
 
 This plan fixes the ordinary implementation choices for a five-hour work session.
 The main deliverable is a polished accommodation-request example and its useful,
@@ -216,10 +216,9 @@ Run checks in this order, fixing genuine failures before proceeding:
 6. If Rust contracts are touched by a bounded fix, run the applicable Rust tests,
    warnings-denied lint, doctests, and documentation checks as repository rules require.
 
-Today's viewer changes intentionally have unaccepted own-guide output. The
-additional tracked-baseline check in `just verify` may therefore differ from
-repeatability. Record its precise status separately; do not describe a baseline
-mismatch as a fully passing umbrella gate or accept it to obtain green results.
+The preceding viewer work and reviewed own-guide output were committed at
+`61c0e6e` before this session. Keep tracked-baseline acceptance separate from
+repeatability; do not accept a baseline to obtain green results.
 
 Preserve explicit Cargo/npm/browser cache and target overrides. Dependency
 installation must finish before parallel builds. Never run collectors sharing
@@ -290,3 +289,209 @@ References: [existing web example](../../examples/lgtmd-web/README.md),
 [architecture](../architecture/executable-documents.md),
 [AI SDK testing](https://ai-sdk.dev/docs/ai-sdk-core/testing), and
 [Airbnb host/guest messaging reference](https://www.airbnb.com/help/topic/1664).
+
+## 11. Execution receipt
+
+Completed within the five-hour budget, starting from clean `main` at
+`61c0e6e035b1f94c0d5df84d2770b692d0a775dd`. HEAD and the index remain unchanged.
+The local [Stay example](../../examples/stay/README.md) delivers all Section 6
+gates: three fictional properties with original local SVGs, responsive guest and
+host interfaces, real HTTP state and scoped demo sessions, AI SDK 7.0.139 mock
+streaming/failure/retry, and two natural Reader guides. Browser builds retain
+complete dependency licenses. No live model or paid service is configured.
+
+Verification passed on macOS arm64:
+
+- `just stay-test`: 12 API/provider tests, full guest → host → guest journey,
+  validation, role/ownership/isolation, idempotent acceptance, exact provider
+  context, interrupted drafts, mobile panes/back/focus, stale refreshes and
+  expired-session recovery.
+- Two fresh A collections in each fixture mode have identical candidate IDs and
+  bytes. Reader bundles and Markdown also match across modes. No fuzzy image
+  tolerance or retries were used.
+- B changes the documented reply and images; exact check rejects it without
+  changing any A snapshot file. Assertion, fixture cleanup, outer cleanup and
+  partial-setup failures reject collection. Failed host runs write no successful
+  native handoff. Reader files exclude private notes, receipts and identities.
+- `just doc-web-test --offline` and `just doc-web-smoke --offline`: native
+  warnings-denied lint/tests, actual Chromium, source-only independence,
+  installed Cargo/npm consumers, and npm execution without Rust.
+- `just docs-check`: the existing tracked guide still matches candidate
+  `a33ba617576ef9f7c4b89a49e61d36e3d8a4551c7a0667e3d177232537e4ef94` exactly.
+- All 15 portable-harness Python tests, formatting and `git diff --check` pass.
+- Desktop/mobile app and rendered-guide review is complete. Fresh final review
+  screenshots reproduce the exact verified A candidate.
+
+Exact Stay identities in this capture environment:
+
+| Collection   | Candidate                                                          |
+| ------------ | ------------------------------------------------------------------ |
+| Test-owned A | `1a194ed6988ae7a3adc698a39990c98ad681aa56d856e99554366f6d669ff302` |
+| Supplied A   | `c8871057788961645c843883595ac3ad52278df12bb4cf682e5aceacfc0bbd48` |
+| Test-owned B | `fff7638473b87c4c4624abc8b6a0fcfd7a601cbf4d8e6a87acb024c7377ac7d8` |
+
+The shared A Reader digest is
+`7ded1e36836da5c0fff9b6ab6595f7583b246826b630fedbb3b7e77cc21cc88e`.
+One overlapping preliminary standalone run was stopped before its fixed-port
+browser stage; the complete final stateful gates then ran serially.
+
+Dogfooding fixed viewer page navigation: new pages open at the top, explicit
+anchors work, and same-page diff/version/theme/reruns preserve scroll. Browser
+regressions pass at `/` and `/docs/`. The `site_changed` TypeScript documentation
+now clarifies its existing title/navigation meaning; comparison semantics and
+output bytes are unchanged. The [feedback log](../../examples/stay/feedbacks.md)
+retains diagnostic and mobile image-enlargement proposals. No generic fixture
+framework or new protocol was added.
+
+Live review and restart:
+
+- [App](http://127.0.0.1:4190/): `just stay` (API 4191).
+- [Guest guide](http://127.0.0.1:4192/#/request-a-stay) and
+  [host guide](http://127.0.0.1:4192/#/respond-to-a-request): `just stay-docs`.
+- Verify with `just stay-test`.
+
+Review evidence lives in `examples/stay/.cache/`: `verification.json`,
+`candidates/a-test/`, `candidates/a-supplied/`, `candidates/b-test/`, and
+`review/*-desktop.png` / `review/*-mobile.png`. These are fresh review candidates,
+not accepted tracked baselines. Desktop capture text is still small on mobile;
+the prose remains readable, and enlargement is recorded as follow-up work.
+
+The mock tests integration, not AI quality. The in-memory service persists only
+until restart; there is no payment, availability engine, production authentication
+or real reservation. Linux CI was not run for these uncommitted changes. Existing
+previews and tracked guides were preserved; N3 was not edited. No commit, push,
+baseline acceptance, publication, release tag, workflow dispatch or paid call
+occurred.
+
+## 12. Photorealistic asset refinement
+
+At the user's request on 2026-10-14, the original SVG fallback was replaced with
+three generated photorealistic listing images. The built-in image-generation
+tool created each asset once; local WebP files are now the app's retained input.
+[Provenance, exact prompts and checksums](../../examples/stay/public/ASSETS.md)
+distinguish generated imagery from camera photographs of real properties. This
+asset-authoring step is separate from normal application and documentation runs,
+which still make no model or image-service calls.
+
+All images are 1536 × 1024; the three retained WebPs total 1,512,304 bytes.
+Source PNGs and superseded SVGs remain in ignored local review storage.
+Application frames, proportions and responsive layouts are unchanged. The
+interactive API was restarted to load the new listing paths, resetting its
+temporary demo state. The native guide preview was refreshed without accepting
+any tracked baseline. Asset paths are now declared flow-watch inputs.
+
+`just stay-test` passes with the new imagery: 12 API/provider tests, the complete
+browser journey, exact repeatability in both fixture modes, cross-mode Reader
+equality, A/B drift and failure integrity. All 15 portable-harness tests pass,
+including byte-preserving copy of binary WebP assets. Desktop/mobile listing
+and detail captures are inspected; the new browse captures are
+`examples/stay/.cache/review/acceptance-explore-desktop.png` and
+`acceptance-explore-mobile.png`. These asset-only changes do not require another
+native compiler or installed-package gate.
+
+The earlier Section 11 identities describe the SVG-era candidates. Current
+photorealistic-image candidates are:
+
+| Collection   | Candidate                                                          |
+| ------------ | ------------------------------------------------------------------ |
+| Test-owned A | `ae384c32095d77a820ac879fb6f28a3994fc03f578e9bf680e1afb4c5074b4eb` |
+| Supplied A   | `01a796c079f0fe04eb67cab94db1e5a90b6b035c4799bf7b7e2e3f176690fd6d` |
+| Test-owned B | `6707b2efc44a6156066618424b391dbaa21a330ed5837e277eb483099800d1c6` |
+
+The shared A Reader digest is
+`340c2818a6caebe72d6b8c5f41c92628c8bf631e597605fb710a227ad0b2a390`.
+Updated review candidates remain separate from accepted baselines. No commit,
+push, package publication or release is part of this refinement.
+
+## 13. Detailed filters follow-up
+
+The user's 2026-10-14 request for fine filter interactions adds a bounded
+collection workflow to the completed milestone. Stay now has title/location
+search, inclusive nightly price bounds, guest capacity and all-selected
+amenities. Draft choices preview a result count, and apply/cancel/reset remain
+distinct. Applied chips remove individual constraints; the URL preserves choices
+across reload and listing navigation. An empty state offers recovery.
+
+The panel uses a native dialog, Lucide icons and a short CSS transition with a
+reduced-motion alternative. On mobile it becomes a sheet with a scrolling body
+and visible header/actions. Browser checks cover modal keyboard focus, restored
+focus and body scrolling, invalid ranges, partial native number input, Reset,
+fractional prices and persistence. Review fixed native number validity and a
+finite-price serialization edge; no new backend or SDK protocol was introduced.
+
+`Find a stay with filters` is the third executable Reader guide. Both fixture
+ownership modes collect it alongside the guest and host guides. Private receipt
+notes remain Contributor-only. The filter document and images stay unchanged
+when switching the mocked AI reply from A to B.
+
+`just stay-test`, `just doc-web-test --offline` and
+`just doc-web-smoke --offline` pass, including 12 API/provider tests, 10
+filter-model tests, browser acceptance, exact repeated collections, cross-mode
+Reader equality and failure integrity. All 15 portable-harness tests pass.
+Desktop/mobile app captures, generated prose/resources and the live rendered
+guide were inspected. The refreshed native preview matches the verified
+test-owned A candidate exactly. Formatting and `git diff --check` pass.
+
+The three-guide identities supersede Section 12:
+
+| Collection   | Candidate                                                          |
+| ------------ | ------------------------------------------------------------------ |
+| Test-owned A | `e16149f2315b9e83564213ddfe1032bba93f5f1a9189de60dad04a28bb7ed8de` |
+| Supplied A   | `e89831999ad7f64771e3ed71e0d3a8b3a87cae3e0288dc301ca0abb1cfb8c283` |
+| Test-owned B | `f24b50be4c29cbb0a1d44e73ef8b5a5f14e1eb7f215e1dbd2bf0c1d1ea87b1fd` |
+
+The shared A Reader digest is
+`a09ce3959254ff7b2c62e5462171a486468ae42148d48d6a6bf2d93faad0dad7`.
+
+Review the [application](http://127.0.0.1:4190/#/) and
+[filter guide](http://127.0.0.1:4192/#/find-a-stay). Captures and candidates remain
+under ignored `examples/stay/.cache/`. All changes remain local; HEAD, the index,
+tracked own-guide baselines and N3 are unchanged.
+
+## 14. Guest AI stay finder and delivery review
+
+The guest menu now includes **Ask Stay**, a conversational alternative to
+filtering. A project-owned HTTP conversation uses the published AI SDK mock and
+the existing listing filter model. Follow-up messages retain and revise budgets,
+guest counts, locations and amenities. Replies enumerate the applied criteria
+and link only to known listings. Unsupported prompts ask for supported criteria;
+zero matches are distinct from that clarification. **New chat** clears history
+and preferences without changing stay requests. The UI identifies the scripted
+demo; no live model call, availability or subjective-quality check is implied.
+
+The fourth Reader guide, `Find a stay with AI`, moves from Cedar House to
+Courtyard Loft, reaches a no-match state, and recovers to Coast Cabin by changing
+the nightly budget. Native API assertions check the actual saved conversation
+and listing IDs. Navigation and reload preserve it within the service lifetime.
+Browser acceptance checks initial-load retry, failed-message draft retention,
+pending-response role changes, mobile overflow and a visible composer after
+replies. Screenshots remain lossless WebP in the declared capture environment.
+
+Independent review fixed two issues before delivery: a minimum-price expression
+could misread **at least 3 guests**, and a viewer rerun removing the current page
+could retain that page's scroll position. Actual conversation and root/`/docs/`
+browser regressions cover them. Release source validation now includes all five
+workspaces and all private example dependency/lock versions, with archive
+exclusion tests for Stay fixtures and photos. The 42 release-tool tests pass.
+
+The four-guide candidates supersede Section 13:
+
+| Collection   | Candidate                                                          |
+| ------------ | ------------------------------------------------------------------ |
+| Test-owned A | `cb6b0858f73361281c0b19d4239da1933a27ab067bd2022fd5fab9a8df91abd3` |
+| Supplied A   | `54e3ebc34fd19f31678db4085c5f2aac65905b2a2a78c4ef2cf1010c15603916` |
+| Test-owned B | `d0cf253194c2829506709e6844d939d8ba48642f2aca8d9a650c1402e0c934f1` |
+
+The shared A Reader digest is
+`de66d5cb2b582352f6d773ff4c5f1b428b7d155a266eda1c8ac046937021ebca`.
+All four guides repeat exactly within each fixture mode, and Reader output
+matches across modes. A/B host reply changes leave the stay-finder guide
+unchanged. Reader privacy and failed-run/cleanup handoff checks pass.
+
+Review [Ask Stay](http://127.0.0.1:4190/#/assistant) and its
+[guide](http://127.0.0.1:4192/#/find-with-ai). The application service was
+restarted to load the new endpoints, clearing its temporary demo state.
+The local and source-only web gates pass, including all 23 API/provider tests,
+10 filter-model tests and the rebuilt viewer's fallback regression at both
+base paths. Formatting and the 42 release-tool tests pass. Publication still follows the exact-version
+and protected-run approval process in [RELEASING.md](../../RELEASING.md).

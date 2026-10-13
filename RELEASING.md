@@ -58,7 +58,9 @@ Choose and authorize the exact version separately. Update these together:
 - `crates/lgtmd/Cargo.toml`: Rust SDK version.
 - `crates/lgtmd-cli/Cargo.toml`: CLI version and its `lgtmd` dependency version.
 - `packages/lgtmd/package.json`: Node SDK version.
-- `examples/lgtmd-web/package.json`: development dependency on `lgtmd`.
+- `examples/lgtmd-web/package.json` and `examples/stay/package.json`:
+  development dependency on `lgtmd`.
+- `examples/review/package.json`: dependency on `lgtmd`.
 - `Cargo.lock` and `package-lock.json`: regenerate using the ordinary tools.
 
 The CLI crate, root npm workspace, and examples remain private. Only the Rust SDK and

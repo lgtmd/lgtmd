@@ -226,6 +226,179 @@ ${unavailable.embed("Unavailable current screenshot")}`;
     await page.close();
   }
 }
+async function verifyPageNavigation(url) {
+  const compilation = async (version, ids = ["first", "second"]) => {
+    const documents = ids.map((id) => {
+      const doc = new Doc(id, id === "first" ? "First page" : "Second page");
+      doc.md`${version} revision.`;
+      for (let index = 0; index < 20; index++) {
+        doc.md`Paragraph ${index + 1}. Long documentation gives the reader room to scroll before choosing another page. Page navigation should open at the beginning, while review controls keep the same passage in view.`;
+      }
+      if (id === "first" && ids.includes("second"))
+        doc.md`[Second details](second.md#details).`;
+      doc.section(
+        "details",
+        id === "first" ? "First details" : "Second details",
+      );
+      for (let index = 0; index < 12; index++) {
+        doc.md`Detail ${index + 1}. A deep link chooses this section, and the reader can continue farther down. Changing a revision, appearance, or fresh candidate should preserve that position.`;
+      }
+      return doc.finish();
+    });
+    return (
+      await compileSite(documents, {
+        title: "Navigation cases",
+        navigation: ids,
+      })
+    ).reader;
+  };
+  const previous = await compilation("Previous");
+  const current = await compilation("Current");
+  const refreshed = await compilation("Refreshed");
+  const remaining = await compilation("Remaining", ["first"]);
+  const state = {
+    mode: "dev",
+    title: "Navigation cases",
+    audience: "reader",
+    candidateId: "current-candidate",
+    run: { status: "succeeded", retained: false, stale: false },
+    current: current.bundle,
+    currentResourceBase: "",
+    baseline: {
+      status: "available",
+      ref: "HEAD",
+      bundle: previous.bundle,
+      resourceBase: "",
+    },
+    comparison: await compareSite(previous.files, current.files),
+    canRun: true,
+  };
+  const refreshedComparison = await compareSite(
+    previous.files,
+    refreshed.files,
+  );
+  const remainingComparison = await compareSite(
+    previous.files,
+    remaining.files,
+  );
+  let runs = 0;
+  const page = await browser.newPage({
+    viewport: { width: 1200, height: 900 },
+  });
+  await page.route("**/*", async (route) => {
+    const requested = route.request().url();
+    if (requested === url) {
+      const response = await route.fetch();
+      await route.fulfill({
+        response,
+        body: (await response.text()).replace(
+          /"mode"\s*:\s*"static"/,
+          '"mode":"dev"',
+        ),
+      });
+    } else if (requested === new URL("site.json", url).href) {
+      await route.fulfill({ json: state });
+    } else if (requested.endsWith("/__lgtmd/events")) {
+      await route.fulfill({ status: 204 });
+    } else if (requested.endsWith("/__lgtmd/run")) {
+      const removingPage = ++runs > 1;
+      state.current = removingPage ? remaining.bundle : refreshed.bundle;
+      state.candidateId = removingPage
+        ? "remaining-candidate"
+        : "refreshed-candidate";
+      state.comparison = removingPage
+        ? remainingComparison
+        : refreshedComparison;
+      await route.fulfill({ json: {} });
+    } else await route.continue();
+  });
+  const scrollY = () => page.evaluate(() => window.scrollY);
+  try {
+    await page.goto(url);
+    await expect(
+      page.getByRole("heading", { name: "First page", exact: true }),
+    ).toBeVisible();
+    await page.evaluate(() => window.scrollTo(0, 900));
+    await expect.poll(scrollY).toBe(900);
+    const navigation = page.getByRole("navigation", {
+      name: "Documentation pages",
+    });
+    await navigation
+      .getByRole("link", { name: "Second page", exact: true })
+      .click();
+    await expect(page).toHaveURL(/#\/second$/);
+    await expect(
+      page.getByRole("heading", { name: "Second page", exact: true }),
+    ).toBeVisible();
+    await expect.poll(scrollY).toBe(0);
+    await page.evaluate(() => window.scrollTo(0, 900));
+    await navigation
+      .getByRole("link", { name: "First page", exact: true })
+      .click();
+    await expect.poll(scrollY).toBe(0);
+    await page
+      .getByRole("link", { name: "Second details", exact: true })
+      .click();
+    await expect(page).toHaveURL(/#\/second\/details$/);
+    const details = page.getByRole("heading", {
+      name: /^Second details/,
+    });
+    await expect(details).toBeVisible();
+    assert.ok(
+      (await scrollY()) > 900,
+      "Explicit cross-page anchors open the requested section",
+    );
+    const anchorTop = () =>
+      page
+        .locator("#details")
+        .evaluate((element) => element.getBoundingClientRect().top);
+    assert.ok((await anchorTop()) < 30);
+    await page.evaluate(() => window.scrollBy(0, 160));
+    const position = await scrollY();
+    await page.getByRole("checkbox", { name: "View diff" }).check();
+    await expect.poll(scrollY).toBe(position);
+    await page.getByRole("tab", { name: "Previous", exact: true }).click();
+    await expect.poll(scrollY).toBe(position);
+    await page.getByRole("tab", { name: "Current", exact: true }).click();
+    await expect.poll(scrollY).toBe(position);
+    await page.getByRole("checkbox", { name: "View diff" }).uncheck();
+    await expect.poll(scrollY).toBe(position);
+    await page
+      .getByRole("combobox", { name: "Color theme" })
+      .selectOption("dark");
+    await expect.poll(scrollY).toBe(position);
+    await page
+      .getByRole("button", { name: "Development tools", exact: true })
+      .click();
+    await page.getByRole("button", { name: "Run again", exact: true }).click();
+    await expect(page.getByRole("main")).toContainText("Refreshed revision.");
+    await expect.poll(scrollY).toBe(position);
+    await page.keyboard.press("Escape");
+    await page.reload();
+    await expect(details).toBeVisible();
+    assert.ok(
+      (await anchorTop()) < 30,
+      "Direct anchor loads wait for the document",
+    );
+    await page.evaluate(() => window.scrollBy(0, 160));
+    assert.ok((await scrollY()) > 900);
+    await page
+      .getByRole("button", { name: "Development tools", exact: true })
+      .click();
+    await page.getByRole("button", { name: "Run again", exact: true }).click();
+    await expect(
+      page.getByRole("heading", { name: "First page", exact: true }),
+    ).toBeVisible();
+    await expect(page.getByRole("main")).toContainText("Remaining revision.");
+    await expect(page).toHaveURL(/#\/second\/details$/);
+    await expect.poll(scrollY).toBe(0);
+    console.log(
+      "Verified page navigation, explicit anchors, scroll-stable review/theme/rerun controls, and removed-page fallback",
+    );
+  } finally {
+    await page.close();
+  }
+}
 try {
   const malicious = new Doc("unsafe", "Unsafe URL");
   malicious.md`[Unsafe](javascript:alert(1))`;
@@ -499,6 +672,7 @@ try {
       await page.close();
       if (basePath === "/" && audience === "reader")
         await verifyImageReview(url);
+      if (audience === "reader") await verifyPageNavigation(url);
       await stop();
       console.log(
         `Verified ${audience} content, downloads, notes, SVG isolation and hash navigation at ${basePath}`,

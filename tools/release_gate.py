@@ -18,6 +18,12 @@ REPOSITORY = "lgtmd/lgtmd"
 REPOSITORY_URL = f"https://github.com/{REPOSITORY}"
 ENVIRONMENT = "release"
 GITHUB_API = "https://api.github.com"
+WORKSPACES = ["packages/lgtmd", "packages/viewer", "examples/lgtmd-web", "examples/review", "examples/stay"]
+EXAMPLE_SDK_DEPENDENCIES = {
+    "examples/lgtmd-web": "devDependencies",
+    "examples/review": "dependencies",
+    "examples/stay": "devDependencies",
+}
 
 
 class ReleaseError(Exception):
@@ -113,7 +119,7 @@ def validate_source_files(root, version):
     bridge = package(root, "crates/lgtmd-cli/Cargo.toml")
     consumer = package(root, "crates/doc-example-config/Cargo.toml")
     node = load_json(root, "packages/lgtmd/package.json")
-    example = load_json(root, "examples/lgtmd-web/package.json")
+    examples = {relative: load_json(root, relative + "/package.json") for relative in EXAMPLE_SDK_DEPENDENCIES}
     workspace = load_json(root, "package.json")
     require(core.get("name") == node.get("name") == "lgtmd", "The published Rust and npm packages must both be named lgtmd")
     require(bridge.get("name") == "lgtmd-cli", "The native CLI must be named lgtmd-cli")
@@ -121,9 +127,10 @@ def validate_source_files(root, version):
         require(manifest.get("version") == version, f"{label} version must exactly match requested version {version}")
     require(core.get("publish") == ["crates-io"], "Rust SDK must explicitly allow publication only to crates-io")
     require(bridge.get("publish") is False and consumer.get("publish") is False, "Native CLI and Rust example must remain unpublished")
-    require(workspace.get("private") is True and example.get("private") is True, "npm workspace and web example must remain private")
-    for relative in ("packages/viewer/package.json", "examples/review/package.json"):
-        require(load_json(root, relative).get("private") is True, "Viewer and review example must remain private")
+    require(workspace.get("private") is True, "npm workspace must remain private")
+    require(load_json(root, "packages/viewer/package.json").get("private") is True, "Viewer must remain private")
+    for relative, example in examples.items():
+        require(example.get("private") is True, f"{relative} must remain private")
     require(node.get("private", False) is False, "npm SDK is private; prepare its publication manifest explicitly")
     require(core.get("repository") in (REPOSITORY_URL, REPOSITORY_URL + ".git"), "Rust SDK repository metadata must identify lgtmd/lgtmd")
     repository = object_value(node.get("repository"), "npm SDK repository metadata")
@@ -133,7 +140,8 @@ def validate_source_files(root, version):
     bridge_dependencies = object_value(load_toml(root, "crates/lgtmd-cli/Cargo.toml").get("dependencies"), "native CLI dependencies")
     bridge_dependency = object_value(bridge_dependencies.get("lgtmd"), "native CLI lgtmd dependency")
     require(bridge_dependency.get("path") == "../lgtmd" and bridge_dependency.get("version") == version, "Native CLI dependency must use the matching local SDK version")
-    require(object_value(example.get("devDependencies"), "web example dependencies").get("lgtmd") == version, "Web example must consume the matching SDK version")
+    for relative, dependency_field in EXAMPLE_SDK_DEPENDENCIES.items():
+        require(object_value(examples[relative].get(dependency_field), f"{relative} {dependency_field}").get("lgtmd") == version, f"{relative} must consume the matching SDK version")
     locked = load_toml(root, "Cargo.lock").get("package")
     require(isinstance(locked, list), "Cargo.lock must contain packages")
     for name in ("lgtmd", "lgtmd-cli"):
@@ -143,11 +151,12 @@ def validate_source_files(root, version):
     require(npm_lock.get("lockfileVersion") == 3, "package-lock.json must use the maintained lockfile version 3")
     packages = object_value(npm_lock.get("packages"), "package-lock.json packages")
     require(object_value(packages.get("packages/lgtmd"), "locked npm SDK").get("version") == version, "package-lock.json SDK version must match")
-    locked_example = object_value(packages.get("examples/lgtmd-web"), "locked web example")
-    require(locked_example.get("version") == example.get("version"), "package-lock.json example version must match its private package")
-    require(object_value(locked_example.get("devDependencies"), "locked web example dependencies").get("lgtmd") == version, "package-lock.json example SDK dependency must match")
+    for relative, dependency_field in EXAMPLE_SDK_DEPENDENCIES.items():
+        locked_example = object_value(packages.get(relative), f"locked {relative}")
+        require(locked_example.get("version") == examples[relative].get("version"), f"package-lock.json {relative} version must match its private package")
+        require(object_value(locked_example.get(dependency_field), f"locked {relative} {dependency_field}").get("lgtmd") == version, f"package-lock.json {relative} SDK dependency must match")
     require(packages.get("node_modules/lgtmd") == {"resolved": "packages/lgtmd", "link": True}, "package-lock.json must link the local SDK workspace")
-    require(workspace.get("workspaces") == ["packages/lgtmd", "packages/viewer", "examples/lgtmd-web", "examples/review"], "npm workspace membership must identify the SDK, viewer and maintained examples")
+    require(workspace.get("workspaces") == WORKSPACES, "npm workspace membership must identify the SDK, viewer and all three maintained examples")
     require(object_value(packages.get(""), "locked npm workspace").get("workspaces") == workspace["workspaces"], "package-lock.json workspace membership must match source")
 
 

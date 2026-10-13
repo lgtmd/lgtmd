@@ -23,7 +23,7 @@ class PortablePayloadTests(unittest.TestCase):
             (root / "src").mkdir()
             (root / "src/private-n3.rs").write_text("not portable", encoding="utf-8")
             (root / "Cargo.lock").write_text("host lock", encoding="utf-8")
-            (root / "package.json").write_text(json.dumps({"workspaces": ["packages/lgtmd", "packages/viewer", "examples/lgtmd-web", "examples/review"]}), encoding="utf-8")
+            (root / "package.json").write_text(json.dumps({"workspaces": ["packages/lgtmd", "packages/viewer", "examples/lgtmd-web", "examples/review", "examples/stay"]}), encoding="utf-8")
             (root / "package-lock.json").write_text("{}", encoding="utf-8")
             (root / "lgtmd.config.json").write_text("{}", encoding="utf-8")
             for relative in VERIFY.SOURCES:
@@ -36,11 +36,18 @@ class PortablePayloadTests(unittest.TestCase):
             fixture = root / "crates/lgtmd/tests/fixtures/target/.ownership.json"
             fixture.parent.mkdir(parents=True)
             fixture.write_text("fixture bytes", encoding="utf-8")
+            stay_image = root / "examples/stay/public/images/cedar-house.webp"
+            stay_image.parent.mkdir(parents=True)
+            stay_image.write_bytes(b"RIFF\x00\xffWEBP fixture")
+            stay_config = root / "examples/stay/lgtmd.config.json"
+            stay_config.write_text('{"schemaVersion":1}', encoding="utf-8")
             VERIFY.payload(root, destination)
             self.assertEqual((destination / "Cargo.toml").read_text(encoding="utf-8"), VERIFY.WORKSPACE)
             self.assertFalse((destination / "Cargo.lock").exists())
             self.assertFalse((destination / "src").exists())
             self.assertEqual((destination / "crates/lgtmd/tests/fixtures/target/.ownership.json").read_text(encoding="utf-8"), "fixture bytes")
+            self.assertEqual((destination / "examples/stay/public/images/cedar-house.webp").read_bytes(), b"RIFF\x00\xffWEBP fixture")
+            self.assertEqual((destination / "examples/stay/lgtmd.config.json").read_text(encoding="utf-8"), '{"schemaVersion":1}')
             for relative in VERIFY.SOURCES:
                 self.assertTrue((destination / relative / "LICENSE").exists())
                 for disposable in (".cache", "target", "node_modules", "dist", "native"):

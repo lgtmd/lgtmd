@@ -25,6 +25,7 @@ SOURCES = (
     "examples/lgtmd-web",
     "packages/viewer",
     "examples/review",
+    "examples/stay",
     "docs/authoring",
     "docs/guide",
 )
@@ -73,7 +74,7 @@ def payload(root, destination):
     for filename in ("package.json", "package-lock.json", "lgtmd.config.json"):
         shutil.copyfile(root / filename, destination / filename)
     npm = json.loads((destination / "package.json").read_text(encoding="utf-8"))
-    if npm.get("workspaces") != ["packages/lgtmd", "packages/viewer", "examples/lgtmd-web", "examples/review"]:
+    if npm.get("workspaces") != ["packages/lgtmd", "packages/viewer", "examples/lgtmd-web", "examples/review", "examples/stay"]:
         raise VerificationError("The portable npm manifest must contain only the SDK, viewer and maintained web examples")
     (destination / "Cargo.toml").write_text(WORKSPACE, encoding="utf-8")
     return destination
@@ -542,6 +543,9 @@ def checks(root, cargo, environment, offline, install_browser, *, diagnostics_ro
         diagnostics_root or root / ".cache/lgtmd-web/diagnostics",
     )
     run([node, "--test", "examples/review/fixture.test.mjs"], cwd=root, environment=environment)
+    run([npm, "run", "test:api", "--workspace", "@lgtmd/example-stay"], cwd=root, environment=environment)
+    run([npm, "run", "test:filters", "--workspace", "@lgtmd/example-stay"], cwd=root, environment=environment)
+    run([node, "examples/stay/verify.ts"], cwd=root, environment=environment)
     run([node, "packages/viewer/tests/browser.mjs"], cwd=root, environment=environment)
     run([node, "docs/authoring/verify.mjs", "verify"], cwd=root, environment=environment)
     cargo_consumer(root, cargo, environment, offline)

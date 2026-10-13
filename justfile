@@ -81,3 +81,15 @@ docs-check:
 # Browser controls and exact repeated-run evidence on the current supported host.
 docs-test:
     node docs/authoring/verify.mjs verify
+
+# Start Stay's interactive guest/host application and local HTTP service.
+stay:
+    npm run dev --workspace @lgtmd/example-stay
+
+# Run Stay's executable guides in the shared native docs site.
+stay-docs *args:
+    node packages/lgtmd/dist/src/cli.js dev --config examples/stay/lgtmd.config.json --port 4192 "$@"
+
+# Verify the API, mocked AI, browser guides and exact evidence.
+stay-test:
+    npm test --workspace @lgtmd/example-stay

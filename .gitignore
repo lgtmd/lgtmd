@@ -12,3 +12,6 @@
 /docs/authoring/.cache/
 
 /crates/lgtmd-cli/viewer/
+/examples/stay/.cache/
+/examples/stay/dist/
+/examples/stay/node_modules/

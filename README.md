@@ -78,6 +78,9 @@ The APIs and schema-v1 compiler input remain experimental.
 
 - [React + Vite walkthrough](examples/lgtmd-web/README.md) — client, HTTP API,
   Playwright setup, and the complete guide workflow.
+- [Stay example](examples/stay/README.md) (source checkout) — detailed filters,
+  guest/host requests, scripted AI replies, two fixture ownership patterns, and
+  executable guides.
 - [TypeScript SDK](packages/lgtmd/README.md) · [Rust SDK](crates/lgtmd/README.md) ·
   [Rust CLI and library examples](crates/doc-example-config/README.md).
 
