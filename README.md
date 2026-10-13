@@ -1,3 +1,5 @@
+![lgtmd — LGTM Docs](.github/assets/cover.png)
+
 # lgtmd
 
 **LGTM Docs. Documentation authored alongside the code that demonstrates it.**
