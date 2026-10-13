@@ -86,11 +86,18 @@ setup: Node 24 ESM on macOS 15 arm64 and Ubuntu 24.04 x64. The initial Playwrigh
 adapter requires a dedicated run with one project and no retries or sharding; see its
 [configuration and limits](packages/lgtmd/README.md#playwright).
 
-## Planned: a docs site built for review
+## A docs site built for review
 
-Read your guides, see contributor notes, and compare changes to text and
-screenshots before updating your published docs. The built-in site and visual
-review are on the [roadmap](TODO.md#2-built-in-docs-site-and-change-review).
+Run `lgtmd dev` to read your guides and review text and screenshot changes against
+recorded Git versions. Switch between Previous and Current, compare captures
+side by side, or outline changed image regions. `lgtmd build` exports the same
+reading experience as a static site.
+
+The docs-site CLI is implemented in this checkout and its packed candidate;
+**it is not included in the published 0.1.0 packages yet**. See the
+[getting-started guide](docs/guide/getting-started.md),
+[development workflow](docs/guide/develop-and-record.md), and
+[real visual-review demonstration](docs/guide/review-changes.md).
 Markdown exports remain available for your existing docs stack.
 
 ## Who is using

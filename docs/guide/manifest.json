@@ -1,0 +1,125 @@
+{
+  "artifacts": [
+    {
+      "bytes": 17744,
+      "document": "review-changes",
+      "id": "before-after",
+      "kind": "resource",
+      "mime": "image/webp",
+      "path": "assets/review-changes/before-after.webp",
+      "producer": "playwright/chromium+sharp",
+      "profile": "playwright-1.64.0-darwin-arm64-1200x1000-cpu-full-raster-sharp-0.35.5-libwebp-1.6.0-lossless-effort6",
+      "sha256": "54bd71dd02bc27a017b572f50b2a4fda2001e401f9d261b4e5ef0b352ff2c2c1"
+    },
+    {
+      "bytes": 15418,
+      "document": "review-changes",
+      "id": "changed-regions",
+      "kind": "resource",
+      "mime": "image/webp",
+      "path": "assets/review-changes/changed-regions.webp",
+      "producer": "playwright/chromium+sharp",
+      "profile": "playwright-1.64.0-darwin-arm64-1200x1000-cpu-full-raster-sharp-0.35.5-libwebp-1.6.0-lossless-effort6",
+      "sha256": "d1c06bd0e7dec309c43dfdd05e7cb6ca6bb7f1f7b516704e24e9dc29c8eb8bdf"
+    },
+    {
+      "bytes": 4142,
+      "document": "customize-the-site",
+      "kind": "page",
+      "mime": "text/markdown",
+      "path": "customize-the-site.md",
+      "sha256": "511d744faeafba7ade09da6176df0eceef8ea90fe4545a56baf3617c848e93f3"
+    },
+    {
+      "bytes": 3117,
+      "document": "develop-and-record",
+      "kind": "page",
+      "mime": "text/markdown",
+      "path": "develop-and-record.md",
+      "sha256": "4bac2f645538a979afb7f78d758d6c17651492786af8e545e579285ee7d673e2"
+    },
+    {
+      "bytes": 2801,
+      "document": "getting-started",
+      "kind": "page",
+      "mime": "text/markdown",
+      "path": "getting-started.md",
+      "sha256": "4e9ce53e18ee5e84ae433c12c5b5aba2222f6590ccbcaf607ce4c064d8a071ac"
+    },
+    {
+      "bytes": 2405,
+      "document": "review-changes",
+      "kind": "page",
+      "mime": "text/markdown",
+      "path": "review-changes.md",
+      "sha256": "be24d9ddac9cdcd9dffbb7b8e05734b489b4b41dbfc749acc20447f4f491569c"
+    }
+  ],
+  "audience": "reader",
+  "documents": [
+    {
+      "blocks": [
+        {
+          "id": "block-0001",
+          "kind": "markdown-parts",
+          "references": []
+        }
+      ],
+      "checks": [],
+      "id": "customize-the-site",
+      "title": "Customize the docs site"
+    },
+    {
+      "blocks": [
+        {
+          "id": "block-0001",
+          "kind": "markdown-parts",
+          "references": []
+        }
+      ],
+      "checks": [],
+      "id": "develop-and-record",
+      "title": "Develop and record guides"
+    },
+    {
+      "blocks": [
+        {
+          "id": "block-0001",
+          "kind": "markdown-parts",
+          "references": []
+        }
+      ],
+      "checks": [],
+      "id": "getting-started",
+      "title": "Get started with lgtmd"
+    },
+    {
+      "blocks": [
+        {
+          "id": "block-0001",
+          "kind": "markdown-parts",
+          "references": [
+            {
+              "id": "before-after",
+              "kind": "resource"
+            },
+            {
+              "id": "changed-regions",
+              "kind": "resource"
+            }
+          ]
+        }
+      ],
+      "checks": [],
+      "id": "review-changes",
+      "title": "Review text and image changes"
+    }
+  ],
+  "profiles": [
+    {
+      "producer": "playwright/chromium+sharp",
+      "profile": "playwright-1.64.0-darwin-arm64-1200x1000-cpu-full-raster-sharp-0.35.5-libwebp-1.6.0-lossless-effort6"
+    }
+  ],
+  "schema_version": 1
+}

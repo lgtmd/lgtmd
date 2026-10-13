@@ -140,8 +140,24 @@ platform support remain future work.
 The compiler and strict artifact store are Rust; authoring and host lifecycle are
 native Node APIs. WASM compilation was exercised against the same input, but its
 filesystem publication is unsupported. The initial coarse native bridge reuses
-the existing store without implementing a second filesystem contract. A full
-canonical viewer, cursor/key overlays, and AI-assisted execution remain later
-work. Repository extraction is complete. The manual
-[release workflow](../../docs/releasing.md) prepares one npm archive containing
+the existing store without implementing a second filesystem contract. The canonical docs site is implemented in this checkout. Cursor/key overlays
+and AI-assisted execution remain later work. Repository extraction is complete. The manual
+[release workflow](../../RELEASING.md) prepares one npm archive containing
 both native targets and requires human approval before publication.
+
+## Docs-site CLI in the source checkout
+
+The current checkout adds `lgtmd dev`, `build`, `preview`, `check`, and
+`update --candidate ID`; these are not included in registry version 0.1.0.
+See the [user workflow](../../docs/guide/develop-and-record.md).
+The CLI is a thin launcher for the shared Rust executable, which includes its
+built browser assets. Consumers do not need to build React or install Rust.
+
+`completeRun(documents)` writes the CLI's guarded handoff after your workflow
+and cleanup complete. `collectPlaywright(options)` from `lgtmd/playwright`
+collects frozen documents only after the actual guarded runner completes;
+`runPlaywright` retains its existing Markdown publication API.
+`compileSite`, `validateSite`, `compareSite` and `storeSite` expose coarse shared
+engine operations; filesystem host callbacks and application execution remain
+outside the compiler. Site bundle schema v1 is experimental and independent of
+the existing schema-v1 authoring input.

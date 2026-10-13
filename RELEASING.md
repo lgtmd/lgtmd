@@ -1,7 +1,7 @@
-# Release packages
+# Releasing lgtmd
 
-`.github/workflows/release.yml` prepares the Rust crate and one npm package with
-both native compilers. It runs only through manual `workflow_dispatch`. The default
+[`.github/workflows/release.yml`](.github/workflows/release.yml) prepares the Rust
+crate and one npm package with both native executables. It runs only through manual `workflow_dispatch`. The default
 `verify` mode builds and tests candidates without requesting registry credentials.
 A `publish` run requires a new version already committed on `main`, successful
 `Verify` CI for that exact commit, and human approval through the protected
@@ -16,9 +16,11 @@ Adding or verifying the workflow is not authorization to publish.
 The GitHub `release` environment requires `softmarshmallow` as a human reviewer,
 allows only the `main` branch, and disables administrator bypass. Self-review is
 allowed so the sole maintainer can trigger a run and subsequently approve it.
-Preparation checks these rules; publication checks them again and requires this
-run's recorded approval. An absent or unprotected environment fails, rather than
-relying on GitHub's automatic creation of unprotected environments.
+Preparation checks that human reviewers are required, only `main` is allowed,
+and administrator bypass is disabled. Publication repeats those checks and
+requires this run's recorded approval from a configured reviewer. An absent or
+unprotected environment fails, rather than relying on GitHub's automatic
+creation of unprotected environments.
 
 Configure the existing `lgtmd` packages' trusted publishers separately on npm and
 crates.io. GitHub organization ownership does not change registry ownership.
@@ -54,12 +56,12 @@ or token fallback are configured.
 Choose and authorize the exact version separately. Update these together:
 
 - `crates/lgtmd/Cargo.toml`: Rust SDK version.
-- `crates/lgtmd-node/Cargo.toml`: bridge version and its `lgtmd` dependency version.
+- `crates/lgtmd-cli/Cargo.toml`: CLI version and its `lgtmd` dependency version.
 - `packages/lgtmd/package.json`: Node SDK version.
 - `examples/lgtmd-web/package.json`: development dependency on `lgtmd`.
 - `Cargo.lock` and `package-lock.json`: regenerate using the ordinary tools.
 
-The bridge, root npm workspace, and examples remain private. Only the Rust SDK and
+The CLI crate, root npm workspace, and examples remain private. Only the Rust SDK and
 Node SDK are publishable. Preserve their explicit registry and repository metadata.
 The source guard rejects mismatched manifests, stale locks, dirty checkouts,
 reservation versions in publish mode, and versions already present in a selected
@@ -79,10 +81,10 @@ Run **Release packages** from GitHub Actions on `main` with:
 - `target`: `both`, `npm`, or `crates`; candidates include both packages regardless.
 - `dist_tag`: `next` or `latest`; only a later npm publication uses this value.
 
-The workflow builds the native bridge separately on macOS 15 arm64 and Ubuntu
+The workflow builds the shared native CLI separately on macOS 15 arm64 and Ubuntu
 24.04 x64. Receipts identify the source commit, version, platform, and binary hash.
 An assembly job verifies both receipts and packages TypeScript output, both
-executables, license, and README into one npm archive. It also builds and verifies
+executables with embedded viewer/worker assets, thin CLI launcher, license, and README into one npm archive. It also builds and verifies
 the normalized Cargo archive.
 
 Both hosts then install **the same assembled npm archive** into clean consumers.
@@ -123,3 +125,28 @@ registries before retrying, then request a new approved run with `target: npm`.
 Do not rerun `both` blindly or attempt to replace an existing registry version.
 The equivalent recovery applies to any intentionally selected registry. Never
 silently ignore an already published version.
+
+## Verify registry delivery
+
+A successful publish step confirms the registry accepted the upload. npm may
+still be processing the package before its metadata and archive become public.
+Wait for availability; do not republish an accepted version because an immediate
+lookup returns 404.
+
+- Confirm the exact version on each selected registry and the intended npm
+  distribution tag. Publishing under `next` does not change `latest`.
+- Download the public archives and compare their SHA-256 hashes with the
+  reviewed `release-candidates/manifest.json` values.
+- Run clean consumers against the published packages. Verify the npm core with
+  Rust and Playwright absent, then its optional Playwright integration. Verify
+  the Rust consumer resolves the exact crates.io version, rather than a local
+  path or Git dependency.
+- Update installation and availability documentation after publication is
+  confirmed. Preserve the experimental API status and verified platform limits.
+
+The first completed release was **0.1.0**, published to crates.io and npm's
+`next` tag on October 13, 2026. Its
+[release run](https://github.com/lgtmd/lgtmd/actions/runs/38416118632) exercised
+both native builds, the shared npm archive, installed consumers, the protected
+approval gate, OIDC publication, and npm provenance. Registry downloads matched
+the reviewed archives and passed subsequent consumer checks.

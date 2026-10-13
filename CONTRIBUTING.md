@@ -15,7 +15,7 @@ just setup
 just verify
 ```
 
-Setup installs dependencies, prepares the native Node compiler binary, and
+Setup installs dependencies, prepares the shared native CLI and embedded frontend, and
 installs Chromium. Verification covers formatting, Rust and Node tests, browser
 replay, exact repeated exports, and installed Cargo/npm consumers. See the
 [development guide](docs/development.md) for focused checks, offline work, example
@@ -31,10 +31,13 @@ baseline.
 | Location                     | Responsibility                                      |
 | ---------------------------- | --------------------------------------------------- |
 | `crates/lgtmd/`              | Rust SDK, compiler, exports, and artifact lifecycle |
-| `crates/lgtmd-node/`         | Native compiler/store bridge for Node               |
+| `crates/lgtmd-cli/`          | Shared native CLI and coarse SDK bridge             |
 | `crates/doc-example-config/` | Rust CLI/library consumers and retained baselines   |
 | `packages/lgtmd/`            | Node SDK and optional Playwright integration        |
 | `examples/lgtmd-web/`        | React/Vite app, HTTP API, fixtures, and guides      |
+| `packages/viewer/`           | Bundled reading/review frontend and image worker    |
+| `examples/review/`           | Controlled Git/browser review demonstration         |
+| `docs/authoring/`            | Sole sources of generated user guides               |
 | `docs/architecture/`         | Maintained contracts and boundaries                 |
 | `docs/decisions/`            | Decisions and alternatives                          |
 
@@ -59,7 +62,7 @@ compiler, install-time build, or fallback download. Broader platform support and
 signing remain release work. Version 0.1.0 is published on npm under `next` and
 on crates.io. APIs and schema-v1 compiler input remain experimental.
 
-Read the [release runbook](docs/releasing.md) for packaging, trusted publishers,
+Read the [release runbook](RELEASING.md) for packaging, trusted publishers,
 and human approval gates. A successful verification run does not authorize
 publication. Packages, tags, and publishing workflows require explicit approval
 for the exact version.

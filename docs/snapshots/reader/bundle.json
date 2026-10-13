@@ -1,0 +1,1572 @@
+{
+  "audience": "reader",
+  "digest": "3049a0b6ea667651fa12fab983be41ef761f453e449d879ab4c10b11b12192e7",
+  "navigation": [
+    "getting-started",
+    "develop-and-record",
+    "review-changes",
+    "customize-the-site"
+  ],
+  "pages": [
+    {
+      "anchors": [
+        "block-0001"
+      ],
+      "content": [
+        {
+          "children": [
+            {
+              "text": "Customize the docs site",
+              "type": "text"
+            }
+          ],
+          "level": 1,
+          "type": "heading"
+        },
+        {
+          "id": "block-0001",
+          "type": "anchor"
+        },
+        {
+          "children": [
+            {
+              "text": "Give your docs their own colors, typography and proportions with one CSS file. The bundled site includes Light, Dark and System appearance settings. System follows the reader's device; an explicit choice stays in that browser for this site.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "Add your theme",
+              "type": "text"
+            }
+          ],
+          "level": 2,
+          "type": "heading"
+        },
+        {
+          "children": [
+            {
+              "text": "Add a theme to ",
+              "type": "text"
+            },
+            {
+              "text": "lgtmd.config.json",
+              "type": "code"
+            },
+            {
+              "text": ":",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "{\n  \"flow\": { \"command\": [\"node\", \"docs/authoring/run.ts\"] },\n  \"theme\": { \"css\": \"docs/theme.css\" }\n}\n",
+              "type": "text"
+            }
+          ],
+          "language": "json",
+          "type": "code_block"
+        },
+        {
+          "children": [
+            {
+              "text": "The path resolves relative to the config file and must name a regular UTF-8 file. Create ",
+              "type": "text"
+            },
+            {
+              "text": "docs/theme.css",
+              "type": "code"
+            },
+            {
+              "text": " with ordinary browser CSS:",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": ":root {\n  --lgtmd-accent: #6d28d9;\n  --lgtmd-accent-foreground: #ffffff;\n  --lgtmd-radius: 0.75rem;\n  --lgtmd-content-width: 52rem;\n}\n\n:root[data-theme=\"dark\"] {\n  --lgtmd-accent: #c4b5fd;\n  --lgtmd-accent-foreground: #201039;\n}\n",
+              "type": "text"
+            }
+          ],
+          "language": "css",
+          "type": "code_block"
+        },
+        {
+          "children": [
+            {
+              "text": "The site loads your file after its default styles. No Tailwind setup or frontend build is required in your project. The bundled components use Tailwind internally; this file uses CSS values, not Tailwind directives or utility generation.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "Choose the level of customization",
+              "type": "text"
+            }
+          ],
+          "level": 2,
+          "type": "heading"
+        },
+        {
+          "children": [
+            {
+              "text": "Start with the shared tokens. They apply consistently across navigation, articles and review controls:",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "align": [
+            "none",
+            "none"
+          ],
+          "children": [
+            {
+              "children": [
+                {
+                  "children": [
+                    {
+                      "text": "Tokens",
+                      "type": "text"
+                    }
+                  ],
+                  "type": "table_cell"
+                },
+                {
+                  "children": [
+                    {
+                      "text": "Controls",
+                      "type": "text"
+                    }
+                  ],
+                  "type": "table_cell"
+                }
+              ],
+              "type": "table_head"
+            },
+            {
+              "children": [
+                {
+                  "children": [
+                    {
+                      "text": "--lgtmd-background",
+                      "type": "code"
+                    },
+                    {
+                      "text": ", ",
+                      "type": "text"
+                    },
+                    {
+                      "text": "--lgtmd-foreground",
+                      "type": "code"
+                    }
+                  ],
+                  "type": "table_cell"
+                },
+                {
+                  "children": [
+                    {
+                      "text": "Page background and text",
+                      "type": "text"
+                    }
+                  ],
+                  "type": "table_cell"
+                }
+              ],
+              "type": "table_row"
+            },
+            {
+              "children": [
+                {
+                  "children": [
+                    {
+                      "text": "--lgtmd-surface",
+                      "type": "code"
+                    }
+                  ],
+                  "type": "table_cell"
+                },
+                {
+                  "children": [
+                    {
+                      "text": "Raised and inset surfaces",
+                      "type": "text"
+                    }
+                  ],
+                  "type": "table_cell"
+                }
+              ],
+              "type": "table_row"
+            },
+            {
+              "children": [
+                {
+                  "children": [
+                    {
+                      "text": "--lgtmd-muted",
+                      "type": "code"
+                    },
+                    {
+                      "text": ", ",
+                      "type": "text"
+                    },
+                    {
+                      "text": "--lgtmd-muted-foreground",
+                      "type": "code"
+                    }
+                  ],
+                  "type": "table_cell"
+                },
+                {
+                  "children": [
+                    {
+                      "text": "Quiet surfaces and secondary text",
+                      "type": "text"
+                    }
+                  ],
+                  "type": "table_cell"
+                }
+              ],
+              "type": "table_row"
+            },
+            {
+              "children": [
+                {
+                  "children": [
+                    {
+                      "text": "--lgtmd-border",
+                      "type": "code"
+                    }
+                  ],
+                  "type": "table_cell"
+                },
+                {
+                  "children": [
+                    {
+                      "text": "Dividers and control borders",
+                      "type": "text"
+                    }
+                  ],
+                  "type": "table_cell"
+                }
+              ],
+              "type": "table_row"
+            },
+            {
+              "children": [
+                {
+                  "children": [
+                    {
+                      "text": "--lgtmd-accent",
+                      "type": "code"
+                    },
+                    {
+                      "text": ", ",
+                      "type": "text"
+                    },
+                    {
+                      "text": "--lgtmd-accent-foreground",
+                      "type": "code"
+                    }
+                  ],
+                  "type": "table_cell"
+                },
+                {
+                  "children": [
+                    {
+                      "text": "Emphasis and its contrasting text",
+                      "type": "text"
+                    }
+                  ],
+                  "type": "table_cell"
+                }
+              ],
+              "type": "table_row"
+            },
+            {
+              "children": [
+                {
+                  "children": [
+                    {
+                      "text": "--lgtmd-font-sans",
+                      "type": "code"
+                    },
+                    {
+                      "text": ", ",
+                      "type": "text"
+                    },
+                    {
+                      "text": "--lgtmd-font-mono",
+                      "type": "code"
+                    }
+                  ],
+                  "type": "table_cell"
+                },
+                {
+                  "children": [
+                    {
+                      "text": "Reading and code font stacks",
+                      "type": "text"
+                    }
+                  ],
+                  "type": "table_cell"
+                }
+              ],
+              "type": "table_row"
+            },
+            {
+              "children": [
+                {
+                  "children": [
+                    {
+                      "text": "--lgtmd-success",
+                      "type": "code"
+                    },
+                    {
+                      "text": ", ",
+                      "type": "text"
+                    },
+                    {
+                      "text": "--lgtmd-warning",
+                      "type": "code"
+                    },
+                    {
+                      "text": ", ",
+                      "type": "text"
+                    },
+                    {
+                      "text": "--lgtmd-danger",
+                      "type": "code"
+                    },
+                    {
+                      "text": ", ",
+                      "type": "text"
+                    },
+                    {
+                      "text": "--lgtmd-note",
+                      "type": "code"
+                    },
+                    {
+                      "text": " and each ",
+                      "type": "text"
+                    },
+                    {
+                      "text": "-surface",
+                      "type": "code"
+                    },
+                    {
+                      "text": " counterpart",
+                      "type": "text"
+                    }
+                  ],
+                  "type": "table_cell"
+                },
+                {
+                  "children": [
+                    {
+                      "text": "Status and contributor-note colors",
+                      "type": "text"
+                    }
+                  ],
+                  "type": "table_cell"
+                }
+              ],
+              "type": "table_row"
+            },
+            {
+              "children": [
+                {
+                  "children": [
+                    {
+                      "text": "--lgtmd-radius",
+                      "type": "code"
+                    }
+                  ],
+                  "type": "table_cell"
+                },
+                {
+                  "children": [
+                    {
+                      "text": "Shared corner radius",
+                      "type": "text"
+                    }
+                  ],
+                  "type": "table_cell"
+                }
+              ],
+              "type": "table_row"
+            },
+            {
+              "children": [
+                {
+                  "children": [
+                    {
+                      "text": "--lgtmd-content-width",
+                      "type": "code"
+                    },
+                    {
+                      "text": ", ",
+                      "type": "text"
+                    },
+                    {
+                      "text": "--lgtmd-sidebar-width",
+                      "type": "code"
+                    }
+                  ],
+                  "type": "table_cell"
+                },
+                {
+                  "children": [
+                    {
+                      "text": "Article and navigation widths",
+                      "type": "text"
+                    }
+                  ],
+                  "type": "table_cell"
+                }
+              ],
+              "type": "table_row"
+            }
+          ],
+          "type": "table"
+        },
+        {
+          "children": [
+            {
+              "text": "Use ",
+              "type": "text"
+            },
+            {
+              "text": ":root[data-theme=\"dark\"]",
+              "type": "code"
+            },
+            {
+              "text": " for dark-specific values. Check contrast, focus visibility, code and screenshots in both appearances before publishing a theme.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "For a more focused change, target a supported styling hook:",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "[data-lgtmd-part=\"prose\"] {\n  line-height: 1.8;\n}\n\n[data-lgtmd-part=\"code\"] {\n  border-radius: 0.25rem;\n}\n",
+              "type": "text"
+            }
+          ],
+          "language": "css",
+          "type": "code_block"
+        },
+        {
+          "children": [
+            {
+              "text": "The supported ",
+              "type": "text"
+            },
+            {
+              "text": "data-lgtmd-part",
+              "type": "code"
+            },
+            {
+              "text": " values are ",
+              "type": "text"
+            },
+            {
+              "text": "shell",
+              "type": "code"
+            },
+            {
+              "text": ", ",
+              "type": "text"
+            },
+            {
+              "text": "sidebar",
+              "type": "code"
+            },
+            {
+              "text": ", ",
+              "type": "text"
+            },
+            {
+              "text": "toolbar",
+              "type": "code"
+            },
+            {
+              "text": ", ",
+              "type": "text"
+            },
+            {
+              "text": "content",
+              "type": "code"
+            },
+            {
+              "text": ", ",
+              "type": "text"
+            },
+            {
+              "text": "prose",
+              "type": "code"
+            },
+            {
+              "text": ", ",
+              "type": "text"
+            },
+            {
+              "text": "code",
+              "type": "code"
+            },
+            {
+              "text": ", ",
+              "type": "text"
+            },
+            {
+              "text": "notes",
+              "type": "code"
+            },
+            {
+              "text": ", and ",
+              "type": "text"
+            },
+            {
+              "text": "image-comparison",
+              "type": "code"
+            },
+            {
+              "text": ". Prefer these hooks to generated utility classes or the exact nesting of elements. Hooks describe presentation areas; they do not promise an editable component API. Replacing layout components or adding client behavior remains future work.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "Preview and publish",
+              "type": "text"
+            }
+          ],
+          "level": 2,
+          "type": "heading"
+        },
+        {
+          "children": [
+            {
+              "text": "With ",
+              "type": "text"
+            },
+            {
+              "text": "lgtmd dev",
+              "type": "code"
+            },
+            {
+              "text": " running, edit the configured CSS file and reload the browser. The server reads its latest bytes without running your application or recapturing evidence. Even with ",
+              "type": "text"
+            },
+            {
+              "text": "--watch",
+              "type": "code"
+            },
+            {
+              "text": ", edits to this theme file do not queue a flow. Restart dev if you change the configured file path.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "lgtmd build",
+              "type": "code"
+            },
+            {
+              "text": " copies the CSS into the static site. ",
+              "type": "text"
+            },
+            {
+              "text": "lgtmd preview",
+              "type": "code"
+            },
+            {
+              "text": " serves that recorded build, even if the source CSS changes or is removed. Rebuild to publish a new theme.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "Theme paths and bytes do not change a completed document's identity or invalidate retained output. ",
+              "type": "text"
+            },
+            {
+              "text": "check",
+              "type": "code"
+            },
+            {
+              "text": ", snapshot acceptance and Git comparisons still concern authored content and evidence. The current theme presents both sides of a comparison; it does not reproduce a historical site's CSS.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "Keep overrides self-contained. lgtmd copies only the configured CSS file: it does not follow ",
+              "type": "text"
+            },
+            {
+              "text": "@import",
+              "type": "code"
+            },
+            {
+              "text": ", copy fonts or images mentioned in ",
+              "type": "text"
+            },
+            {
+              "text": "url()",
+              "type": "code"
+            },
+            {
+              "text": ", or rewrite their paths. Relative URLs resolve from the served stylesheet; use assets your deployment actually serves, or browser-supported absolute and data URLs. External resources follow the reader's browser and network rules. A missing, unreadable or unsafe theme input makes dev/build fail visibly. CSS syntax is interpreted by the browser; the CLI does not compile or validate stylesheet rules.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "This customization is available in the prepared source checkout alongside the docs-site CLI. It is not included in the published 0.1.0 SDK.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        }
+      ],
+      "id": "customize-the-site",
+      "notes": [],
+      "title": "Customize the docs site"
+    },
+    {
+      "anchors": [
+        "block-0001"
+      ],
+      "content": [
+        {
+          "children": [
+            {
+              "text": "Develop and record guides",
+              "type": "text"
+            }
+          ],
+          "level": 1,
+          "type": "heading"
+        },
+        {
+          "id": "block-0001",
+          "type": "anchor"
+        },
+        {
+          "children": [
+            {
+              "text": "Run the flow, read the result, then record exactly the candidate you reviewed.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "Develop locally",
+              "type": "text"
+            }
+          ],
+          "level": 2,
+          "type": "heading"
+        },
+        {
+          "children": [
+            {
+              "text": "lgtmd dev\n",
+              "type": "text"
+            }
+          ],
+          "language": "sh",
+          "type": "code_block"
+        },
+        {
+          "children": [
+            {
+              "text": "Dev starts a loopback docs site and runs the configured flow once. The server reports progress and keeps the last successful result visibly stale if the next run fails. Use ",
+              "type": "text"
+            },
+            {
+              "children": [
+                {
+                  "text": "Run again",
+                  "type": "text"
+                }
+              ],
+              "type": "strong"
+            },
+            {
+              "text": " for another complete run.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "lgtmd dev --watch\nlgtmd dev --reuse\n",
+              "type": "text"
+            }
+          ],
+          "language": "sh",
+          "type": "code_block"
+        },
+        {
+          "children": [
+            {
+              "text": "Watch is opt-in and requires ",
+              "type": "text"
+            },
+            {
+              "text": "flow.watch",
+              "type": "code"
+            },
+            {
+              "text": " paths in the config. It reruns the whole flow after source changes, serializes runs, and refreshes after success. Generated output is excluded. Editing during a run queues one follow-up run.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "Reuse opens the last completed candidate without running your app. It labels the output as retained, not freshly verified. It cannot be combined with watch. Reading pages and changing review modes never run a flow.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "Configure your project",
+              "type": "text"
+            }
+          ],
+          "level": 2,
+          "type": "heading"
+        },
+        {
+          "children": [
+            {
+              "text": "{\n  \"schemaVersion\": 1,\n  \"title\": \"My product\",\n  \"flow\": {\n    \"command\": [\"node\", \"docs/authoring/run.ts\"],\n    \"watch\": [\"docs/authoring\", \"src\"]\n  },\n  \"snapshots\": \"docs/snapshots\",\n  \"outDir\": \"build/docs\",\n  \"basePath\": \"/docs/\"\n}\n",
+              "type": "text"
+            }
+          ],
+          "language": "json",
+          "type": "code_block"
+        },
+        {
+          "children": [
+            {
+              "text": "Paths resolve relative to the config file. Use ",
+              "type": "text"
+            },
+            {
+              "text": "--config PATH",
+              "type": "code"
+            },
+            {
+              "text": " when it is elsewhere. Command arguments are passed directly, without a shell. Your runner owns database seeds, mock providers, servers and browser fixtures; lgtmd does not impose a fullstack topology.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "Record and check",
+              "type": "text"
+            }
+          ],
+          "level": 2,
+          "type": "heading"
+        },
+        {
+          "children": [
+            {
+              "text": "The CLI and dev page identify each completed candidate. Record that exact result:",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "lgtmd update --candidate CANDIDATE_ID\n",
+              "type": "text"
+            }
+          ],
+          "language": "sh",
+          "type": "code_block"
+        },
+        {
+          "children": [
+            {
+              "text": "Update copies the reviewed Reader snapshot and resources into your configured snapshot directory. It does not rerun the flow or create a Git commit. Commit the source and snapshots through your ordinary Git workflow. An old source commit alone cannot supply screenshots that were never recorded.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "lgtmd check\n",
+              "type": "text"
+            }
+          ],
+          "language": "sh",
+          "type": "code_block"
+        },
+        {
+          "children": [
+            {
+              "text": "Check executes a fresh flow and compares its output exactly with the accepted snapshot. Drift and execution failures exit unsuccessfully. Run it in CI using the same capture profile that produced your accepted images.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "Publish the reading site",
+              "type": "text"
+            }
+          ],
+          "level": 2,
+          "type": "heading"
+        },
+        {
+          "children": [
+            {
+              "text": "lgtmd build\nlgtmd preview\n",
+              "type": "text"
+            }
+          ],
+          "language": "sh",
+          "type": "code_block"
+        },
+        {
+          "children": [
+            {
+              "text": "Build runs the flow and creates the static Reader site; preview serves those files without execution. Deploy them through your normal hosting workflow. Root hosting and ",
+              "type": "text"
+            },
+            {
+              "text": "/docs/",
+              "type": "code"
+            },
+            {
+              "text": " both work, with hash-based page links in this first version.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "Reader exports exclude contributor-only payloads before delivery. Use ",
+              "type": "text"
+            },
+            {
+              "text": "--audience contributor",
+              "type": "code"
+            },
+            {
+              "text": " explicitly for internal output. Committing Contributor snapshots exposes their notes to everyone who can read that repository. Secrets already captured in an image cannot be removed by audience filtering.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "To change the site's colors, typography and proportions, configure a CSS file with ",
+              "type": "text"
+            },
+            {
+              "text": "theme.css",
+              "type": "code"
+            },
+            {
+              "text": ". The ",
+              "type": "text"
+            },
+            {
+              "children": [
+                {
+                  "text": "customization guide",
+                  "type": "text"
+                }
+              ],
+              "page_id": "customize-the-site",
+              "type": "link"
+            },
+            {
+              "text": " covers tokens, appearance settings and supported styling hooks.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "The public static site is for reading. Git history review runs in the local development site. Building, accepting a snapshot, committing, and deploying remain separate actions.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        }
+      ],
+      "id": "develop-and-record",
+      "notes": [],
+      "title": "Develop and record guides"
+    },
+    {
+      "anchors": [
+        "block-0001"
+      ],
+      "content": [
+        {
+          "children": [
+            {
+              "text": "Get started with lgtmd",
+              "type": "text"
+            }
+          ],
+          "level": 1,
+          "type": "heading"
+        },
+        {
+          "id": "block-0001",
+          "type": "anchor"
+        },
+        {
+          "children": [
+            {
+              "text": "Keep screenshots and explanations together. Write the guide beside the actions that produce its evidence, then regenerate and review both when your product changes.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "lgtmd compiles code-authored guides into Markdown and a docs site. It works with your existing fixtures and assertions. Your project owns its application, services, test data, authentication and cleanup.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "Availability",
+              "type": "text"
+            }
+          ],
+          "level": 2,
+          "type": "heading"
+        },
+        {
+          "children": [
+            {
+              "text": "The SDK is published as ",
+              "type": "text"
+            },
+            {
+              "children": [
+                {
+                  "text": "lgtmd 0.1.0",
+                  "type": "text"
+                }
+              ],
+              "type": "strong"
+            },
+            {
+              "text": ", with npm's ",
+              "type": "text"
+            },
+            {
+              "children": [
+                {
+                  "text": "next",
+                  "type": "text"
+                }
+              ],
+              "type": "strong"
+            },
+            {
+              "text": " tag. The docs-site CLI shown in this guide is available from the prepared source checkout and its packed candidate; it has not yet been released to the registries.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "The current Node package supports Node.js 24 ESM on macOS arm64 and Linux x64. Rust authors use the Rust crate and their normal toolchain. Both use the same native lgtmd command. npm supplies a launcher for that executable; a native installation can serve docs and run Rust-authored flows without Node. The frontend is included in the executable.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "Author your first guide",
+              "type": "text"
+            }
+          ],
+          "level": 2,
+          "type": "heading"
+        },
+        {
+          "children": [
+            {
+              "text": "Install the SDK and keep the runner in your project. A simple Node guide uses ordinary code:",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "import { guide, runGuide, completeRun } from \"lgtmd\";\n\nconst introduction = guide({ id: \"hello\", title: \"Hello\" }, (doc) => {\n  doc.md`Welcome to our product.`;\n});\n\nawait completeRun([await runGuide(introduction)]);\n",
+              "type": "text"
+            }
+          ],
+          "language": "ts",
+          "type": "code_block"
+        },
+        {
+          "children": [
+            {
+              "text": "Place the runner in ",
+              "type": "text"
+            },
+            {
+              "text": "docs/authoring/run.ts",
+              "type": "code"
+            },
+            {
+              "text": ", then configure its command:",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "{\n  \"schemaVersion\": 1,\n  \"title\": \"My product\",\n  \"flow\": { \"command\": [\"node\", \"docs/authoring/run.ts\"] }\n}\n",
+              "type": "text"
+            }
+          ],
+          "language": "json",
+          "type": "code_block"
+        },
+        {
+          "children": [
+            {
+              "text": "Save this as ",
+              "type": "text"
+            },
+            {
+              "text": "lgtmd.config.json",
+              "type": "code"
+            },
+            {
+              "text": ". Run the installed command through a package script or ",
+              "type": "text"
+            },
+            {
+              "text": "npm exec -- lgtmd dev",
+              "type": "code"
+            },
+            {
+              "text": ". A Rust runner can use ",
+              "type": "text"
+            },
+            {
+              "text": "cargo run --example guides",
+              "type": "code"
+            },
+            {
+              "text": " and ",
+              "type": "text"
+            },
+            {
+              "text": "lgtmd::handoff::complete_run",
+              "type": "code"
+            },
+            {
+              "text": " instead.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "Add evidence where it matters",
+              "type": "text"
+            }
+          ],
+          "level": 2,
+          "type": "heading"
+        },
+        {
+          "children": [
+            {
+              "text": "Use your normal assertions to establish behavior, then attach a screenshot or another resource to the explanation. An image illustrates what happened; it does not prove every statement in a paragraph.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "For Playwright, retain your existing fixtures with ",
+              "type": "text"
+            },
+            {
+              "text": "withDocs(test)",
+              "type": "code"
+            },
+            {
+              "text": ", use ",
+              "type": "text"
+            },
+            {
+              "text": "docsReporter()",
+              "type": "code"
+            },
+            {
+              "text": ", then collect the completed run with ",
+              "type": "text"
+            },
+            {
+              "text": "collectPlaywright",
+              "type": "code"
+            },
+            {
+              "text": ". Pass those documents to ",
+              "type": "text"
+            },
+            {
+              "text": "completeRun",
+              "type": "code"
+            },
+            {
+              "text": " only after your own cleanup succeeds. A failed process, fixture or guarded reporter cannot become a successful docs candidate.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "For a new app, explicit state providers or isolated seeds make guides easier to reproduce. In an existing app, start with one useful flow and your current testing setup. lgtmd cannot make DOM selectors unbreakable or remove external nondeterminism.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "Build screenshots in a stable browser, font, viewport and rendering environment. Live services, clocks, changing data and animations can produce real byte differences. Investigate those differences before accepting a new baseline.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        }
+      ],
+      "id": "getting-started",
+      "notes": [],
+      "title": "Get started with lgtmd"
+    },
+    {
+      "anchors": [
+        "block-0001"
+      ],
+      "content": [
+        {
+          "children": [
+            {
+              "text": "Review text and image changes",
+              "type": "text"
+            }
+          ],
+          "level": 1,
+          "type": "heading"
+        },
+        {
+          "id": "block-0001",
+          "type": "anchor"
+        },
+        {
+          "children": [
+            {
+              "text": "Choose ",
+              "type": "text"
+            },
+            {
+              "children": [
+                {
+                  "text": "View diff",
+                  "type": "text"
+                }
+              ],
+              "type": "strong"
+            },
+            {
+              "text": " to compare your current completed guide with its recorded version in Git. By default the baseline is the exact snapshot at ",
+              "type": "text"
+            },
+            {
+              "children": [
+                {
+                  "text": "HEAD",
+                  "type": "text"
+                }
+              ],
+              "type": "strong"
+            },
+            {
+              "text": ". Select another revision to inspect an earlier result.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "The site shows the resolved revision and current candidate. Selecting a version does not check out old code, run your app, or accept a baseline.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "Read both versions",
+              "type": "text"
+            }
+          ],
+          "level": 2,
+          "type": "heading"
+        },
+        {
+          "children": [
+            {
+              "text": "Use ",
+              "type": "text"
+            },
+            {
+              "children": [
+                {
+                  "text": "Previous",
+                  "type": "text"
+                }
+              ],
+              "type": "strong"
+            },
+            {
+              "text": " and ",
+              "type": "text"
+            },
+            {
+              "children": [
+                {
+                  "text": "Current",
+                  "type": "text"
+                }
+              ],
+              "type": "strong"
+            },
+            {
+              "text": " to read the rendered guide. Changed-page navigation identifies additions, removals and changes. This first version compares whole pages; it does not infer paragraph identity or promise inline word highlighting.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "Compare the screenshots",
+              "type": "text"
+            }
+          ],
+          "level": 2,
+          "type": "heading"
+        },
+        {
+          "children": [
+            {
+              "children": [
+                {
+                  "text": "Before / After",
+                  "type": "text"
+                }
+              ],
+              "type": "strong"
+            },
+            {
+              "text": " displays the retained captures side by side. This real example changes the project status from ",
+              "type": "text"
+            },
+            {
+              "children": [
+                {
+                  "text": "In progress",
+                  "type": "text"
+                }
+              ],
+              "type": "strong"
+            },
+            {
+              "text": " to ",
+              "type": "text"
+            },
+            {
+              "children": [
+                {
+                  "text": "Ready for review",
+                  "type": "text"
+                }
+              ],
+              "type": "strong"
+            },
+            {
+              "text": " in both its explanation and screenshot.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "page_id": "review-changes",
+              "resource_id": "before-after",
+              "text": "Before and after captures of a project's review status",
+              "type": "image"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "Choose ",
+              "type": "text"
+            },
+            {
+              "children": [
+                {
+                  "text": "Regions",
+                  "type": "text"
+                }
+              ],
+              "type": "strong"
+            },
+            {
+              "text": " to outline groups of changed pixels on compatible static PNG or WebP screenshots.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "page_id": "review-changes",
+              "resource_id": "changed-regions",
+              "text": "Changed regions outlined on the current project screenshot",
+              "type": "image"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "Boxes group changed pixels; they do not recognize semantic controls. Different dimensions or capture profiles, animations, unsupported formats and large images retain the side-by-side view with an explanation. Visual modes never change the exact artifact check result.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "Keep history honest",
+              "type": "text"
+            }
+          ],
+          "level": 2,
+          "type": "heading"
+        },
+        {
+          "children": [
+            {
+              "text": "A revision with no recorded snapshot is reported as unavailable. The site does not recreate historical evidence by running old code. Missing resources and incompatible snapshots remain visible errors; current docs stay readable.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "Start with ",
+              "type": "text"
+            },
+            {
+              "children": [
+                {
+                  "text": "Reader",
+                  "type": "text"
+                }
+              ],
+              "type": "strong"
+            },
+            {
+              "text": " for user-facing content. An explicit Contributor session can show attached internal notes, and needs actual Contributor snapshots on both sides to review them.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "Try the demonstration",
+              "type": "text"
+            }
+          ],
+          "level": 2,
+          "type": "heading"
+        },
+        {
+          "children": [
+            {
+              "text": "In a prepared lgtmd checkout, run ",
+              "type": "text"
+            },
+            {
+              "children": [
+                {
+                  "text": "just docs-demo",
+                  "type": "text"
+                }
+              ],
+              "type": "strong"
+            },
+            {
+              "text": ". It starts this real comparison against a disposable, clearly labeled example history. Its sample notes are intentionally public. The example never creates commits in your project.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "This page is itself authored with lgtmd. Its browser scenario asserts the real revision and changes, operates the comparison controls, then captures these images. The final guide is not an input to the example it explains.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        }
+      ],
+      "id": "review-changes",
+      "notes": [],
+      "title": "Review text and image changes"
+    }
+  ],
+  "resources": [
+    {
+      "bytes": 17744,
+      "id": "before-after",
+      "mime": "image/webp",
+      "page_id": "review-changes",
+      "path": "assets/review-changes/before-after.webp",
+      "producer": "playwright/chromium+sharp",
+      "profile": "playwright-1.64.0-darwin-arm64-1200x1000-cpu-full-raster-sharp-0.35.5-libwebp-1.6.0-lossless-effort6",
+      "sha256": "54bd71dd02bc27a017b572f50b2a4fda2001e401f9d261b4e5ef0b352ff2c2c1"
+    },
+    {
+      "bytes": 15418,
+      "id": "changed-regions",
+      "mime": "image/webp",
+      "page_id": "review-changes",
+      "path": "assets/review-changes/changed-regions.webp",
+      "producer": "playwright/chromium+sharp",
+      "profile": "playwright-1.64.0-darwin-arm64-1200x1000-cpu-full-raster-sharp-0.35.5-libwebp-1.6.0-lossless-effort6",
+      "sha256": "d1c06bd0e7dec309c43dfdd05e7cb6ca6bb7f1f7b516704e24e9dc29c8eb8bdf"
+    }
+  ],
+  "schema_version": 1,
+  "title": "lgtmd"
+}

@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "files": [
+    "assets/review-changes/before-after.webp",
+    "assets/review-changes/changed-regions.webp",
+    "customize-the-site.md",
+    "develop-and-record.md",
+    "getting-started.md",
+    "manifest.json",
+    "review-changes.md"
+  ]
+}

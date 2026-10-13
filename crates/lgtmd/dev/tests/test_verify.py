@@ -83,6 +83,35 @@ class PortableVerificationTests(unittest.TestCase):
         self.assertFalse(calls[0][1].exists())
         self.assertFalse((self.root / "Cargo.lock").exists())
 
+    def test_standalone_artifacts_never_reuse_native_or_previous_copied_sources(self):
+        target_root = self.root / "shared target"
+        target_root.mkdir()
+        retained = target_root / "native-artifact"
+        retained.write_text("untouched")
+        targets = []
+
+        def compiled_check(sdk, cargo, environment, offline):
+            target = Path(environment["CARGO_TARGET_DIR"])
+            self.assertEqual(target.parent, target_root.resolve())
+            # Model a compile-time source path embedded in a cached executable.
+            marker = target / "compiled-manifest-dir"
+            self.assertFalse(marker.exists())
+            marker.write_text(str(sdk))
+            targets.append(target)
+            return 0 if len(targets) == 1 else 19
+
+        environment = {"CARGO_TARGET_DIR": str(target_root), "RUSTUP_TOOLCHAIN": "test"}
+        with patch.dict(os.environ, environment, clear=True), patch.object(verify, "run", return_value=0), patch.object(verify, "checks", side_effect=compiled_check):
+            self.assertEqual(verify.main(["--standalone"], sdk=self.sdk), 0)
+            self.assertEqual(verify.main(["--standalone"], sdk=self.sdk), 19)
+            self.assertEqual(os.environ["CARGO_TARGET_DIR"], str(target_root))
+        self.assertNotEqual(*targets)
+        self.assertTrue(all(not target.exists() for target in targets))
+        self.assertEqual(retained.read_text(), "untouched")
+        with patch.dict(os.environ, environment, clear=True), patch.object(verify, "checks", return_value=0) as checks:
+            self.assertEqual(verify.main([], sdk=self.sdk), 0)
+            self.assertEqual(checks.call_args.args[2]["CARGO_TARGET_DIR"], str(target_root))
+
     def test_failing_consumer_checks_stop_before_doctests_and_docs(self):
         calls = []
 

@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { fileURLToPath } from "node:url";
+import { nativeExecutable } from "./native.js";
 import type { FrozenDocument } from "./model.js";
 import { freezeJson } from "./model.js";
 
@@ -29,18 +29,15 @@ function layout(value?: ExportLayout): Record<string, unknown> {
   };
 }
 
-async function request(value: unknown): Promise<unknown> {
-  const executable = fileURLToPath(
-    new URL(
-      `../../native/${process.platform}-${process.arch}/lgtmd-node${process.platform === "win32" ? ".exe" : ""}`,
-      import.meta.url,
-    ),
-  );
+export async function bridgeRequest(value: unknown): Promise<unknown> {
+  const executable = nativeExecutable();
   // Freeze the complete request before starting a process. Host execution has
   // already ended; the bridge never calls application or authoring callbacks.
   const input = JSON.stringify(freezeJson(value));
   return new Promise((resolve, reject) => {
-    const child = spawn(executable, [], { stdio: ["pipe", "pipe", "pipe"] });
+    const child = spawn(executable, ["__bridge"], {
+      stdio: ["pipe", "pipe", "pipe"],
+    });
     let stdout = "";
     let stderr = "";
     child.stdout.setEncoding("utf8").on("data", (chunk: string) => {
@@ -52,7 +49,7 @@ async function request(value: unknown): Promise<unknown> {
     child.on("error", (error) =>
       reject(
         new Error(
-          `lgtmd native bridge unavailable for ${process.platform}-${process.arch}. Build the local binding or install a package containing that platform.`,
+          `lgtmd native executable unavailable for ${process.platform}-${process.arch}. Build the local CLI or install a package containing that platform.`,
           { cause: error },
         ),
       ),
@@ -93,7 +90,7 @@ export async function compile(
   documents: readonly FrozenDocument[],
   options?: ExportLayout,
 ): Promise<Exports> {
-  const result = (await request({
+  const result = (await bridgeRequest({
     operation: "compile",
     input: { schema_version: 1, documents },
     layout: layout(options),
@@ -122,7 +119,7 @@ export async function publish(
   documents: readonly FrozenDocument[],
   options: PublishOptions,
 ): Promise<void> {
-  await request({
+  await bridgeRequest({
     operation: "publish",
     input: { schema_version: 1, documents },
     command: options.command,

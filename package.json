@@ -3,17 +3,20 @@
   "private": true,
   "workspaces": [
     "packages/lgtmd",
-    "examples/lgtmd-web"
+    "packages/viewer",
+    "examples/lgtmd-web",
+    "examples/review"
   ],
   "type": "module",
   "scripts": {
-    "build": "npm run build --workspace lgtmd",
-    "test": "npm run test --workspace lgtmd",
+    "build": "npm run build --workspace lgtmd && npm run build --workspace @lgtmd/viewer && npm run build --workspace @lgtmd/example-review",
+    "test": "npm run test --workspace lgtmd && npm run test --workspace @lgtmd/viewer",
     "typecheck": "npm run typecheck --workspace @lgtmd/example-web"
   },
   "devDependencies": {
     "@playwright/test": "1.64.0",
     "@types/node": "24.19.2",
+    "sharp": "0.35.5",
     "typescript": "7.0.2"
   },
   "engines": {

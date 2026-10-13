@@ -14,7 +14,7 @@ replay, renderer, generated guides, capture policies, and agent skills.
 | Location                     | Responsibility                                                                                               |
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------ |
 | `crates/lgtmd/`              | Rust authoring, frozen document model, validation, Markdown exports, and artifact lifecycle.                 |
-| `crates/lgtmd-node/`         | Coarse native compiler/store bridge for Node authoring.                                                      |
+| `crates/lgtmd-cli/`          | Shared native CLI, embedded frontend, and coarse SDK bridge.                                                 |
 | `crates/doc-example-config/` | CLI/library consumers, isolated fixtures, and retained Reader/Contributor baselines.                         |
 | `packages/lgtmd/`            | Node authoring, project-owned lifecycle integration, native bridge loading, and optional Playwright adapter. |
 | `examples/lgtmd-web/`        | React/Vite application, HTTP API, fixtures, guides, and browser configuration.                               |
@@ -24,9 +24,14 @@ replay, renderer, generated guides, capture policies, and agent skills.
 
 Read the [architecture](docs/architecture/executable-documents.md), the owning
 package README, and the relevant example before changing a boundary. The Node
-integration uses a native binary, not a shipped WASM package. A full canonical
-viewer, browser-hosted SDK, generic plugin framework, and standalone CLI are
-future work. Create components only when they have real responsibilities.
+integration uses a native binary, not a shipped WASM package. The docs-site CLI and bundled React frontend are implemented in this checkout.
+Browser-hosted authoring and a generic plugin framework remain future work. The [docs-site decision](docs/decisions/0002-docs-site-and-git-review.md)
+and [user guide](docs/guide/develop-and-record.md) describe the feature; the
+[v1 execution plan](docs/plans/docs-site-v1.md) fixes its first implementation
+scope and completion gates.
+The docs site is one experience in development and after publishing; viewer is
+an internal frontend responsibility, not a separate public product.
+Create components only when they have real responsibilities.
 
 ## Authoring and project boundaries
 
@@ -65,8 +70,8 @@ mutation must not change evidence. Exporting a second audience must not rerun th
 application or capture again. Preserve typed-handle ownership, collision checks,
 reference integrity, and useful diagnostics.
 
-The manifest records an inventory and ownership receipt. It is not the future
-canonical viewer's full document protocol. Public input and exports remain
+The Markdown manifest records an inventory and ownership receipt. The versioned
+site bundle is a separate content, audience, navigation and resource protocol. Public input and exports remain
 experimental; meaningful compatibility changes need explicit tests and review.
 Preserve APIs and output bytes during extraction and packaging changes unless a
 separate behavior change is authorized.
@@ -129,9 +134,9 @@ Ubuntu 24.04 x64. CommonJS, other platforms,
 and browser-hosted authoring have no support promise.
 
 Release packaging uses one npm archive containing both verified native targets.
-Read [releasing](docs/releasing.md) before changing publication. Keep verification
-free of registry credentials and require the protected environment and current
-run approval before OIDC authentication. A verification run never grants release
+Read [RELEASING.md](RELEASING.md) before preparing or publishing a release or
+changing publication. Keep verification free of registry credentials and require
+the protected environment and current run approval before OIDC authentication. A verification run never grants release
 authorization.
 
 ## Repository and release conventions
@@ -158,3 +163,48 @@ authorization.
   package publication are distinct actions. Never publish a package, create a
   release tag, or dispatch publishing workflows without active explicit
   authorization for the exact release/version.
+
+## Docs site and own guides
+
+`packages/viewer/` owns presentation and browser-only image analysis;
+`crates/lgtmd-cli/` owns host execution, Git reads, watching and serving;
+`packages/lgtmd/src/cli.ts` only launches that native executable;
+`crates/lgtmd/src/site/` and `review.rs` own bundles and exact comparison.
+Do not make browser Regions boxes or decoding outcomes canonical check results.
+
+Maintain user-facing narrative only in `docs/authoring/`. `docs/guide/` is generated
+Reader Markdown/media; `docs/snapshots/reader/` is the explicitly recorded site
+snapshot. Do not hand-edit either tree. Run `just docs-build`, review the result,
+then use `just docs-record CANDIDATE_ID` and the explicit CLI snapshot update
+when intentional changes are ready. Normal dev/build/check never overwrite the
+tracked guide. `just docs-check` compares the tracked guide exactly in its declared
+capture environment; `just docs-test` separately checks repeatability through
+fresh controlled Git/browser runs and does not accept a baseline.
+
+Retain own-guide and review-example screenshots as lossless WebP. Playwright's
+PNG capture buffer is an intermediate; the repository capture helper encodes it
+with pinned Sharp/libwebp and records that encoder in the profile. Keep the SDK
+format-agnostic and pass the actual image MIME explicitly. Verify decoded pixel
+preservation and fresh-run repeatability before recording changed evidence.
+
+Use `just docs` for local development and `just docs-demo` for the disposable
+Git-backed example. A missing snapshot at real HEAD remains unavailable until
+recorded source is committed; never invent it or commit automatically. Keep
+explanation capture one level deep: controlled A/B example -> real review UI ->
+final guide, with no dependency back from that final guide into the example.
+
+### Viewer presentation and themes
+
+Use Tailwind for bundled viewer components, backed by the documented semantic
+`--lgtmd-*` CSS tokens. Keep the public `data-lgtmd-part` hooks stable; utility
+classes and DOM nesting are implementation details. Maintain Light, Dark and
+System appearance, readable focus states and responsive layouts together.
+
+`theme: { css: "docs/theme.css" }` is optional host configuration. Load ordinary
+CSS after default styles, read it fresh on dev requests, and freeze its bytes in
+static builds. Theme edits do not rerun flows, invalidate retained candidates or
+alter exact evidence checks. Do not add theme bytes to the site bundle, candidate
+identity or snapshot protocol. Preview uses the built CSS, not the source file.
+Do not traverse CSS imports or infer adjacent assets. Full component replacement
+and a component registry remain deferred. User-facing details belong in the
+[authored customization guide](docs/authoring/customize-the-site.mjs).

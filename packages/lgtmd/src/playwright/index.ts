@@ -12,8 +12,11 @@ import {
   type ReporterOptions,
 } from "./reporter.js";
 
-export { runPlaywright } from "./runner.js";
-export type { RunPlaywrightOptions } from "./runner.js";
+export { collectPlaywright, runPlaywright } from "./runner.js";
+export type {
+  CollectPlaywrightOptions,
+  RunPlaywrightOptions,
+} from "./runner.js";
 
 /** Preserve an application's existing fixtures, assertions, and cleanup. */
 export function withDocs<T extends object, W extends object>(

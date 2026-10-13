@@ -36,8 +36,8 @@ version = "{version}"
 publish = ["crates-io"]
 repository = "https://github.com/lgtmd/lgtmd"
 ''',
-        "crates/lgtmd-node/Cargo.toml": f'''[package]
-name = "lgtmd-node"
+        "crates/lgtmd-cli/Cargo.toml": f'''[package]
+name = "lgtmd-cli"
 version = "{version}"
 publish = false
 [dependencies]
@@ -53,15 +53,17 @@ publish = false
 name = "lgtmd"
 version = "{version}"
 [[package]]
-name = "lgtmd-node"
+name = "lgtmd-cli"
 version = "{version}"
 ''',
     }.items():
         path = root / relative
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(text, encoding="utf-8")
-    workspace = {"private": True, "workspaces": ["packages/lgtmd", "examples/lgtmd-web"]}
+    workspace = {"private": True, "workspaces": ["packages/lgtmd", "packages/viewer", "examples/lgtmd-web", "examples/review"]}
     write_json(root, "package.json", workspace)
+    write_json(root, "packages/viewer/package.json", {"private": True})
+    write_json(root, "examples/review/package.json", {"private": True})
     write_json(root, "packages/lgtmd/package.json", {
         "name": "lgtmd", "version": version,
         "repository": {"type": "git", "url": "git+https://github.com/lgtmd/lgtmd.git", "directory": "packages/lgtmd"},
@@ -163,7 +165,7 @@ class SourceTests(unittest.TestCase):
         self.fetch.assert_not_called()
 
     def test_all_sdk_versions_and_locks_must_match(self):
-        for relative in ("crates/lgtmd/Cargo.toml", "crates/lgtmd-node/Cargo.toml", "Cargo.lock", "packages/lgtmd/package.json", "package-lock.json"):
+        for relative in ("crates/lgtmd/Cargo.toml", "crates/lgtmd-cli/Cargo.toml", "Cargo.lock", "packages/lgtmd/package.json", "package-lock.json"):
             with self.subTest(relative=relative):
                 fixture(self.root)
                 path = self.root / relative
@@ -175,7 +177,7 @@ class SourceTests(unittest.TestCase):
     def test_manifest_publication_boundaries_fail_closed(self):
         for relative, old, new in (
             ("crates/lgtmd/Cargo.toml", 'publish = ["crates-io"]', 'publish = false'),
-            ("crates/lgtmd-node/Cargo.toml", 'publish = false', 'publish = true'),
+            ("crates/lgtmd-cli/Cargo.toml", 'publish = false', 'publish = true'),
             ("crates/doc-example-config/Cargo.toml", 'publish = false', 'publish = true'),
             ("packages/lgtmd/package.json", '"name": "lgtmd"', '"name": "lgtmd", "private": true'),
             ("package.json", '"private": true', '"private": false'),

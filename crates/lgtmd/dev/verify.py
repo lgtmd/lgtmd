@@ -1,6 +1,7 @@
 """Verify the portable Rust SDK and its real consumers without application replay."""
 
 import argparse
+from contextlib import contextmanager
 import os
 from pathlib import Path
 import shutil
@@ -84,10 +85,27 @@ def environment_for(sdk, standalone, toolchain=None):
             # caller's location before native/standalone checks change that cwd.
             environment[variable] = str(invocation / value)
     if standalone:
-        # Keep rebuilds cheap while preserving explicit native/container overrides.
+        # Preserve the storage root; standalone execution allocates a private target below it.
         environment.setdefault("CARGO_TARGET_DIR", str(sdk / ".cache/standalone-target"))
     preserve_toolchain(environment, sdk, toolchain)
     return environment
+
+
+@contextmanager
+def isolated_target(environment, default):
+    """Keep copied-source artifacts private to this disposable workspace.
+
+    Cargo can reuse local-package fingerprints across copied trees with equal
+    mtimes, including compiled CARGO_MANIFEST_DIR values from a deleted copy.
+    Keep the caller's storage root, but never reuse its native build artifacts
+    or a previous disposable copy's target directory.
+    """
+    root = Path(environment.get("CARGO_TARGET_DIR") or default)
+    root.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix="lgtmd-isolated-", dir=root) as temporary:
+        isolated = environment.copy()
+        isolated["CARGO_TARGET_DIR"] = str(Path(temporary).resolve())
+        yield isolated
 
 
 def checks(sdk, cargo, environment, offline):
@@ -114,7 +132,7 @@ def checks(sdk, cargo, environment, offline):
 
 def main(arguments=None, *, sdk=SDK):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--standalone", action="store_true", help="copy both packages to a disposable minimal workspace")
+    parser.add_argument("--standalone", action="store_true", help="copy both packages to a disposable minimal workspace with a private Cargo target")
     parser.add_argument("--toolchain", help="select an installed rustup toolchain, e.g. 1.95.0")
     parser.add_argument("--offline", action="store_true", help="resolve and verify using cached Cargo dependencies")
     options = parser.parse_args(arguments)
@@ -124,7 +142,9 @@ def main(arguments=None, *, sdk=SDK):
         environment = environment_for(sdk, options.standalone, options.toolchain)
         if not options.standalone:
             return checks(sdk, cargo, environment, options.offline)
-        with tempfile.TemporaryDirectory(prefix="lgtmd-") as temporary:
+        with tempfile.TemporaryDirectory(prefix="lgtmd-") as temporary, isolated_target(
+            environment, sdk / ".cache/standalone-target",
+        ) as environment:
             isolated = payload(sdk, Path(temporary))
             # Resolve only portable dependencies into a temporary lockfile. Never
             # copy or modify the application's lockfile, patches, or toolchain pin.

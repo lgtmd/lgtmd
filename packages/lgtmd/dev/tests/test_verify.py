@@ -1,6 +1,7 @@
 import importlib.util
 import json
 import os
+import shutil
 import subprocess
 from pathlib import Path
 import tempfile
@@ -22,8 +23,9 @@ class PortablePayloadTests(unittest.TestCase):
             (root / "src").mkdir()
             (root / "src/private-n3.rs").write_text("not portable", encoding="utf-8")
             (root / "Cargo.lock").write_text("host lock", encoding="utf-8")
-            (root / "package.json").write_text(json.dumps({"workspaces": ["packages/lgtmd", "examples/lgtmd-web"]}), encoding="utf-8")
+            (root / "package.json").write_text(json.dumps({"workspaces": ["packages/lgtmd", "packages/viewer", "examples/lgtmd-web", "examples/review"]}), encoding="utf-8")
             (root / "package-lock.json").write_text("{}", encoding="utf-8")
+            (root / "lgtmd.config.json").write_text("{}", encoding="utf-8")
             for relative in VERIFY.SOURCES:
                 package = root / relative
                 package.mkdir(parents=True)
@@ -50,6 +52,39 @@ class PortablePayloadTests(unittest.TestCase):
             self.assertEqual(environment["CARGO_HOME"], str(Path.cwd() / "cache/cargo"))
             self.assertEqual(environment["CARGO_TARGET_DIR"], str(Path.cwd() / "cache/target"))
             self.assertEqual(environment["npm_config_cache"], str(Path.cwd() / "cache/npm"))
+
+    def test_standalone_cargo_targets_are_unique_and_cleaned_after_success_or_failure(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve() / "source"
+            sdk = root / "packages/lgtmd"
+            sdk.mkdir(parents=True)
+            target_root = root / "shared target"
+            target_root.mkdir()
+            retained = target_root / "native-artifact"
+            retained.write_text("untouched")
+            targets = []
+
+            def compiled_check(source, cargo, environment, offline, install_browser, *, diagnostics_root):
+                target = Path(environment["CARGO_TARGET_DIR"])
+                self.assertEqual(target.parent, target_root)
+                marker = target / "compiled-manifest-dir"
+                self.assertFalse(marker.exists())
+                marker.write_text(str(source))
+                targets.append(target)
+                if len(targets) == 2:
+                    raise VERIFY.VerificationError("intentional standalone failure")
+
+            environment = {"CARGO_TARGET_DIR": str(target_root), "RUSTUP_TOOLCHAIN": "test"}
+            with mock.patch.dict(os.environ, environment, clear=True), mock.patch.object(VERIFY, "payload", side_effect=lambda source, destination: destination), mock.patch.object(VERIFY, "run"), mock.patch.object(VERIFY, "checks", side_effect=compiled_check):
+                self.assertEqual(VERIFY.main(["--standalone"], sdk=sdk), 0)
+                self.assertEqual(VERIFY.main(["--standalone"], sdk=sdk), 1)
+                self.assertEqual(os.environ["CARGO_TARGET_DIR"], str(target_root))
+            self.assertNotEqual(*targets)
+            self.assertTrue(all(not target.exists() for target in targets))
+            self.assertEqual(retained.read_text(), "untouched")
+            with mock.patch.dict(os.environ, environment, clear=True), mock.patch.object(VERIFY, "checks") as checks:
+                self.assertEqual(VERIFY.main([], sdk=sdk), 0)
+                self.assertEqual(checks.call_args.args[2]["CARGO_TARGET_DIR"], str(target_root))
 
     def test_main_preserves_source_toolchain_for_disposable_cargo_consumer(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -96,6 +131,109 @@ class PortablePayloadTests(unittest.TestCase):
                 self.assertNotIn("RUSTUP_TOOLCHAIN", VERIFY.environment_for(Path.cwd()))
             with mock.patch.object(VERIFY.shutil, "which", return_value="/optional/rustup"), mock.patch.object(VERIFY.subprocess, "run", return_value=subprocess.CompletedProcess([], 1, stdout="")):
                 self.assertNotIn("RUSTUP_TOOLCHAIN", VERIFY.environment_for(Path.cwd()))
+
+
+class EmbeddedViewerPreparationTests(unittest.TestCase):
+    def test_native_staging_replaces_inode_preserves_mode_and_leaves_open_old_bytes(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            binary = root / "compiled"
+            binary.write_bytes(b"new signed executable")
+            binary.chmod(0o751)
+            native = root / "native/lgtmd"
+            native.parent.mkdir()
+            native.write_bytes(b"previous executable")
+            before = native.stat().st_ino
+            with native.open("rb") as running:
+                VERIFY.stage_native(binary, native)
+                self.assertNotEqual(native.stat().st_ino, before)
+                self.assertEqual(running.read(), b"previous executable")
+            self.assertEqual(native.read_bytes(), binary.read_bytes())
+            self.assertEqual(native.stat().st_mode & 0o777, 0o751)
+            self.assertEqual(list(native.parent.iterdir()), [native])
+
+    def test_failed_native_staging_keeps_previous_executable_and_removes_partial_copy(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            binary = root / "compiled"
+            binary.write_bytes(b"new executable")
+            native = root / "native/lgtmd"
+            native.parent.mkdir()
+            native.write_bytes(b"previous executable")
+            before = native.stat().st_ino
+            def interrupted(source, destination):
+                Path(destination).write_bytes(b"partial")
+                raise OSError("copy interrupted")
+            with mock.patch.object(VERIFY.shutil, "copy2", side_effect=interrupted):
+                with self.assertRaisesRegex(OSError, "copy interrupted"):
+                    VERIFY.stage_native(binary, native)
+            self.assertEqual(native.stat().st_ino, before)
+            self.assertEqual(native.read_bytes(), b"previous executable")
+            self.assertEqual(list(native.parent.iterdir()), [native])
+
+    def test_preparation_builds_frontend_before_native_and_retires_old_bridge(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / "packages/lgtmd/viewer"
+            source.mkdir(parents=True)
+            (source / "index.html").write_text("prepared HTML")
+            (source / "manifest.json").write_text("{}")
+            native = root / "packages/lgtmd/native/darwin-arm64"
+            native.mkdir(parents=True)
+            (native / "lgtmd-node").write_text("old bridge")
+            binary = root / "target/release/lgtmd"
+            binary.parent.mkdir(parents=True)
+            binary.write_text("native with embedded viewer")
+            calls = []
+            def step(command, **kwargs):
+                calls.append(command)
+                if "cargo" == command[0]:
+                    self.assertEqual((root / "crates/lgtmd-cli/viewer/index.html").read_text(), "prepared HTML")
+            with mock.patch.object(VERIFY, "run", side_effect=step):
+                VERIFY.prepare(root, ["cargo"], {"CARGO_TARGET_DIR": str(root / "target")}, True, "npm", "darwin-arm64")
+            self.assertEqual(calls[0][:2], ["npm", "ci"])
+            self.assertEqual(calls[1], ["npm", "run", "build"])
+            self.assertIn("lgtmd-cli", calls[2])
+            self.assertFalse((native / "lgtmd-node").exists())
+            self.assertEqual((native / "lgtmd").read_bytes(), binary.read_bytes())
+
+    def test_viewer_staging_rejects_missing_or_symlink_assets(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            with self.assertRaises(VERIFY.VerificationError):
+                VERIFY.stage_viewer(root)
+            source = root / "packages/lgtmd/viewer"
+            source.mkdir(parents=True)
+            (source / "index.html").write_text("HTML")
+            (source / "manifest.json").write_text("{}")
+            (source / "escaped").symlink_to(root)
+            with self.assertRaises(VERIFY.VerificationError):
+                VERIFY.stage_viewer(root)
+
+
+class PackagedCliFailureTests(unittest.TestCase):
+    def test_failed_preview_exits_instead_of_waiting_for_already_delivered_close(self):
+        node = shutil.which("node")
+        self.assertIsNotNone(node, "CLI verification requires Node.js")
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            cli = root / "node_modules/lgtmd/dist/src/cli.js"
+            cli.parent.mkdir(parents=True)
+            cli.write_text(
+                "const fs = require('node:fs');\n"
+                "if (process.argv[2] === '--help') console.log('dev');\n"
+                "else if (process.argv[2] === 'build') fs.writeFileSync('runs', 'x');\n"
+                "else { console.error('deliberate broken preview'); process.exitCode = 23; }\n",
+                encoding="utf-8",
+            )
+            binary = root / "node_modules/.bin/lgtmd"
+            binary.parent.mkdir()
+            binary.symlink_to(cli)
+            smoke = root / "smoke.mjs"
+            smoke.write_text(VERIFY.CLI_SMOKE, encoding="utf-8")
+            result = subprocess.run([node, str(smoke)], cwd=root, capture_output=True, text=True, timeout=10)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("deliberate broken preview", result.stderr)
 
 
 class BrowserDiagnosticsTests(unittest.TestCase):

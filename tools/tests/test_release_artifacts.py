@@ -49,15 +49,19 @@ class Artifacts(unittest.TestCase):
         self.crate = self.output / f"lgtmd-{VERSION}.crate"
         package = {
             "name": "lgtmd", "version": VERSION, "type": "module", "license": "MIT",
+            "bin": {"lgtmd": "./dist/src/cli.js"},
             "repository": {"type": "git", "url": release.REPOSITORY, "directory": "packages/lgtmd"},
         }
         self.npm_files = {name: (b"content", 0o644) for name in [
             "LICENSE", "README.md", "dist/src/index.js", "dist/src/index.d.ts",
             "dist/src/playwright/index.js", "dist/src/playwright/index.d.ts", "dist/src/playwright/reporter.js",
         ]}
+        self.npm_files.update({
+            "dist/src/cli.js": (b"#!/usr/bin/env node\n", 0o755),
+        })
         self.npm_files["package.json"] = (json.dumps(package).encode(), 0o644)
         self.native = {tag: binary(tag) for tag in release.TARGETS}
-        self.npm_files.update({f"native/{tag}/lgtmd-node": (data, 0o755) for tag, data in self.native.items()})
+        self.npm_files.update({f"native/{tag}/lgtmd": (data, 0o755) for tag, data in self.native.items()})
         self.crate_files = {name: (b"content", 0o644) for name in ["LICENSE", "README.md", "src/lib.rs", "Cargo.toml.orig"]}
         self.crate_files["Cargo.toml"] = ((
             f'[package]\nname = "lgtmd"\nversion = "{VERSION}"\nlicense = "MIT"\n'
@@ -107,14 +111,14 @@ class Artifacts(unittest.TestCase):
         self.assert_invalid("checksum mismatch")
 
     def test_changed_embedded_binary_fails_even_if_archive_receipt_is_updated(self):
-        name = "native/linux-x64/lgtmd-node"
+        name = "native/linux-x64/lgtmd"
         data, mode = self.npm_files[name]
         self.npm_files[name] = (data + b"tampered", mode)
         self.write_archives()
         self.assert_invalid("native binary checksum mismatch")
 
     def test_missing_native_and_permissions_are_rejected(self):
-        name = "native/darwin-arm64/lgtmd-node"
+        name = "native/darwin-arm64/lgtmd"
         original = self.npm_files.pop(name)
         self.write_archives()
         self.assert_invalid("missing required payload")
@@ -123,7 +127,7 @@ class Artifacts(unittest.TestCase):
         self.assert_invalid("permissions")
 
     def test_wrong_native_architecture_is_rejected(self):
-        name = "native/darwin-arm64/lgtmd-node"
+        name = "native/darwin-arm64/lgtmd"
         self.npm_files[name] = (self.native["linux-x64"], 0o755)
         self.write_archives()
         self.assert_invalid("does not match darwin-arm64")
@@ -174,6 +178,32 @@ class Artifacts(unittest.TestCase):
         self.write_archives()
         self.assert_invalid("Unexpected npm archive payload")
 
+    def test_cli_and_native_inventory_are_complete(self):
+        original = self.npm_files.copy()
+        for missing in ("native/linux-x64/lgtmd", "native/darwin-arm64/lgtmd", "dist/src/cli.js"):
+            self.npm_files = original.copy()
+            del self.npm_files[missing]
+            self.write_archives()
+            self.assert_invalid()
+        self.npm_files = original.copy()
+        self.npm_files["viewer/private.json"] = (b"private", 0o644)
+        self.write_archives()
+        self.assert_invalid("Unexpected npm archive payload")
+
+    def test_cli_permissions_and_loose_viewer_are_rejected(self):
+        self.npm_files["dist/src/cli.js"] = (b"#!/usr/bin/env node\n", 0o644)
+        self.write_archives()
+        self.assert_invalid("CLI")
+        self.npm_files["dist/src/cli.js"] = (b"#!/usr/bin/env node\n", 0o755)
+        self.npm_files["viewer/manifest.json"] = (json.dumps({"index.html": {"file": "assets/../private.js"}}).encode(), 0o644)
+        self.write_archives()
+        self.assert_invalid("Unexpected npm archive payload")
+
+    def test_retired_typescript_host_cannot_reenter_archive(self):
+        self.npm_files["dist/src/cli/server.js"] = (b"stale host", 0o644)
+        self.write_archives()
+        self.assert_invalid("Unexpected npm archive payload")
+
     def test_archive_traversal_links_and_duplicates_are_rejected(self):
         for name, kind in [
             ("package/../escape", tarfile.REGTYPE), ("/package/absolute", tarfile.REGTYPE),
@@ -200,7 +230,7 @@ class Artifacts(unittest.TestCase):
         for tag, data in self.native.items():
             folder = directory / tag
             folder.mkdir()
-            (folder / "lgtmd-node").write_bytes(data)
+            (folder / "lgtmd").write_bytes(data)
             release.write_json(folder / "receipt.json", {
                 "schema_version": 1, "source_sha": SHA, "version": VERSION,
                 "tag": tag, "sha256": hashlib.sha256(data).hexdigest(),
@@ -210,7 +240,7 @@ class Artifacts(unittest.TestCase):
             release.native_receipts(directory, "b" * 40, VERSION)
         with self.assertRaisesRegex(release.ReleaseError, "receipt"):
             release.native_receipts(directory, SHA, "9.0.0")
-        binary_path = directory / "linux-x64/lgtmd-node"
+        binary_path = directory / "linux-x64/lgtmd"
         binary_path.write_bytes(binary_path.read_bytes() + b"tampered")
         with self.assertRaisesRegex(release.ReleaseError, "receipt"):
             release.native_receipts(directory, SHA, VERSION)

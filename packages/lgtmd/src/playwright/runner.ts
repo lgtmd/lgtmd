@@ -6,18 +6,21 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { publish, type ExportLayout } from "../compiler.js";
-import type { FrozenDocument } from "../model.js";
+import { freezeJson, type FrozenDocument } from "../model.js";
 import { RECEIPT_ENV, TOKEN_ENV, type RunReceipt } from "./reporter.js";
 
-export interface RunPlaywrightOptions {
+export interface CollectPlaywrightOptions {
   readonly config: string | URL;
   readonly cwd?: string;
+  /** Documents from other host runs whose preparation and cleanup completed. */
+  readonly documents?: readonly FrozenDocument[];
+}
+
+export interface RunPlaywrightOptions extends CollectPlaywrightOptions {
   readonly command: "build" | "check" | "update";
   readonly reader: string;
   readonly contributor: string;
   readonly layout?: ExportLayout;
-  /** Documents from other host runs whose preparation and cleanup completed. */
-  readonly documents?: readonly FrozenDocument[];
 }
 
 function readReceipt(source: string, token: string): RunReceipt {
@@ -51,8 +54,10 @@ function readReceipt(source: string, token: string): RunReceipt {
   return value;
 }
 
-/** Publish only after the actual runner process and all guarded reporters finish. */
-export async function runPlaywright(options: RunPlaywrightOptions) {
+/** Collect only after the actual runner process and all guarded reporters finish. */
+export async function collectPlaywright(
+  options: CollectPlaywrightOptions,
+): Promise<readonly FrozenDocument[]> {
   const config =
     options.config instanceof URL
       ? fileURLToPath(options.config)
@@ -117,13 +122,26 @@ export async function runPlaywright(options: RunPlaywrightOptions) {
     ) {
       throw new Error("Duplicate document identity across completed host runs");
     }
-    return await publish(documents, {
-      command: options.command,
-      reader: resolve(cwd, options.reader),
-      contributor: resolve(cwd, options.contributor),
-      ...(options.layout === undefined ? {} : { layout: options.layout }),
-    });
+    return freezeJson(documents) as unknown as readonly FrozenDocument[];
   } finally {
     await rm(directory, { recursive: true, force: true });
   }
+}
+
+/** Publish the same completed collection through the existing Markdown store. */
+export async function runPlaywright(
+  options: RunPlaywrightOptions,
+): Promise<void> {
+  const config =
+    options.config instanceof URL
+      ? fileURLToPath(options.config)
+      : resolve(options.cwd ?? process.cwd(), options.config);
+  const cwd = resolve(options.cwd ?? dirname(config));
+  const documents = await collectPlaywright(options);
+  await publish(documents, {
+    command: options.command,
+    reader: resolve(cwd, options.reader),
+    contributor: resolve(cwd, options.contributor),
+    ...(options.layout === undefined ? {} : { layout: options.layout }),
+  });
 }
