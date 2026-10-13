@@ -5,8 +5,9 @@ values, downloads, images, and contributor notes; use native assertions when
 a claim should be verified. The shared Rust compiler exports Reader and
 Contributor Markdown/resources from one completed run.
 
-This SDK is maintained in the standalone lgtmd repository. The npm package remains
-private and unpublishable; these APIs and schema-v1 input are experimental.
+This SDK is maintained in the standalone lgtmd repository. Registry entries are
+reservations; no usable SDK version has been released. These APIs and schema-v1
+input are experimental.
 
 ```ts
 import assert from "node:assert/strict";
@@ -121,9 +122,8 @@ Docker. The standalone gate copies only portable sources, tests them in their ow
 workspace, packages Cargo/npm, and installs the npm tarball with Rust absent from
 PATH. Playwright is an optional peer; importing the core does not require it.
 
-Initial runtime: **Node 24, ESM**. Native `darwin-arm64` is the locally verified
-target; `linux-x64` has a configured CI lane and remains unverified until that lane
-runs. Other targets, CommonJS, and browser-hosted SDK execution have no support
+Initial runtime: **Node 24, ESM**. Native `darwin-arm64` and `linux-x64` are
+verified in CI on macOS 15 and Ubuntu 24.04 respectively. Other targets, CommonJS, and browser-hosted SDK execution have no support
 claim. Installing a prepared npm tarball requires no Rust compiler; contributors
 build the platform binding before packing. There is no install-time build or
 fallback download. Unsupported platforms fail clearly. Distributed binaries,
@@ -135,4 +135,6 @@ native Node APIs. WASM compilation was exercised against the same input, but its
 filesystem publication is unsupported. The initial coarse native bridge reuses
 the existing store without implementing a second filesystem contract. A full
 canonical viewer, cursor/key overlays, and AI-assisted execution remain later
-work. Repository extraction is complete; release and public distribution are deferred.
+work. Repository extraction is complete. The manual
+[release workflow](../../docs/releasing.md) prepares one npm archive containing
+both native targets and requires human approval before publication.

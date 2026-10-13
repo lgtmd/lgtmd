@@ -233,16 +233,22 @@ export default {
 """
 
 
-def npm_consumer(root, node, npm, environment, offline):
+def npm_consumer(root, node, npm, environment, offline, *, archive=None):
     with tempfile.TemporaryDirectory(prefix="lgtmd-npm-consumer-") as temporary:
         directory = Path(temporary).resolve()
-        archives = directory / "archives"
-        archives.mkdir()
-        packed = json.loads(run(
-            [npm, "pack", "--json", "--pack-destination", archives],
-            cwd=root / "packages/lgtmd", environment=environment, capture=True,
-        ))
-        archive = archives / packed[0]["filename"]
+        if archive is None:
+            archives = directory / "archives"
+            archives.mkdir()
+            packed = json.loads(run(
+                [npm, "pack", "--json", "--pack-destination", archives],
+                cwd=root / "packages/lgtmd", environment=environment, capture=True,
+            ))
+            archive = archives / packed[0]["filename"]
+        else:
+            # Release hosts execute the identical assembled archive, never a repack.
+            archive = Path(archive).resolve()
+            if not archive.is_file():
+                raise VerificationError(f"Prepared npm archive is missing: {archive}")
         consumer = directory / "consumer"
         consumer.mkdir()
         (consumer / "package.json").write_text(json.dumps({

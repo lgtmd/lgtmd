@@ -9,8 +9,9 @@ Reader and Contributor documents without running the application again.
 
 **Status:** the Rust SDK, Node SDK, optional Playwright adapter, examples, and
 verification harness have moved here from N3. APIs and schema-v1 compiler input
-remain experimental. Registry entries are name reservations; usable public SDK
-releases, binary distribution, and registry installation are deferred.
+remain experimental. Registry entries are name reservations; no usable SDK release
+has been published. The [release workflow](docs/releasing.md) prepares packages for
+review and requires human approval before OIDC publication.
 
 ## What you write
 
@@ -99,7 +100,7 @@ work. The current static preview is a review utility.
 
 ## Develop from source
 
-Use Rust 1.95.0 with rustfmt and Clippy, Python 3, Node.js 24 with npm, and just.
+Use Rust 1.95.0 with rustfmt and Clippy, Python 3.11+, Node.js 24 with npm, and just.
 The toolchain and dependency versions are pinned in the repository.
 
 ```sh
@@ -114,11 +115,11 @@ consumers. See [development](docs/development.md) for focused and offline comman
 No N3 checkout, application renderer, Docker, model call, or paid service is
 required by these workflows.
 
-The Node runtime is **Node 24 ESM**. macOS arm64 is locally verified; Linux x64 has
-configured CI and remains unverified until that lane runs. Contributors build the
-platform binary before packing npm. A prepared tarball installs and runs without
-a Rust toolchain; there is no install-time build or fallback download. Broader
-platform support and release packaging remain unfinished.
+The Node runtime is **Node 24 ESM**. CI verifies macOS 15 arm64 and Ubuntu 24.04
+x64. Contributors build the platform binary before packing npm; release packaging
+combines both native binaries in one tarball. A prepared tarball installs and runs
+without a Rust toolchain; there is no install-time build or fallback download.
+Broader platform support, signing, and registry installation remain release work.
 
 ## Repository layout
 

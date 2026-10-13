@@ -43,7 +43,8 @@ create another implementation of the most failure-sensitive contract.
 
 The cost is platform binaries, explicit unsupported-platform errors, packaging,
 and later distribution/signing work. macOS arm64 is the executed local scope.
-Linux x64 has configured CI; support claims require a successful run. This is not
+CI has also verified macOS 15 arm64 and Ubuntu 24.04 x64; release packaging
+combines both native targets in one npm archive. This is not
 a claim that native execution is universally faster or simpler than WASM.
 
 WASM remains an option for pure processing when a browser-hosted consumer or a

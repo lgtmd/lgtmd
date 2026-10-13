@@ -3,10 +3,12 @@ name = "lgtmd"
 version = "0.0.0"
 edition = "2024"
 rust-version = "1.95"
-publish = false
+publish = ["crates-io"]
 license = "MIT"
 description = "Rust-authored executable documents with checked observations and owned artifacts"
 readme = "README.md"
+repository = "https://github.com/lgtmd/lgtmd"
+homepage = "https://github.com/lgtmd/lgtmd"
 
 [dependencies]
 serde = { version = "=1.0.229", features = ["derive"] }

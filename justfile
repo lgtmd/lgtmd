@@ -38,7 +38,11 @@ doc-web-test *args:
 doc-web-smoke *args:
     python3 packages/lgtmd/dev/verify.py --standalone --toolchain 1.95.0 "$@"
 
+# Check release package integrity and fail-closed approval guards.
+release-test:
+    python3 -m unittest discover -s tools/tests -p 'test_release_*.py'
+
 # Both language gates are required; forward --offline after explicit setup.
-verify *args: fmt-check
+verify *args: fmt-check release-test
     python3 crates/lgtmd/dev/verify.py "$@"
     python3 packages/lgtmd/dev/verify.py "$@"

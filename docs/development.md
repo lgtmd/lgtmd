@@ -5,7 +5,7 @@ React/Vite example do not require N3, its renderer, Docker, or a provider accoun
 
 ## Prerequisites and setup
 
-Install Python 3, Node.js 24 with npm, Rust through rustup, and just. The repository
+Install Python 3.11 or newer, Node.js 24 with npm, Rust through rustup, and just. The repository
 pins Rust 1.95.0 with rustfmt/Clippy and uses exact npm dependency versions.
 
 ```sh
@@ -89,10 +89,10 @@ capture is not a new browser run or an accepted baseline.
 
 ## Distribution and integration
 
-The current source packages remain private/unpublishable. The local native target
-is macOS arm64 with Node 24 ESM; Linux x64 CI is configured but requires its own
-successful execution. CI verifies code and consumers without publishing a
-release. No supported CommonJS or browser-hosted SDK package exists today.
+The SDK manifests identify their public registries; bridge and example packages
+remain private. No usable SDK version has been released. CI verifies macOS 15
+arm64 and Ubuntu 24.04 x64 with Node 24 ESM, without publishing a release.
+CommonJS and browser-hosted SDK packages have no support promise.
 
 The npm gate packs the built SDK and native executable, installs the tarball in a
 clean project with no Rust toolchain on PATH, tests the core without Playwright,
@@ -105,3 +105,8 @@ and exact guide verification remain N3 responsibilities. Public versions,
 platform binary distribution/signing, actual registry consumption, and replacing
 N3's interim dependency with crates.io require separate release work and explicit
 publication authorization.
+
+Release preparation and publication use the manual, approval-gated
+[release workflow](releasing.md). `just release-test` checks artifact and approval
+guards without authenticating to registries; these tests also run in `just verify`
+and normal CI. Release tooling needs Python 3.11+; CI uses Python 3.13.
