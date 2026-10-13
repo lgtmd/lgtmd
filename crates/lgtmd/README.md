@@ -6,9 +6,8 @@ resources, and contributor notes. The same completed document can produce Reader
 and Contributor exports without executing the application again.
 
 This package is maintained in the standalone lgtmd repository, with independent
-Rust and web consumers. Its API and manifest are experimental, and
-`publish = false` prevents registry publication. It does not depend on N3, egui, wgpu, a renderer, an agent skill, or a
-documentation website.
+Rust and web consumers. Its API and manifest are experimental. It does not depend
+on N3, egui, wgpu, a renderer, an agent skill, or a documentation website.
 
 ## Start with an executable paragraph
 
@@ -36,9 +35,15 @@ assert!(String::from_utf8_lossy(&contributor["trim-text.md"]).contains("fixture"
 # Ok::<(), String>(())
 ```
 
-Add this package as a development dependency through its local path. A standalone
-copy of this directory retains explicit Cargo dependency versions, this README,
-tests, and its license; no workspace-inherited package fields are required.
+Add a published version as a development dependency:
+
+```sh
+cargo add --dev lgtmd@0.1.0
+```
+
+Source consumers can use a local path instead. A standalone copy of this directory
+retains explicit Cargo dependency versions, this README, tests, and its license;
+no workspace-inherited package fields are required.
 
 ## Authoring and evidence
 

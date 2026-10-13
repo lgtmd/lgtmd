@@ -5,9 +5,17 @@ values, downloads, images, and contributor notes; use native assertions when
 a claim should be verified. The shared Rust compiler exports Reader and
 Contributor Markdown/resources from one completed run.
 
-This SDK is maintained in the standalone lgtmd repository. Registry entries are
-reservations; no usable SDK version has been released. These APIs and schema-v1
+This SDK is maintained in the standalone lgtmd repository. Its APIs and schema-v1
 input are experimental.
+
+Install a published version as a development dependency with Node.js 24 ESM:
+
+```sh
+npm install --save-dev lgtmd@0.1.0
+```
+
+The prepared npm package includes its native compiler and requires no Rust
+installation. Playwright remains optional; see the integration below when using it.
 
 ```ts
 import assert from "node:assert/strict";
@@ -126,9 +134,8 @@ Initial runtime: **Node 24, ESM**. Native `darwin-arm64` and `linux-x64` are
 verified in CI on macOS 15 and Ubuntu 24.04 respectively. Other targets, CommonJS, and browser-hosted SDK execution have no support
 claim. Installing a prepared npm tarball requires no Rust compiler; contributors
 build the platform binding before packing. There is no install-time build or
-fallback download. Unsupported platforms fail clearly. Distributed binaries,
-signing, release versions, registry installation, and broader platform testing
-remain release work.
+fallback download. Unsupported platforms fail clearly. Signing and broader
+platform support remain future work.
 
 The compiler and strict artifact store are Rust; authoring and host lifecycle are
 native Node APIs. WASM compilation was exercised against the same input, but its

@@ -118,8 +118,8 @@ browser example's behavior or screenshot baseline.
 `just doc-web-test --offline` runs the complete local web and package checks.
 `just doc-web-smoke --offline` repeats the portable gate in an independent copy,
 including the Rust 1.95 baseline. Setup is separate: checks do not fetch a browser
-or require Docker. The current native package and browser capture have been
-verified on macOS arm64; other platforms need their own binding and capture gate.
+or require Docker. The native package and browser capture have been verified on
+macOS 15 arm64 and Ubuntu 24.04 x64; other platforms need their own binding and capture gate.
 
 ## Application and runner ownership
 

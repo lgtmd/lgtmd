@@ -7,9 +7,9 @@ A `publish` run requires a new version already committed on `main`, successful
 `Verify` CI for that exact commit, and human approval through the protected
 `release` environment.
 
-The current `0.0.0` source version is a reservation, not a release candidate. This
-workflow does not choose versions, bump manifests, create tags, or create GitHub
-releases. Adding or verifying the workflow is not authorization to publish.
+Reservation versions such as `0.0.0` cannot be published by this workflow. It
+does not choose versions, bump manifests, create tags, or create GitHub releases.
+Adding or verifying the workflow is not authorization to publish.
 
 ## One-time account setup
 
