@@ -62,8 +62,19 @@ a controlled browser, fonts, platform, and data.
 
 ## Get started
 
-**Experimental; available from source.** npm and crates.io entries currently
-reserve the name; no usable SDK release has been published.
+**Experimental release: 0.1.0.** Install the Node SDK from npm's `next` tag:
+
+```sh
+npm install --save-dev lgtmd@next
+```
+
+For Rust projects, add the SDK as a development dependency (Rust 1.95 or newer):
+
+```sh
+cargo add --dev lgtmd@0.1.0
+```
+
+The APIs and schema-v1 compiler input remain experimental.
 
 - [React + Vite walkthrough](examples/lgtmd-web/README.md) — client, HTTP API,
   Playwright setup, and the complete guide workflow.

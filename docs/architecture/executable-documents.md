@@ -88,8 +88,8 @@ before values enter the portable contract; the Node facade does not replace it.
 The selected native route preserves the existing Rust filesystem store. See the
 [bridge decision](../decisions/0001-native-node-bridge.md). Installing a prepared
 npm package requires no Rust toolchain, install-time compilation, or fallback
-download. Building platform binaries and distributing public packages remain
-release work.
+download. The published 0.1.0 npm package includes both verified native targets;
+additional platforms and signing remain future work.
 
 ## Project lifecycle and application state
 
@@ -179,8 +179,8 @@ baselines. Prose, visual legibility, meaningful coverage, and physical interacti
 still need review.
 
 Rust 1.95 is the declared minimum. CI has verified Node 24 ESM on macOS 15 arm64
-and Ubuntu 24.04 x64. Public binary distribution, registry consumption, and a
-stable API guarantee are deferred.
+and Ubuntu 24.04 x64. Version 0.1.0 is available from npm and crates.io; APIs and
+schema-v1 compiler input remain experimental, without a stable API guarantee.
 N3's separate native replay remains its consumer acceptance gate.
 
 The [development guide](../development.md) lists commands. Historical N3

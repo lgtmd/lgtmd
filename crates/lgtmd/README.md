@@ -340,8 +340,8 @@ bytes as well as artifact bytes; a manifest cannot contain its own final hash.
 
 The initial schema is not a cross-language execution protocol or a promised
 long-term compatibility standard. See the source and tests for its current
-failure semantics. No crate release, registry publication, or repository split is
-implied by this maintained local package.
+failure semantics. The initial schema remains experimental; publication does not
+establish a stable compatibility guarantee.
 
 ### Review exported documents
 

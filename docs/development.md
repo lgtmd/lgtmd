@@ -90,9 +90,10 @@ capture is not a new browser run or an accepted baseline.
 ## Distribution and integration
 
 The SDK manifests identify their public registries; bridge and example packages
-remain private. No usable SDK version has been released. CI verifies macOS 15
-arm64 and Ubuntu 24.04 x64 with Node 24 ESM, without publishing a release.
-CommonJS and browser-hosted SDK packages have no support promise.
+remain private. Version 0.1.0 is published on npm under `next` and on crates.io.
+CI verifies macOS 15 arm64 and Ubuntu 24.04 x64 with Node 24 ESM; ordinary
+verification does not publish packages. APIs and schema-v1 compiler input remain
+experimental. CommonJS and browser-hosted SDK packages have no support promise.
 
 The npm gate packs the built SDK and native executable, installs the tarball in a
 clean project with no Rust toolchain on PATH, tests the core without Playwright,
@@ -101,10 +102,10 @@ builds the normalized package archive and a consumer using its extracted source.
 These establish package-content checks, not registry installation.
 
 N3 consumes an exact Git revision during release preparation. Its native replay
-and exact guide verification remain N3 responsibilities. Public versions,
-platform binary distribution/signing, actual registry consumption, and replacing
-N3's interim dependency with crates.io require separate release work and explicit
-publication authorization.
+and exact guide verification remain N3 responsibilities. Signing, broader
+platform support, and replacing N3's interim dependency with crates.io remain
+separate work. Future package publications require explicit authorization for
+the exact version.
 
 Release preparation and publication use the manual, approval-gated
 [release workflow](releasing.md). `just release-test` checks artifact and approval

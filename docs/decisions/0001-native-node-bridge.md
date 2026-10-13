@@ -1,6 +1,6 @@
 # Decision 0001: Use a coarse native compiler/store bridge for Node
 
-Status: **Accepted and implemented; release distribution deferred**
+Status: **Accepted and implemented; initial distribution released in 0.1.0**
 
 Date: 2026-10-13
 
@@ -42,9 +42,9 @@ staging, compatibility, and recovery rules. A second Node filesystem store would
 create another implementation of the most failure-sensitive contract.
 
 The cost is platform binaries, explicit unsupported-platform errors, packaging,
-and later distribution/signing work. macOS arm64 is the executed local scope.
-CI has also verified macOS 15 arm64 and Ubuntu 24.04 x64; release packaging
-combines both native targets in one npm archive. This is not
+and ongoing distribution work. Signing remains future work. macOS arm64 is the
+executed local scope. CI has also verified macOS 15 arm64 and Ubuntu 24.04 x64;
+the published 0.1.0 npm archive combines both native targets. This is not
 a claim that native execution is universally faster or simpler than WASM.
 
 WASM remains an option for pure processing when a browser-hosted consumer or a
