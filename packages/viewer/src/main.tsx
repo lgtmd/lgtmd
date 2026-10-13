@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type FormEvent,
@@ -46,6 +47,7 @@ function App() {
   const [failure, setFailure] = useState<string>();
   const [connected, setConnected] = useState(true);
   const [currentRoute, setRoute] = useState(route);
+  const lastNavigation = useRef<{ page: string; anchor?: string }>(undefined);
   const [diff, setDiff] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(false);
   const toolsRef = useRef<HTMLDivElement>(null);
@@ -156,14 +158,23 @@ function App() {
       !changedOnly ||
       comparison.pages.some((p) => p.id === id && p.status !== "unchanged"),
   );
-  useEffect(() => {
-    if (!currentRoute.anchor) return;
-    const id = window.setTimeout(
-      () => document.getElementById(currentRoute.anchor!)?.scrollIntoView(),
-      0,
-    );
-    return () => window.clearTimeout(id);
-  }, [currentRoute.anchor, pageId, side, current?.digest, previous?.digest]);
+  useLayoutEffect(() => {
+    if (!current || !pageId) return;
+    const next = {
+      page: pageId,
+      anchor: currentRoute.page === pageId ? currentRoute.anchor : undefined,
+    };
+    const last = lastNavigation.current;
+    if (last?.page === next.page && last?.anchor === next.anchor) return;
+    lastNavigation.current = next;
+    if (next.anchor) {
+      document
+        .getElementById(next.anchor)
+        ?.scrollIntoView({ behavior: "instant" });
+    } else if (last?.page !== next.page) {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    }
+  }, [currentRoute.page, currentRoute.anchor, pageId, current]);
   async function action(name: string, payload: Record<string, unknown>) {
     await jsonResponse(
       await fetch(endpoint(name), {

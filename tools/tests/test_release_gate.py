@@ -13,6 +13,12 @@ GATE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(GATE)
 SHA = "a" * 40
 VERSION = "0.1.0"
+WORKSPACES = ["packages/lgtmd", "packages/viewer", "examples/lgtmd-web", "examples/review", "examples/stay"]
+EXAMPLES = {
+    "examples/lgtmd-web": ("@lgtmd/example-web", "devDependencies"),
+    "examples/review": ("@lgtmd/example-review", "dependencies"),
+    "examples/stay": ("@lgtmd/example-stay", "devDependencies"),
+}
 ENVIRONMENT = {
     "GITHUB_REPOSITORY": "lgtmd/lgtmd",
     "GITHUB_REF": "refs/heads/main",
@@ -60,20 +66,20 @@ version = "{version}"
         path = root / relative
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(text, encoding="utf-8")
-    workspace = {"private": True, "workspaces": ["packages/lgtmd", "packages/viewer", "examples/lgtmd-web", "examples/review"]}
+    workspace = {"private": True, "workspaces": WORKSPACES}
     write_json(root, "package.json", workspace)
     write_json(root, "packages/viewer/package.json", {"private": True})
-    write_json(root, "examples/review/package.json", {"private": True})
     write_json(root, "packages/lgtmd/package.json", {
         "name": "lgtmd", "version": version,
         "repository": {"type": "git", "url": "git+https://github.com/lgtmd/lgtmd.git", "directory": "packages/lgtmd"},
         "publishConfig": {"access": "public", "registry": "https://registry.npmjs.org"},
     })
-    write_json(root, "examples/lgtmd-web/package.json", {"name": "@lgtmd/example-web", "version": "0.0.0", "private": True, "devDependencies": {"lgtmd": version}})
+    for relative, (name, dependency_field) in EXAMPLES.items():
+        write_json(root, relative + "/package.json", {"name": name, "version": "0.0.0", "private": True, dependency_field: {"lgtmd": version}})
     write_json(root, "package-lock.json", {"lockfileVersion": 3, "packages": {
         "": workspace,
         "packages/lgtmd": {"version": version},
-        "examples/lgtmd-web": {"version": "0.0.0", "devDependencies": {"lgtmd": version}},
+        **{relative: {"version": "0.0.0", dependency_field: {"lgtmd": version}} for relative, (_, dependency_field) in EXAMPLES.items()},
         "node_modules/lgtmd": {"resolved": "packages/lgtmd", "link": True},
     }})
 
@@ -174,6 +180,63 @@ class SourceTests(unittest.TestCase):
                     self.source()
         self.fetch.assert_not_called()
 
+    def test_all_three_private_examples_require_matching_sdk_dependencies(self):
+        for relative, (_, dependency_field) in EXAMPLES.items():
+            for locked in (False, True):
+                for dependency in (None, "0.2.0", "^0.1.0"):
+                    with self.subTest(relative=relative, locked=locked, dependency=dependency):
+                        fixture(self.root)
+                        path = self.root / ("package-lock.json" if locked else relative + "/package.json")
+                        manifest = json.loads(path.read_text())
+                        example = manifest["packages"][relative] if locked else manifest
+                        if dependency is None:
+                            del example[dependency_field]["lgtmd"]
+                        else:
+                            example[dependency_field]["lgtmd"] = dependency
+                        path.write_text(json.dumps(manifest))
+                        with self.assertRaisesRegex(GATE.ReleaseError, relative):
+                            self.source()
+        self.fetch.assert_not_called()
+
+    def test_private_example_lock_entries_and_versions_must_match_source(self):
+        for relative in EXAMPLES:
+            for missing in (False, True):
+                with self.subTest(relative=relative, missing=missing):
+                    fixture(self.root)
+                    path = self.root / "package-lock.json"
+                    manifest = json.loads(path.read_text())
+                    if missing:
+                        del manifest["packages"][relative]
+                    else:
+                        manifest["packages"][relative]["version"] = "0.9.0"
+                    path.write_text(json.dumps(manifest))
+                    with self.assertRaisesRegex(GATE.ReleaseError, relative):
+                        self.source()
+        self.fetch.assert_not_called()
+
+    def test_workspace_membership_remains_an_exact_five_package_allowlist(self):
+        for members in (WORKSPACES[:-1], [*WORKSPACES, "examples/unreviewed"], [*WORKSPACES, "examples/stay"]):
+            with self.subTest(members=members):
+                fixture(self.root)
+                path = self.root / "package.json"
+                workspace = json.loads(path.read_text())
+                workspace["workspaces"] = members
+                write_json(self.root, "package.json", workspace)
+                lock_path = self.root / "package-lock.json"
+                lock = json.loads(lock_path.read_text())
+                lock["packages"][""]["workspaces"] = members
+                write_json(self.root, "package-lock.json", lock)
+                with self.assertRaisesRegex(GATE.ReleaseError, "workspace membership"):
+                    self.source()
+        fixture(self.root)
+        path = self.root / "package-lock.json"
+        lock = json.loads(path.read_text())
+        lock["packages"][""]["workspaces"] = WORKSPACES[:-1]
+        write_json(self.root, "package-lock.json", lock)
+        with self.assertRaisesRegex(GATE.ReleaseError, "workspace membership must match source"):
+            self.source()
+        self.fetch.assert_not_called()
+
     def test_manifest_publication_boundaries_fail_closed(self):
         for relative, old, new in (
             ("crates/lgtmd/Cargo.toml", 'publish = ["crates-io"]', 'publish = false'),
@@ -182,6 +245,9 @@ class SourceTests(unittest.TestCase):
             ("packages/lgtmd/package.json", '"name": "lgtmd"', '"name": "lgtmd", "private": true'),
             ("package.json", '"private": true', '"private": false'),
             ("examples/lgtmd-web/package.json", '"private": true', '"private": false'),
+            ("examples/review/package.json", '"private": true', '"private": false'),
+            ("examples/stay/package.json", '"private": true', '"private": false'),
+            ("packages/viewer/package.json", '"private": true', '"private": false'),
             ("packages/lgtmd/package.json", 'git+https://github.com/lgtmd/lgtmd.git', 'git+https://github.com/fork/lgtmd.git'),
         ):
             with self.subTest(relative=relative, new=new):

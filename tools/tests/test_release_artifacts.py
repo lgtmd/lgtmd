@@ -178,6 +178,15 @@ class Artifacts(unittest.TestCase):
         self.write_archives()
         self.assert_invalid("Unexpected npm archive payload")
 
+    def test_stay_fixture_data_and_photos_cannot_enter_the_published_sdk(self):
+        original = self.npm_files.copy()
+        for name in ("examples/stay/fixtures/scenario.ts", "examples/stay/public/images/cedar-house.webp"):
+            with self.subTest(name=name):
+                self.npm_files = original.copy()
+                self.npm_files[name] = (b"private example payload", 0o644)
+                self.write_archives()
+                self.assert_invalid("Unexpected npm archive payload")
+
     def test_cli_and_native_inventory_are_complete(self):
         original = self.npm_files.copy()
         for missing in ("native/linux-x64/lgtmd", "native/darwin-arm64/lgtmd", "dist/src/cli.js"):

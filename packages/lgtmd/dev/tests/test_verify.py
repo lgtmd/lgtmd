@@ -23,7 +23,7 @@ class PortablePayloadTests(unittest.TestCase):
             (root / "src").mkdir()
             (root / "src/private-n3.rs").write_text("not portable", encoding="utf-8")
             (root / "Cargo.lock").write_text("host lock", encoding="utf-8")
-            (root / "package.json").write_text(json.dumps({"workspaces": ["packages/lgtmd", "packages/viewer", "examples/lgtmd-web", "examples/review"]}), encoding="utf-8")
+            (root / "package.json").write_text(json.dumps({"workspaces": ["packages/lgtmd", "packages/viewer", "examples/lgtmd-web", "examples/review", "examples/stay"]}), encoding="utf-8")
             (root / "package-lock.json").write_text("{}", encoding="utf-8")
             (root / "lgtmd.config.json").write_text("{}", encoding="utf-8")
             for relative in VERIFY.SOURCES:
@@ -36,11 +36,18 @@ class PortablePayloadTests(unittest.TestCase):
             fixture = root / "crates/lgtmd/tests/fixtures/target/.ownership.json"
             fixture.parent.mkdir(parents=True)
             fixture.write_text("fixture bytes", encoding="utf-8")
+            stay_image = root / "examples/stay/public/images/cedar-house.webp"
+            stay_image.parent.mkdir(parents=True)
+            stay_image.write_bytes(b"RIFF\x00\xffWEBP fixture")
+            stay_config = root / "examples/stay/lgtmd.config.json"
+            stay_config.write_text('{"schemaVersion":1}', encoding="utf-8")
             VERIFY.payload(root, destination)
             self.assertEqual((destination / "Cargo.toml").read_text(encoding="utf-8"), VERIFY.WORKSPACE)
             self.assertFalse((destination / "Cargo.lock").exists())
             self.assertFalse((destination / "src").exists())
             self.assertEqual((destination / "crates/lgtmd/tests/fixtures/target/.ownership.json").read_text(encoding="utf-8"), "fixture bytes")
+            self.assertEqual((destination / "examples/stay/public/images/cedar-house.webp").read_bytes(), b"RIFF\x00\xffWEBP fixture")
+            self.assertEqual((destination / "examples/stay/lgtmd.config.json").read_text(encoding="utf-8"), '{"schemaVersion":1}')
             for relative in VERIFY.SOURCES:
                 self.assertTrue((destination / relative / "LICENSE").exists())
                 for disposable in (".cache", "target", "node_modules", "dist", "native"):
@@ -237,6 +244,47 @@ class PackagedCliFailureTests(unittest.TestCase):
 
 
 class BrowserDiagnosticsTests(unittest.TestCase):
+    def test_stay_failed_pair_survives_disposable_workspace_without_rerun(self):
+        failure = VERIFY.VerificationError("Stay exact repeatability failed")
+        with tempfile.TemporaryDirectory() as temporary:
+            durable = Path(temporary) / "retained"
+            with tempfile.TemporaryDirectory() as disposable:
+                root = Path(disposable)
+                cache = root / "examples/stay/.cache"
+                image = cache / "diagnostics/test-repeat-one/first/reader/assets/chat.webp"
+                image.parent.mkdir(parents=True)
+                image.write_bytes(b"RIFF\x00\xffWEBP actual first capture")
+                trace = cache / "playwright/chat/trace.zip"
+                trace.parent.mkdir(parents=True)
+                trace.write_bytes(b"actual failed run trace")
+                with mock.patch.object(VERIFY, "run", side_effect=failure) as run:
+                    with self.assertRaises(VERIFY.VerificationError) as raised:
+                        VERIFY.stay_example(root, "node", {}, durable)
+                self.assertIs(raised.exception, failure)
+                run.assert_called_once_with(["node", "examples/stay/verify.ts"], cwd=root, environment={})
+            retained, = durable.iterdir()
+            self.assertEqual((retained / "diagnostics/test-repeat-one/first/reader/assets/chat.webp").read_bytes(), b"RIFF\x00\xffWEBP actual first capture")
+            self.assertEqual((retained / "playwright/chat/trace.zip").read_bytes(), b"actual failed run trace")
+            self.assertIn("Stay exact repeatability failed", (retained / "failure.txt").read_text())
+
+    def test_stay_retention_failure_keeps_original_error(self):
+        failure = VERIFY.VerificationError("original Stay failure")
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            with mock.patch.object(VERIFY, "run", side_effect=failure), mock.patch.object(VERIFY.Path, "mkdir", side_effect=OSError("retention unavailable")):
+                with self.assertRaises(VERIFY.VerificationError) as raised:
+                    VERIFY.stay_example(root, "node", {}, root / "diagnostics")
+            self.assertIs(raised.exception, failure)
+
+    def test_stay_success_retains_nothing_and_does_not_repeat(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            durable = root / "diagnostics"
+            with mock.patch.object(VERIFY, "run") as run:
+                VERIFY.stay_example(root, "node", {}, durable)
+            run.assert_called_once_with(["node", "examples/stay/verify.ts"], cwd=root, environment={})
+            self.assertFalse(durable.exists())
+
     def test_failed_check_keeps_baseline_and_actual_without_recapture(self):
         failure = VERIFY.VerificationError("artifact changed")
         commands = []

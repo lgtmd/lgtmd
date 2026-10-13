@@ -39,9 +39,12 @@ seeds, and deployment remain project responsibilities. The guide and examples
 should make these integration choices understandable while keeping lgtmd's
 authoring and lifecycle interfaces agnostic to the project's stack and topology.
 
-### Proposed dogfooding example: guest and host stay requests
+### Stay dogfooding example: guest and host stay requests
 
-Direction agreed on 2026-10-14; implementation and verification are deferred.
+Implemented and verified locally on 2026-10-14. The
+[Stay example](examples/stay/README.md) includes the application, filtering and
+guest/host guides, two fixture ownership paths, and exact evidence checks. General
+adoption guides above remain separate follow-up work.
 The [five-hour execution plan](docs/plans/stay-dogfooding.md) fixes scope,
 ownership, autonomous decisions, and acceptance gates.
 Use an Airbnb-inspired accommodation workflow with original branding, fictional
@@ -49,26 +52,34 @@ listings, and a polished responsive React/Vite interface. One application should
 cover both the guest journey and the support-style host inbox; a separate inbox
 example is unnecessary for this milestone.
 
-- [ ] Build one complete workflow: a guest opens a listing, chooses dates, and
+- [x] Build one complete workflow: a guest opens a listing, chooses dates, and
       submits a stay request with a message; the host reviews the request, edits
       a mocked AI reply, responds, and accepts the request; the guest sees the
       persisted response and updated status. Use a small real HTTP API and an
       isolated in-memory store. Scope excludes payments, maps, production
       authentication, and a full marketplace or property-management system.
-- [ ] Keep the AI boundary project-owned, using a pinned mock provider with
+- [x] Keep the AI boundary project-owned, using a pinned mock provider with
       scripted output, controlled streaming, and a failure/retry scenario.
       Demonstrate explicit control of scenario data, visible times and IDs, and
       two declared response variants whose changed evidence fails exact
       comparison. Do not claim that mocks make live model output deterministic.
-- [ ] Demonstrate both supplied sandbox state and test-owned API preparation and
+- [x] Demonstrate both supplied sandbox state and test-owned API preparation and
       cleanup. Verify guest/host state transitions, workspace isolation, reload
       persistence within the running server, and unsuccessful-run/cleanup
       behavior. No real database or external model calls are required.
-- [ ] Author natural guest and host guides alongside the scenarios, with a
+- [x] Author natural guest and host guides alongside the scenarios, with a
       separate adoption explanation for fixture ownership and verification
       limits. Guest and host are application roles; both need Reader guides.
       They must not be represented by lgtmd's Reader/Contributor audience split.
-- [ ] Keep an example-local `feedbacks.md` recording authoring friction,
+- [x] Add detailed collection filtering and a third executable guide: search,
+      inclusive nightly budget, guest capacity, all-selected amenities, draft
+      apply/cancel/reset behavior, removable chips, URL persistence, validation
+      and empty-state recovery. Verify keyboard focus and mobile sheet scrolling.
+- [x] Add a guest AI stay-finder menu and executable chat guide using the local
+      AI SDK mock. Demonstrate follow-up preferences, grounded listing cards,
+      no-match recovery, persisted conversation, and a fresh-chat action without
+      live provider calls or availability claims.
+- [x] Keep an example-local `feedbacks.md` recording authoring friction,
       reproductions, workarounds, fixes, deferred proposals, and verification.
       Prioritize the application and guides; bound product fixes to demonstrated
       bugs and small compatible improvements. Record ambiguous contracts or
@@ -120,6 +131,11 @@ example is unnecessary for this milestone.
       only switches between **Previous / Current** documents; it does not render
       inline text edits. Keep the UI authored in lgtmd; evaluate reusing a diff
       algorithm core rather than embedding another product's diff viewer.
+- [ ] Evaluate accessible image enlargement or original-size inspection on small
+      screens. Stay dogfooding showed that desktop captures fit a mobile reading
+      column but their UI text becomes small. Keep ordinary reading, focus,
+      download access and image comparison coherent; no gallery or resource
+      protocol is selected. See [the observed feedback](examples/stay/feedbacks.md).
 
 ### Text diff research (2026-10-14; proposal, no dependency selected)
 

@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "title": "Stay guides",
+  "flow": {
+    "command": ["node", "run.ts"],
+    "watch": ["browser", "src", "server", "fixtures", "public/images"],
+    "timeoutMs": 180000
+  },
+  "snapshots": ".cache/snapshots",
+  "cacheDir": ".cache/lgtmd",
+  "outDir": ".cache/site",
+  "basePath": "/",
+  "navigation": [
+    "find-a-stay",
+    "find-with-ai",
+    "request-a-stay",
+    "respond-to-a-request"
+  ],
+  "git": { "base": "HEAD" }
+}

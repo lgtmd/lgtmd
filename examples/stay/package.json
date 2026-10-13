@@ -1,0 +1,27 @@
+{
+  "name": "@lgtmd/example-stay",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node dev.ts",
+    "build": "npm run typecheck && vite build",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test:api": "node --test server/*.test.ts",
+    "test:filters": "node --test src/filters.test.ts",
+    "test": "npm run build && npm run test:api && npm run test:filters && node verify.ts"
+  },
+  "dependencies": {
+    "ai": "7.0.139",
+    "lucide-react": "1.56.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.2",
+    "lgtmd": "0.1.0",
+    "vite": "8.3.4"
+  }
+}
