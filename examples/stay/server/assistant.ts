@@ -36,7 +36,14 @@ function parsePreferences(
     ...message.matchAll(
       /\b(?:under|up to|at most|(?:raise|increase|lower|change|set)(?: my)? budget to|budget(?: of| is|:)?)[\s$]*([+-]?\$?(?:\d[\d.,]*(?:e[+-]?\d+)?|\.\d+|infinity|nan))/gi,
     ),
-  ].at(-1);
+  ]
+    .filter(
+      (match) =>
+        !/^\s*(?:guests?|people|adults?|nights?|days?)\b/i.test(
+          message.slice(match.index! + match[0].length),
+        ),
+    )
+    .at(-1);
   if (budget) {
     next.maxPrice = nightlyPrice(budget[1]);
     recognized = true;

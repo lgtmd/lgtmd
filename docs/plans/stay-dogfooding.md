@@ -511,3 +511,10 @@ also require rendered terminal controls before capture. Local fresh repeatabilit
 and 18 portable-harness tests pass; corrected CI is required before merging.
 The original run did not retain its differing bytes, so these fixes are not
 presented as proof of that run's specific changed resource.
+
+The retained follow-up failure isolated `filter-controls.webp`: 943 pixels at its
+outer edge and rounded corners differed; its entire interior matched. The modal
+capture now declares neutral heading focus and both panel/background scroll
+positions. A regression deliberately varies those inputs and requires exact WebP
+equality after preparation. No application layout change, crop, tolerance,
+baseline acceptance or failed-run retry was added.

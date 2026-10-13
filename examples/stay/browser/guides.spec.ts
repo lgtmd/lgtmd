@@ -5,6 +5,7 @@ import type { Doc } from "lgtmd";
 import type { Page } from "@playwright/test";
 import { test as applicationTest, expect } from "./application-test.ts";
 import { fixtureRequest } from "./fixture-api.ts";
+import { readyForCapture as ready } from "./capture-readiness.ts";
 import { captureWebp, webpProfile } from "../../review/capture.mjs";
 import {
   listings,
@@ -21,19 +22,6 @@ const manualDraft =
 const script = process.env.STAY_SCRIPT === "B" ? "B" : "A";
 const suggestion = replyScripts[script].join("");
 const sentReply = suggestion + hostEdit;
-
-async function ready(page: Page) {
-  await page.evaluate(async () => {
-    await document.fonts.ready;
-    await Promise.all([...document.images].map((image) => image.decode()));
-  });
-  await page.mouse.move(0, 0);
-  // A neutral focus target avoids screenshots depending on the last control clicked.
-  await page.locator("main").evaluate((element) => {
-    element.setAttribute("tabindex", "-1");
-    (element as HTMLElement).focus({ preventScroll: true });
-  });
-}
 
 async function image(doc: Doc, page: Page, id: string, surface = "main") {
   await ready(page);

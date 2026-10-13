@@ -20,6 +20,7 @@ import {
 } from "../src/domain.ts";
 import { dispose, provision, type Workspace } from "./fixture-api.ts";
 import type { AssistantConversation } from "../src/assistant-domain.ts";
+import { verifyDialogCaptureReadiness } from "./capture-acceptance.ts";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 
@@ -709,6 +710,7 @@ export async function runAcceptance() {
     await guestPage.goto("/#/");
     await expect(guestPage.getByRole("main").getByRole("img")).toHaveCount(3);
     await saveReview(guestPage, "acceptance-explore-desktop");
+    await verifyDialogCaptureReadiness(guestPage);
     await guestPage.setViewportSize({ width: 390, height: 844 });
     await saveReview(guestPage, "acceptance-explore-mobile");
     await mobileFilterDetails(guestPage);

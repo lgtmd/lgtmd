@@ -262,3 +262,21 @@ and 18 portable-harness tests pass locally. These changes close identified races
 and preserve evidence for any further CI drift; they do not establish which
 resource differed in the original unretained run. Both platform CI jobs must
 pass on the corrected revision before merge.
+
+The next macOS run retained the actual mismatch: only `filter-controls.webp`
+changed. Both images were 621 × 790; all 943 differing pixels were at the outer
+edge or rounded corners, with none in the panel interior. The screenshot also
+contains the page behind those edges. Its scroll position had not been declared,
+and the helper's `main` focus target was inert while the native modal was open.
+Modal captures now focus the panel heading and explicitly reset the panel and
+background scroll positions. A controlled browser regression starts with distinct
+background scroll, panel scroll and focused inputs, then requires identical
+lossless WebP bytes after preparation. Application modal behavior, screenshot
+boundaries and exact comparison remain unchanged.
+
+Final API review also found that `up to 3 guests` and `at most 3 guests` could
+overwrite a saved nightly budget with `3`. Maximum-price extraction now excludes
+guest and duration counts. HTTP conversation regressions verify that these
+follow-ups preserve the $200 budget, persist the history and recommend Cedar
+House. All 25 API/provider tests pass; the four authored guide prompts are
+unchanged.

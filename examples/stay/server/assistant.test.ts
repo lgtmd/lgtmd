@@ -195,6 +195,37 @@ test("minimum prices require price context and do not consume guest or night cou
   }
 });
 
+test("upper budget limits preserve price wording and exclude guest or night counts", () => {
+  for (const wording of [
+    "under 200",
+    "up to $200",
+    "at most $200",
+    "budget of $200",
+    "raise my budget to $200",
+  ]) {
+    const preferences = updatePreferences(
+      defaultFilters(),
+      `For 3 guests, ${wording} per night`,
+      listings,
+    );
+    assert.equal(preferences.maxPrice, 200, wording);
+    assert.equal(preferences.guests, 3, wording);
+  }
+  for (const count of [
+    "up to 3 guests",
+    "at most 3 guests",
+    "up to 3 nights",
+    "at most 3 days",
+  ]) {
+    const preferences = updatePreferences(
+      { ...defaultFilters(), maxPrice: 200 },
+      `Actually ${count}`,
+      listings,
+    );
+    assert.equal(preferences.maxPrice, 200, count);
+  }
+});
+
 test("unsupported-only preferences ask for supported criteria without presenting matches", async () => {
   const assistant = new StayAssistant(listings);
   const clarification = await assistant.send(
@@ -417,6 +448,42 @@ test("assistant HTTP API persists refinements and reset without host reply calls
     messages: [],
     preferences: defaultFilters(),
   });
+});
+
+test("guest-count chat follow-ups retain the existing budget and grounded Cedar match", async (t) => {
+  const server = await startServer({ port: 0, fixtureKey });
+  t.after(() => server.close());
+  for (const quantifier of ["up to", "at most"]) {
+    const workspace = await provision(server.url);
+    const token = workspace.sessions.guest.token;
+    const first = await api(
+      server.url,
+      token,
+      "/api/assistant/messages",
+      "POST",
+      { message: "A stay under $200 with a kitchen" },
+    );
+    assert.equal(first.status, 200);
+    const before = (await first.json()) as AssistantConversation;
+    const response = await api(
+      server.url,
+      token,
+      "/api/assistant/messages",
+      "POST",
+      { message: `Actually ${quantifier} 3 guests` },
+    );
+    assert.equal(response.status, 200);
+    const updated = (await response.json()) as AssistantConversation;
+    assert.deepEqual(updated.preferences, {
+      ...defaultFilters(),
+      maxPrice: 200,
+      guests: 3,
+      amenities: ["Full kitchen"],
+    });
+    assert.deepEqual(recommendations(updated), ["cedar-house"]);
+    assert.deepEqual(updated.messages.slice(0, 2), before.messages);
+    assert.deepEqual(await (await api(server.url, token)).json(), updated);
+  }
 });
 
 test("assistant API enforces role, guest ownership, workspace and credential lifetime", async (t) => {
