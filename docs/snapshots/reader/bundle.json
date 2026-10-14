@@ -1,6 +1,6 @@
 {
   "audience": "reader",
-  "digest": "2d59eda138254f9b1ad99a7881a44b193294c1ef16e5cb54810db996867b6bf0",
+  "digest": "d92d3b35fb41a78b293951b48f1c4380d00394ef0e69b44dc3c9f5841599cc8b",
   "navigation": [
     "getting-started",
     "develop-and-record",
@@ -661,7 +661,7 @@
         {
           "children": [
             {
-              "text": "This customization is available in the prepared source checkout alongside the docs-site CLI. It is not included in the published 0.1.0 SDK.",
+              "text": "This customization is included in the npm 0.2.0 docs-site CLI and is also available from the prepared source checkout.",
               "type": "text"
             }
           ],
@@ -1027,14 +1027,14 @@
             {
               "children": [
                 {
-                  "text": "lgtmd 0.1.0",
+                  "text": "lgtmd 0.2.0",
                   "type": "text"
                 }
               ],
               "type": "strong"
             },
             {
-              "text": ", with npm's ",
+              "text": " on crates.io and npm's ",
               "type": "text"
             },
             {
@@ -1047,7 +1047,7 @@
               "type": "strong"
             },
             {
-              "text": " tag. The docs-site CLI shown in this guide is available from the prepared source checkout and its packed candidate; it has not yet been released to the registries.",
+              "text": " tag. The npm package includes the docs-site CLI and embedded frontend shown in this guide. The CLI crate remains source-only; it is not published to crates.io.",
               "type": "text"
             }
           ],

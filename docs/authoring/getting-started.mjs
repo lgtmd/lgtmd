@@ -8,7 +8,7 @@ lgtmd compiles code-authored guides into Markdown and a docs site. It works with
 
 ## Availability
 
-The SDK is published as **lgtmd 0.1.0**, with npm's **next** tag. The docs-site CLI shown in this guide is available from the prepared source checkout and its packed candidate; it has not yet been released to the registries.
+The SDK is published as **lgtmd 0.2.0** on crates.io and npm's **next** tag. The npm package includes the docs-site CLI and embedded frontend shown in this guide. The CLI crate remains source-only; it is not published to crates.io.
 
 The current Node package supports Node.js 24 ESM on macOS arm64 and Linux x64. Rust authors use the Rust crate and their normal toolchain. Both use the same native lgtmd command. npm supplies a launcher for that executable; a native installation can serve docs and run Rust-authored flows without Node. The frontend is included in the executable.
 

@@ -87,7 +87,7 @@ example is unnecessary for this milestone.
 
 ## 2. Built-in docs site and change review
 
-**V1 implemented and verified with one native CLI; not yet released.**
+**V1 implemented and verified with one native CLI; included in npm 0.2.0.**
 
 - [x] Move all CLI orchestration into one Rust executable with an embedded
       frontend; keep npm as a thin launcher and verify native/Node invocation

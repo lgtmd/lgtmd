@@ -21,7 +21,7 @@ exports both Markdown/resources and a built-in docs site with Contributor notes,
 review, and browser-side image comparison. The
 [docs-site decision](../decisions/0002-docs-site-and-git-review.md) explains the
 boundaries, and the [user guide](../guide/develop-and-record.md) explains the
-workflow. This CLI is not part of the published 0.1.0 packages yet. The versioned
+workflow. The npm 0.2.0 package includes this CLI and its embedded frontend. The versioned
 site bundle is separate from the Markdown inventory manifest; both exports
 consume the same completed frozen documents. An alternate public exporter
 interface remains future work.
@@ -95,7 +95,7 @@ before values enter the portable contract; the Node facade does not replace it.
 The selected native route preserves the existing Rust filesystem store. See the
 [bridge decision](../decisions/0001-native-node-bridge.md). Installing a prepared
 npm package requires no Rust toolchain, install-time compilation, or fallback
-download. The published 0.1.0 npm package includes both verified native targets;
+download. The published 0.2.0 npm package includes both verified native targets;
 additional platforms and signing remain future work.
 
 ## Project lifecycle and application state
@@ -186,7 +186,7 @@ baselines. Prose, visual legibility, meaningful coverage, and physical interacti
 still need review.
 
 Rust 1.95 is the declared minimum. CI has verified Node 24 ESM on macOS 15 arm64
-and Ubuntu 24.04 x64. Version 0.1.0 is available from npm and crates.io; APIs and
+and Ubuntu 24.04 x64. Version 0.2.0 is available from npm and crates.io; APIs and
 schema-v1 compiler input remain experimental, without a stable API guarantee.
 N3's separate native replay remains its consumer acceptance gate.
 

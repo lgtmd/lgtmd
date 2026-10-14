@@ -23,12 +23,12 @@
       "sha256": "5467b73358c4b91a14bc42010aae3f985100c5dc1a9261b5a0fe8fcec5ddc833"
     },
     {
-      "bytes": 4142,
+      "bytes": 4121,
       "document": "customize-the-site",
       "kind": "page",
       "mime": "text/markdown",
       "path": "customize-the-site.md",
-      "sha256": "511d744faeafba7ade09da6176df0eceef8ea90fe4545a56baf3617c848e93f3"
+      "sha256": "2466abd582275a6ac06d1bef214d4857d33f65c121090ae537934de9db197d2e"
     },
     {
       "bytes": 3117,
@@ -39,12 +39,12 @@
       "sha256": "4bac2f645538a979afb7f78d758d6c17651492786af8e545e579285ee7d673e2"
     },
     {
-      "bytes": 2801,
+      "bytes": 2808,
       "document": "getting-started",
       "kind": "page",
       "mime": "text/markdown",
       "path": "getting-started.md",
-      "sha256": "4e9ce53e18ee5e84ae433c12c5b5aba2222f6590ccbcaf607ce4c064d8a071ac"
+      "sha256": "cd43317cba961df9922171868b86d24a7f3105b89e1a3910d28e9d23389a1360"
     },
     {
       "bytes": 3075,

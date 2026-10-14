@@ -1,6 +1,6 @@
 # Decision 0002: A docs site with Git-backed change review
 
-Status: **V1 implemented and verified with one native CLI; not included in registry 0.1.0**
+Status: **V1 implemented and verified with one native CLI; included in npm 0.2.0**
 
 Date: 2026-10-14
 
@@ -14,8 +14,8 @@ lgtmd is the framework. Users develop and publish a **docs site**. The reusable
 browser frontend may be called the **viewer** internally; it is not a separate
 product users must configure or a separate authoring application.
 
-The [user guide](../guide/develop-and-record.md) is the first reviewable contract for this
-work. It describes the implemented checkout and distinguishes it from the published
+The [user guide](../guide/develop-and-record.md) was the first reviewable contract for this
+work. At implementation, it distinguished the checkout from the published
 0.1.0 SDK. Its narrative and real captures are generated from `docs/authoring/`.
 The [existing architecture](../architecture/executable-documents.md) remains the
 authority for the released SDK.
