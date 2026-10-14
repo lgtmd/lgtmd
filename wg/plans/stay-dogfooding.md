@@ -73,7 +73,9 @@ Suggested file ownership:
 - `collect.ts`, `run.ts`, `verify.ts`: one collection path, native CLI handoff,
   and example acceptance checks.
 - `lgtmd.config.json`: example-owned navigation, cache, static build, and snapshot paths.
-- `README.md`, `feedbacks.md`: launch/integration instructions and dogfooding evidence.
+- `README.md`: launch/integration instructions. Dogfooding observations now live
+  in [GitHub Issues](https://github.com/lgtmd/lgtmd/issues); the original feedback
+  is preserved in the [closed archive](https://github.com/lgtmd/lgtmd/issues/13).
 
 The server resolves workspace and actor from opaque demo session credentials.
 It scopes request/message reads and writes on the server; a client-supplied role
@@ -263,9 +265,10 @@ reproduction from this example, a narrow correction, and appropriate regression
 verification. Preserve existing public contracts and output bytes unless a
 demonstrated existing-behavior bug requires a separately explained correction.
 New protocol/resource primitives, generalized adapters, text diff, component
-replacement, and ambiguous API designs go into `feedbacks.md` and TODO.
+replacement, and ambiguous API designs go into GitHub Issues, linked from the
+relevant epic in TODO.
 
-The feedback log records encountered friction, source location, consequence,
+Feedback issues record encountered friction, source location, consequence,
 workaround, fixed/deferred status, and verification. Keep workaround costs visible.
 Do not invent findings or erase resolved ones. If a foundational blocker cannot
 be repaired within the boundary, complete independent deliverables and report
@@ -279,7 +282,7 @@ workflow dispatch, paid service, or real external message is included.
 
 Provide working local app/docs links, commands to restart and verify them, and
 desktop/mobile screenshots. Identify the example sources, guide candidates, and
-feedback log. Report passed checks, any failed or unrun gate, exact repeatability
+feedback issues. Report passed checks, any failed or unrun gate, exact repeatability
 results, and important limits of the mocks and in-memory service. State which
 existing lgtmd issues were fixed and which need a later decision. Keep generated
 candidate output separate from accepted baselines.
@@ -339,7 +342,8 @@ Dogfooding fixed viewer page navigation: new pages open at the top, explicit
 anchors work, and same-page diff/version/theme/reruns preserve scroll. Browser
 regressions pass at `/` and `/docs/`. The `site_changed` TypeScript documentation
 now clarifies its existing title/navigation meaning; comparison semantics and
-output bytes are unchanged. The [feedback log](../../examples/stay/feedbacks.md)
+output bytes are unchanged. The
+[archived feedback log](https://github.com/lgtmd/lgtmd/issues/13)
 retains diagnostic and mobile image-enlargement proposals. No generic fixture
 framework or new protocol was added.
 

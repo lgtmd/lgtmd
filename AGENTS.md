@@ -11,23 +11,22 @@ The SDK, examples, baselines, preview, and independent development harness were
 extracted from N3. N3 remains a consumer and retains its application adapter,
 replay, renderer, generated guides, capture policies, and agent skills.
 
-| Location                     | Responsibility                                                                                               |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `crates/lgtmd/`              | Rust authoring, frozen document model, validation, Markdown exports, and artifact lifecycle.                 |
-| `crates/lgtmd-cli/`          | Shared native CLI, embedded frontend, and coarse SDK bridge.                                                 |
-| `crates/doc-example-config/` | CLI/library consumers, isolated fixtures, and retained Reader/Contributor baselines.                         |
-| `packages/lgtmd/`            | Node authoring, project-owned lifecycle integration, native bridge loading, and optional Playwright adapter. |
-| `examples/lgtmd-web/`        | React/Vite application, HTTP API, fixtures, guides, and browser configuration.                               |
-| `docs/architecture/`         | Implemented contracts and engineering rationale.                                                             |
-| `docs/decisions/`            | Decisions and alternatives with explicit status.                                                             |
-| `tools/`                     | Repository formatting and contributor automation.                                                            |
+Use [REPOSITORY.md](REPOSITORY.md) for the authoritative layout, ownership map,
+and examples index. Keep user-facing documentation and its generation sources
+in `docs/`; keep internal engineering material in `wg/`. Link to the map rather
+than duplicating it in other entry points.
 
-Read the [architecture](docs/architecture/executable-documents.md), the owning
+Use [.agents/skills/oss-standards/SKILL.md](.agents/skills/oss-standards/SKILL.md)
+when finalizing changes for review or preparing a PR. Repository skills live in
+`.agents/skills/`; user-installable skills live in `skills/`. Keep consumer
+instructions portable and maintainer skills marked `metadata.internal: true`.
+
+Read the [architecture](wg/architecture/executable-documents.md), the owning
 package README, and the relevant example before changing a boundary. The Node
 integration uses a native binary, not a shipped WASM package. The docs-site CLI and bundled React frontend are implemented in this checkout.
-Browser-hosted authoring and a generic plugin framework remain future work. The [docs-site decision](docs/decisions/0002-docs-site-and-git-review.md)
+Browser-hosted authoring and a generic plugin framework remain future work. The [docs-site decision](wg/decisions/0002-docs-site-and-git-review.md)
 and [user guide](docs/guide/develop-and-record.md) describe the feature; the
-[v1 execution plan](docs/plans/docs-site-v1.md) fixes its first implementation
+[v1 execution plan](wg/plans/docs-site-v1.md) fixes its first implementation
 scope and completion gates.
 The docs site is one experience in development and after publishing; viewer is
 an internal frontend responsibility, not a separate public product.
@@ -98,7 +97,7 @@ separate behavior change is authorized.
 ## Development and verification
 
 Start with [CONTRIBUTING.md](CONTRIBUTING.md), the root `justfile`, and the
-[development guide](docs/development.md). Source
+[development guide](wg/development.md). Source
 contributors need Rust 1.95.0 with rustfmt/Clippy, Python 3.11+, Node.js 24/npm, and
 just. Setup is explicit:
 
@@ -149,8 +148,10 @@ authorization.
   CONTRIBUTING.md and the development guide, and implementation contracts and
   decisions in their owning docs.
 - Keep the requested follow-up backlog in [TODO.md](TODO.md). Record
-  proposal status explicitly; a TODO or decision document is not implementation
-  approval.
+  epic and milestone outcomes there, with links to GitHub Issues for feedback
+  and individual work. Use the [proposal record](wg/decisions/README.md) for
+  durable decisions and alternatives. Record proposal status explicitly; a TODO,
+  issue, or decision document is not implementation approval.
 - Ignore build output, dependencies, caches, native binaries, and disposable
   review captures. Keep intentional consumer baselines with their examples;
   never hand-edit them or pass them through prose formatting.

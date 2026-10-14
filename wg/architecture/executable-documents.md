@@ -20,7 +20,7 @@ The [Rust SDK](../../crates/lgtmd/README.md) and
 exports both Markdown/resources and a built-in docs site with Contributor notes, Git revision
 review, and browser-side image comparison. The
 [docs-site decision](../decisions/0002-docs-site-and-git-review.md) explains the
-boundaries, and the [user guide](../guide/develop-and-record.md) explains the
+boundaries, and the [user guide](../../docs/guide/develop-and-record.md) explains the
 workflow. The npm 0.2.0 package includes this CLI and its embedded frontend. The versioned
 site bundle is separate from the Markdown inventory manifest; both exports
 consume the same completed frozen documents. An alternate public exporter

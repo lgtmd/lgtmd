@@ -14,7 +14,7 @@ lgtmd is the framework. Users develop and publish a **docs site**. The reusable
 browser frontend may be called the **viewer** internally; it is not a separate
 product users must configure or a separate authoring application.
 
-The [user guide](../guide/develop-and-record.md) was the first reviewable contract for this
+The [user guide](../../docs/guide/develop-and-record.md) was the first reviewable contract for this
 work. At implementation, it distinguished the checkout from the published
 0.1.0 SDK. Its narrative and real captures are generated from `docs/authoring/`.
 The [existing architecture](../architecture/executable-documents.md) remains the

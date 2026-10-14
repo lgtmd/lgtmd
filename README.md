@@ -60,4 +60,4 @@ npm i -D lgtmd
 
 Used by [**N3**](https://github.com/gridaco/n3) for its executable user guides.
 
-[Contributing](CONTRIBUTING.md) · [MIT license](LICENSE)
+[Repository map](REPOSITORY.md) · [Contributing](CONTRIBUTING.md) · [MIT license](LICENSE)

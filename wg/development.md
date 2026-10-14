@@ -207,7 +207,7 @@ active theme.
 Theme input validation belongs in the host. Keep path separation and symlink
 checks; do not follow CSS `@import` or copy `url()` dependencies. The browser
 resolves CSS URLs from the published stylesheet. See the
-[authored customization guide](authoring/customize-the-site.mjs) for the supported
+[authored customization guide](../docs/authoring/customize-the-site.mjs) for the supported
 tokens and hooks. Full component customization is deferred.
 
 ### Local version history
@@ -236,3 +236,20 @@ exclude it. Change summaries count added, removed and modified pages/assets;
 they are not line-level text diffs. Candidate IDs identify completed generated
 output for explicit recording and cannot be used as Git revisions. Keep accepted
 snapshots outside ignored cache directories when historical docs review is wanted.
+
+## Agent readiness and handoff
+
+Use [REPOSITORY.md](../REPOSITORY.md) to find the owning package and complete
+example, then follow [AGENTS.md](../AGENTS.md). Readiness is demonstrated by a
+working task environment and evidence for the change, rather than a repository
+score or a promise that every task can run unattended.
+
+- Record the working directory, revision, and existing changes before editing.
+- Confirm explicit setup and the relevant focused commands work in the current
+  environment. Preserve caller-supplied cache and target overrides.
+- Use isolated fixtures and output paths. Keep failed-run diagnostics; do not
+  convert missing tools, unstable output, or failed checks into successful evidence.
+- Match verification to the change. Prose-only work needs formatting, link, and
+  factual checks; runtime or browser changes need their applicable gates.
+- Hand off changed files, checks actually run, remaining uncertainty, and the
+  commit/push state. Baseline acceptance and release authorization stay explicit.

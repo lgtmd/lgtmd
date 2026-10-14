@@ -1,0 +1,19 @@
+lgtmd OSS standards skill
+
+Adapted from the Grida project (https://github.com/gridaco/grida),
+.agents/skills/oss-standards/SKILL.md at commit
+c82c990545f0843fa3db2b2d205a00076dcb5734.
+
+Source:
+https://github.com/gridaco/grida/blob/c82c990545f0843fa3db2b2d205a00076dcb5734/.agents/skills/oss-standards/SKILL.md
+
+The upstream Apache License, Version 2.0 is reproduced in LICENSE.
+No applicable upstream NOTICE file accompanied the source skill.
+
+Modified for lgtmd on 2026-10-15. Changes adapt repository links, documentation
+ownership, evidence handling, experimental API claims, and release authorization;
+remove Grida-only skill dependencies and draft metadata requirements; and narrow
+cleanup guidance to respect existing work and task scope. Internal discovery
+metadata keeps this contributor skill out of default user skill installation.
+
+This notice records provenance and modifications. It does not alter the license.
