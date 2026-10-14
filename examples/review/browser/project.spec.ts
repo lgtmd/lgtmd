@@ -39,4 +39,23 @@ ${image.embed("The saved project and its current review status")}`;
   doc.noteOn(
     passage,
   )`Public example note: the application fixture owns its state. The browser assertions verify saving and the displayed status.`;
+  doc.md`## Read the text changes
+
+These authored fixtures demonstrate text review; they do not describe additional application behavior.`;
+  if (version === "B")
+    doc.md`This paragraph was added above the existing explanation.`;
+  doc.md`The examples below keep their original order.
+
+Review the ${version === "A" ? "draft" : "final"} project description.
+
+### A small correction
+
+Check the ${version === "A" ? "descripton" : "description"} before sharing.
+
+### An exact code change
+
+\`\`\`js
+const status = "${version === "A" ? "draft" : "ready"}";
+saveProject(status);
+\`\`\``;
 });

@@ -1,6 +1,6 @@
 {
   "audience": "reader",
-  "digest": "d92d3b35fb41a78b293951b48f1c4380d00394ef0e69b44dc3c9f5841599cc8b",
+  "digest": "532fdd4bb77a236a2cd9fc4e28a6ee8397ef6b9f7ac67b68aebd7eafe59df520",
   "navigation": [
     "getting-started",
     "develop-and-record",
@@ -555,6 +555,39 @@
             },
             {
               "text": ". Prefer these hooks to generated utility classes or the exact nesting of elements. Hooks describe presentation areas; they do not promise an editable component API. Replacing layout components or adding client behavior remains future work.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "Source-development text review also exposes ",
+              "type": "text"
+            },
+            {
+              "text": "text-change",
+              "type": "code"
+            },
+            {
+              "text": " and ",
+              "type": "text"
+            },
+            {
+              "text": "block-change",
+              "type": "code"
+            },
+            {
+              "text": ", with ",
+              "type": "text"
+            },
+            {
+              "text": "data-change=\"added|removed|modified\"",
+              "type": "code"
+            },
+            {
+              "text": ". Their defaults use the success, danger and warning tokens. Keep typography, padding and borders unchanged in these overrides so enabling highlights preserves the document layout. These two hooks are not in the published 0.2.0 viewer.",
               "type": "text"
             }
           ],
@@ -1299,7 +1332,94 @@
         {
           "children": [
             {
-              "text": "The site shows the resolved revision and current candidate. Selecting a version does not check out old code, run your app, or accept a baseline.",
+              "text": "In the source development viewer, open the ",
+              "type": "text"
+            },
+            {
+              "children": [
+                {
+                  "text": "Versions",
+                  "type": "text"
+                }
+              ],
+              "type": "strong"
+            },
+            {
+              "text": " sheet to browse project commits by their message and date. History includes all commits reachable from local branches and tags, whether or not they changed documentation. Use ",
+              "type": "text"
+            },
+            {
+              "children": [
+                {
+                  "text": "Older commits",
+                  "type": "text"
+                }
+              ],
+              "type": "strong"
+            },
+            {
+              "text": " and ",
+              "type": "text"
+            },
+            {
+              "children": [
+                {
+                  "text": "Newer commits",
+                  "type": "text"
+                }
+              ],
+              "type": "strong"
+            },
+            {
+              "text": " to browse 20 at a time. Selecting a commit reads the documentation snapshot stored at that exact revision; a commit without one remains visible and explains why no comparison is available. Hover a date for its full timestamp. Use ",
+              "type": "text"
+            },
+            {
+              "children": [
+                {
+                  "text": "Advanced",
+                  "type": "text"
+                }
+              ],
+              "type": "strong"
+            },
+            {
+              "text": " to enter a branch, tag or older commit, or to copy the current candidate ID. A candidate ID identifies completed generated documentation; it is not a Git revision. The published 0.2.0 viewer uses a Git reference field; this version picker is not released yet.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "The change summary counts added, removed and modified ",
+              "type": "text"
+            },
+            {
+              "children": [
+                {
+                  "text": "pages",
+                  "type": "text"
+                }
+              ],
+              "type": "strong"
+            },
+            {
+              "text": " and ",
+              "type": "text"
+            },
+            {
+              "children": [
+                {
+                  "text": "assets",
+                  "type": "text"
+                }
+              ],
+              "type": "strong"
+            },
+            {
+              "text": ". These are documentation counts, not Git line counts. Selecting a version does not check out old code, run your app, or accept a baseline.",
               "type": "text"
             }
           ],
@@ -1344,7 +1464,107 @@
               "type": "strong"
             },
             {
-              "text": " to read the rendered guide. Changed-page navigation identifies additions, removals and changes. This first version compares whole pages; it does not infer paragraph identity or promise inline word highlighting.",
+              "text": " to read the rendered guide. Changed-page navigation identifies additions, removals and changes. With ",
+              "type": "text"
+            },
+            {
+              "children": [
+                {
+                  "text": "View diff",
+                  "type": "text"
+                }
+              ],
+              "type": "strong"
+            },
+            {
+              "text": " enabled, Current highlights additions in its own text and Previous highlights deletions in its own text. Headings and paragraphs show word changes; small corrections can show individual characters without splitting emoji or combining marks. Code blocks highlight changed lines. Switching highlights on or off keeps the selected version’s text and layout intact.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "The demonstration also adds a paragraph above unchanged content, changes ",
+              "type": "text"
+            },
+            {
+              "children": [
+                {
+                  "text": "draft",
+                  "type": "text"
+                }
+              ],
+              "type": "strong"
+            },
+            {
+              "text": " to ",
+              "type": "text"
+            },
+            {
+              "children": [
+                {
+                  "text": "final",
+                  "type": "text"
+                }
+              ],
+              "type": "strong"
+            },
+            {
+              "text": ", corrects ",
+              "type": "text"
+            },
+            {
+              "children": [
+                {
+                  "text": "descripton",
+                  "type": "text"
+                }
+              ],
+              "type": "strong"
+            },
+            {
+              "text": " to ",
+              "type": "text"
+            },
+            {
+              "children": [
+                {
+                  "text": "description",
+                  "type": "text"
+                }
+              ],
+              "type": "strong"
+            },
+            {
+              "text": ", and updates one code line. Lists, tables, changed formatting and ambiguous replacements use whole-block markers. ",
+              "type": "text"
+            },
+            {
+              "children": [
+                {
+                  "text": "Partial text diff",
+                  "type": "text"
+                }
+              ],
+              "type": "strong"
+            },
+            {
+              "text": " means some changes need whole-block or page-level review; open ",
+              "type": "text"
+            },
+            {
+              "children": [
+                {
+                  "text": "Versions → Advanced",
+                  "type": "text"
+                }
+              ],
+              "type": "strong"
+            },
+            {
+              "text": " for the reason. Notes keep their existing comment presentation. Detailed text highlights are a source-development feature and are not in the published 0.2.0 viewer.",
               "type": "text"
             }
           ],
@@ -1547,7 +1767,7 @@
             {
               "children": [
                 {
-                  "text": "just docs-demo",
+                  "text": "just docs-git-demo",
                   "type": "text"
                 }
               ],
@@ -1555,6 +1775,28 @@
             },
             {
               "text": ". It starts this real comparison against a disposable, clearly labeled example history. Its sample notes are intentionally public. The example never creates commits in your project.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "For an evergreen, Git-free tour of the same viewer, run ",
+              "type": "text"
+            },
+            {
+              "children": [
+                {
+                  "text": "just docs-demo",
+                  "type": "text"
+                }
+              ],
+              "type": "strong"
+            },
+            {
+              "text": ". Its retained Original and Revised versions cover text, full-width page captures, a four-pixel image change, mismatched dimensions, notes, unchanged content and added or removed pages. Browsing does not rerun captures.",
               "type": "text"
             }
           ],
@@ -1577,24 +1819,24 @@
   ],
   "resources": [
     {
-      "bytes": 7572,
+      "bytes": 7580,
       "id": "before-after",
       "mime": "image/webp",
       "page_id": "review-changes",
       "path": "assets/review-changes/before-after.webp",
       "producer": "playwright/chromium+sharp",
       "profile": "playwright-1.64.0-darwin-arm64-1200x1000-cpu-full-raster-sharp-0.35.5-libwebp-1.6.0-lossless-effort6",
-      "sha256": "2adc1d5068400111d9bac793575a80f87132ccfecfdc080cfbcef01d03346422"
+      "sha256": "15f47f3da4203b593462f2f2416c10612a6a0630ac041fef0ffe2a21162b63fa"
     },
     {
-      "bytes": 7474,
+      "bytes": 7368,
       "id": "changed-regions",
       "mime": "image/webp",
       "page_id": "review-changes",
       "path": "assets/review-changes/changed-regions.webp",
       "producer": "playwright/chromium+sharp",
       "profile": "playwright-1.64.0-darwin-arm64-1200x1000-cpu-full-raster-sharp-0.35.5-libwebp-1.6.0-lossless-effort6",
-      "sha256": "5467b73358c4b91a14bc42010aae3f985100c5dc1a9261b5a0fe8fcec5ddc833"
+      "sha256": "233b6500ded361d877cddc73254f3866f126a7646de0ace80ef16892d118f45c"
     }
   ],
   "schema_version": 1,

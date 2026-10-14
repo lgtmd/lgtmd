@@ -8,6 +8,7 @@ import { spawn } from "node:child_process";
 import { once } from "node:events";
 import { chromium, expect } from "@playwright/test";
 import { Doc, compileSite, compareSite } from "lgtmd";
+import { verifyTextReview } from "./text-review-browser.mjs";
 
 const cli = fileURLToPath(
   new URL("../../lgtmd/dist/src/cli.js", import.meta.url),
@@ -81,6 +82,14 @@ async function verifyImageReview(url) {
 | [${image.embed("Table screenshot")}](https://example.invalid/table) |
 
 ${unavailable.embed("Unavailable current screenshot")}`;
+    const unchanged = doc.assets.image(
+      "unchanged",
+      new TextEncoder().encode(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="480" height="240"><rect width="480" height="240" fill="#334455"/></svg>',
+      ),
+      { mediaType: "image/svg+xml" },
+    );
+    doc.md`${unchanged.embed("Unchanged image on a changed page")}`;
     return (await compileSite([doc.finish()])).reader;
   };
   const previous = await compilation("#3864be");
@@ -149,6 +158,17 @@ ${unavailable.embed("Unavailable current screenshot")}`;
     await page.goto(url);
     const comparisons = page.locator('[data-lgtmd-part="image-comparison"]');
     await expect(comparisons).toHaveCount(4);
+    const unchangedImage = page.getByRole("img", {
+      name: "Unchanged image on a changed page",
+      exact: true,
+    });
+    await expect(unchangedImage).toBeVisible();
+    assert.equal(
+      await unchangedImage.evaluate(
+        (image) => !!image.closest('[data-lgtmd-part="image-comparison"]'),
+      ),
+      false,
+    );
     await expect(page.locator(".image-review-base-error")).toBeVisible();
     const footprint = () =>
       comparisons.evaluateAll((items) =>
@@ -256,7 +276,20 @@ async function verifyPageNavigation(url) {
   const current = await compilation("Current");
   const refreshed = await compilation("Refreshed");
   const remaining = await compilation("Remaining", ["first"]);
+  const newer = {
+    revision: "a".repeat(40),
+    subject: "Record the refreshed guide",
+    committedAt: Math.floor(Date.now() / 1000) - 120,
+    decorations: "HEAD -> main",
+  };
+  const older = {
+    revision: "b".repeat(40),
+    subject: "Record the first guide",
+    committedAt: 1700000000,
+    decorations: "v1",
+  };
   const state = {
+    history: { commits: [newer, older], truncated: true, offset: 0 },
     mode: "dev",
     title: "Navigation cases",
     audience: "reader",
@@ -267,6 +300,8 @@ async function verifyPageNavigation(url) {
     baseline: {
       status: "available",
       ref: "HEAD",
+      revision: newer.revision,
+      commit: newer,
       bundle: previous.bundle,
       resourceBase: "",
     },
@@ -300,6 +335,43 @@ async function verifyPageNavigation(url) {
       await route.fulfill({ json: state });
     } else if (requested.endsWith("/__lgtmd/events")) {
       await route.fulfill({ status: 204 });
+    } else if (requested.endsWith("/__lgtmd/history")) {
+      const { direction } = route.request().postDataJSON();
+      state.history =
+        direction === "older"
+          ? {
+              commits: [
+                { ...older, subject: "Set up the app before docs existed" },
+              ],
+              truncated: false,
+              offset: 20,
+            }
+          : { commits: [newer, older], truncated: true, offset: 0 };
+      await route.fulfill({ json: state.history });
+    } else if (requested.endsWith("/__lgtmd/base")) {
+      const { ref } = route.request().postDataJSON();
+      if (ref === state.candidateId) {
+        state.baseline = {
+          status: "unavailable",
+          ref,
+          code: "candidate-id",
+          message:
+            "This is the current documentation candidate ID, not a Git revision.",
+        };
+        state.comparison = undefined;
+      } else {
+        const selected = ref === older.revision ? older : newer;
+        state.baseline = {
+          status: "available",
+          ref,
+          revision: selected.revision,
+          commit: selected,
+          bundle: previous.bundle,
+          resourceBase: "",
+        };
+        state.comparison = await compareSite(previous.files, current.files);
+      }
+      await route.fulfill({ json: state.baseline });
     } else if (requested.endsWith("/__lgtmd/run")) {
       const removingPage = ++runs > 1;
       state.current = removingPage ? remaining.bundle : refreshed.bundle;
@@ -318,6 +390,82 @@ async function verifyPageNavigation(url) {
     await expect(
       page.getByRole("heading", { name: "First page", exact: true }),
     ).toBeVisible();
+    await page
+      .getByRole("button", { name: "Version history", exact: true })
+      .click();
+    const versions = page.getByRole("list", { name: "Project history" });
+    await expect(versions.getByRole("button")).toHaveCount(2);
+    await page
+      .getByRole("button", { name: "Older commits", exact: true })
+      .click();
+    await expect(versions).toContainText("Set up the app before docs existed");
+    await expect(page.getByLabel("Selected commit")).toContainText(
+      newer.subject,
+    );
+    await expect(
+      page.getByRole("button", { name: "Older commits", exact: true }),
+    ).toBeDisabled();
+    await page
+      .getByRole("button", { name: "Newer commits", exact: true })
+      .click();
+    await expect(versions.getByRole("button")).toHaveCount(2);
+    await page
+      .getByRole("button", { name: "Refresh project history", exact: true })
+      .click();
+    await expect(versions.getByRole("button")).toHaveCount(2);
+    await page.setViewportSize({ width: 320, height: 740 });
+    assert.ok(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    );
+    const panelBounds = await page.locator("#version-sheet").boundingBox();
+    assert.ok(panelBounds.x >= 0 && panelBounds.x + panelBounds.width <= 320);
+    assert.ok(panelBounds.y >= 0 && panelBounds.y + panelBounds.height <= 740);
+    await page.setViewportSize({ width: 1200, height: 900 });
+    await expect(page.getByLabel("Selected commit")).toContainText(
+      newer.subject,
+    );
+    await expect(
+      page.getByLabel("Selected commit").locator("time"),
+    ).toHaveAttribute("title", /.+/);
+    await expect(page.getByLabel("Selected commit")).toContainText(
+      /minutes? ago/,
+    );
+    await expect(
+      page.getByLabel("Candidate ID", { exact: true }),
+    ).not.toBeVisible();
+    await versions
+      .getByRole("button", { name: new RegExp(older.subject) })
+      .click();
+    await expect(page.getByLabel("Selected commit")).toContainText(
+      older.subject,
+    );
+    await expect(page.getByLabel("Documentation changes")).toContainText("M 2");
+    await page.getByText("Advanced", { exact: true }).click();
+    await page
+      .getByLabel("Branch, tag, or commit", { exact: true })
+      .fill(state.candidateId);
+    await page.getByRole("button", { name: "Compare", exact: true }).click();
+    await expect(
+      page.getByRole("status").filter({ hasText: "Comparison unavailable" }),
+    ).toContainText("candidate ID, not a Git revision");
+    await expect(
+      page.getByRole("tab", { name: "Previous", exact: true }),
+    ).toBeDisabled();
+    await versions
+      .getByRole("button", { name: new RegExp(newer.subject) })
+      .click();
+    await expect(
+      page.getByRole("tab", { name: "Previous", exact: true }),
+    ).toBeEnabled();
+    assert.equal(runs, 0, "Version selection must not execute the application");
+    await page
+      .getByRole("button", { name: "Close version history", exact: true })
+      .click();
+    await page
+      .getByRole("checkbox", { name: "View diff", exact: true })
+      .uncheck();
     await page.evaluate(() => window.scrollTo(0, 900));
     await expect.poll(scrollY).toBe(900);
     const navigation = page.getByRole("navigation", {
@@ -367,9 +515,26 @@ async function verifyPageNavigation(url) {
       .getByRole("combobox", { name: "Color theme" })
       .selectOption("dark");
     await expect.poll(scrollY).toBe(position);
-    await page
-      .getByRole("button", { name: "Development tools", exact: true })
-      .click();
+    const beforeSheet = await page.getByRole("main").boundingBox();
+    const historyButton = page.getByRole("button", {
+      name: "Version history",
+      exact: true,
+    });
+    await historyButton.click();
+    await expect(
+      page.getByRole("dialog", { name: "Version history", exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Close version history", exact: true }),
+    ).toBeFocused();
+    assert.deepEqual(await page.getByRole("main").boundingBox(), beforeSheet);
+    await expect.poll(scrollY).toBe(position);
+    await page.keyboard.press("Escape");
+    await expect(historyButton).toBeFocused();
+    await expect(
+      page.getByRole("dialog", { name: "Version history", exact: true }),
+    ).toHaveCount(0);
+    await expect.poll(scrollY).toBe(position);
     await page.getByRole("button", { name: "Run again", exact: true }).click();
     await expect(page.getByRole("main")).toContainText("Refreshed revision.");
     await expect.poll(scrollY).toBe(position);
@@ -382,9 +547,6 @@ async function verifyPageNavigation(url) {
     );
     await page.evaluate(() => window.scrollBy(0, 160));
     assert.ok((await scrollY()) > 900);
-    await page
-      .getByRole("button", { name: "Development tools", exact: true })
-      .click();
     await page.getByRole("button", { name: "Run again", exact: true }).click();
     await expect(
       page.getByRole("heading", { name: "First page", exact: true }),
@@ -543,6 +705,12 @@ try {
         const data = await (
           await page.request.get(new URL("site.json", url).href)
         ).text();
+        assert.equal(
+          JSON.parse(data).history,
+          undefined,
+          "Static exports must not include repository history",
+        );
+        assert.equal(JSON.parse(data).baseline, undefined);
         assert.ok(
           !data.includes("INTERNAL-NOTE-731") &&
             !data.includes("PRIVATE-RESOURCE-731") &&
@@ -672,6 +840,7 @@ try {
       await page.close();
       if (basePath === "/" && audience === "reader")
         await verifyImageReview(url);
+      if (basePath === "/") await verifyTextReview(browser, url, audience);
       if (audience === "reader") await verifyPageNavigation(url);
       await stop();
       console.log(

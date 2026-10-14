@@ -362,8 +362,7 @@
     border-color: var(--lgtmd-border);
     cursor: pointer;
   }
-  .diff-toggle,
-  .filter-label {
+  .diff-toggle {
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -371,11 +370,6 @@
     line-height: 1.5;
     white-space: nowrap;
     cursor: pointer;
-  }
-  .filter-label {
-    padding: 0.375rem 0.75rem 0.875rem;
-    color: var(--lgtmd-muted-foreground);
-    font-size: 0.6875rem;
   }
   .mobile-nav-toggle {
     display: none;
@@ -435,6 +429,10 @@
   .dev-tools-toggle[aria-expanded="true"] {
     background: var(--lgtmd-muted);
   }
+  .dev-tools-toggle:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
   .dev-status,
   .dev-chevron {
     color: var(--lgtmd-muted-foreground);
@@ -453,16 +451,6 @@
     border-radius: 999px;
     font-size: 0.6875rem;
     padding: 0.3125rem 0.75rem;
-  }
-  .dev-panel .filter-label {
-    display: flex;
-    align-items: center;
-    padding: 0;
-    margin: 0;
-  }
-  .dev-panel .filter-label input {
-    flex: none;
-    width: auto;
   }
   .viewer-shell:has(.dev-tools) main {
     padding-bottom: 12rem;
@@ -493,20 +481,7 @@
   .dev-panel > .notice {
     margin: 0.75rem 1rem;
   }
-  .dev-panel .review-toolbar {
-    border-bottom: 0;
-  }
-  .dev-panel .review-toolbar form {
-    width: 100%;
-    min-width: 0;
-  }
-  .dev-panel .review-toolbar input {
-    flex: 1;
-    width: 100%;
-    min-width: 0;
-  }
-  .dev-panel .run-bar,
-  .dev-panel .review-toolbar {
+  .dev-panel .run-bar {
     padding: 1rem;
   }
   .run-bar {
@@ -589,59 +564,126 @@
   .page-frame > .notice {
     margin: 1rem 1.5rem;
   }
-  .review-toolbar {
-    display: flex;
+  .revision-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .revision-list li + li {
+    margin-top: 2px;
+  }
+  .revision-list button {
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+  }
+  .revision-list button:hover,
+  .revision-list button[aria-pressed="true"] {
+    background: var(--lgtmd-muted);
+  }
+  .revision-review code {
+    font-size: 0.6875rem;
+  }
+  .version-sheet {
+    inset: 0.75rem 0.75rem 6.75rem auto;
+    width: min(25rem, calc(100vw - 1.5rem));
+    border-radius: 12px;
+    background: var(--lgtmd-surface);
+    box-shadow: 0 12px 48px #00000020;
+    transition: opacity 120ms ease-out;
+  }
+  @starting-style {
+    .version-sheet {
+      opacity: 0;
+    }
+  }
+  .version-sheet .sheet-icon-button,
+  .version-sheet .sheet-text-button {
+    display: inline-flex;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 1rem 1.75rem;
-    border-bottom: 1px solid var(--lgtmd-border);
-    padding: 1rem 1.5rem;
+    justify-content: center;
+    min-height: 32px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    font-size: 0.6875rem;
+  }
+  .version-sheet .sheet-icon-button {
+    width: 32px;
+    padding: 0;
+  }
+  .version-sheet .sheet-text-button {
+    padding: 0 8px;
+  }
+  .version-sheet :is(.sheet-icon-button, .sheet-text-button):hover {
+    background: var(--lgtmd-muted);
+  }
+  .version-sheet button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .revision-footer {
+    max-height: 45%;
+    overscroll-behavior: contain;
+  }
+  .revision-review time {
+    flex-shrink: 0;
+  }
+  @media (max-width: 640px) {
+    .version-sheet {
+      inset: auto 0 0;
+      width: 100%;
+      height: min(75dvh, 42rem);
+      border-radius: 16px 16px 0 0;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .dev-status {
+      display: none;
+    }
+  }
+  [data-lgtmd-part="text-change"] {
+    color: inherit;
+    font: inherit;
+    padding: 0;
+    border: 0;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.15em;
+    background: var(--lgtmd-success-surface);
+    text-decoration-color: var(--lgtmd-success);
+  }
+  [data-lgtmd-part="text-change"][data-change="removed"] {
+    background: var(--lgtmd-danger-surface);
+    text-decoration-color: var(--lgtmd-danger);
+    text-decoration-style: dotted;
+  }
+  [data-lgtmd-part="block-change"] {
+    box-shadow: inset 3px 0 var(--lgtmd-warning);
     background: color-mix(
       in srgb,
-      var(--lgtmd-muted) 30%,
-      var(--lgtmd-surface)
+      var(--lgtmd-warning-surface) 60%,
+      transparent
     );
   }
-  .review-toolbar form {
-    min-width: 15rem;
+  [data-lgtmd-part="block-change"][data-change="added"] {
+    box-shadow: inset 3px 0 var(--lgtmd-success);
+    background: color-mix(
+      in srgb,
+      var(--lgtmd-success-surface) 60%,
+      transparent
+    );
   }
-  .review-toolbar label {
-    display: block;
-    margin-bottom: 0.375rem;
-    color: var(--lgtmd-muted-foreground);
-    font-size: 0.6875rem;
-    font-weight: 550;
+  [data-lgtmd-part="block-change"][data-change="removed"] {
+    box-shadow: inset 3px 0 var(--lgtmd-danger);
+    background: color-mix(
+      in srgb,
+      var(--lgtmd-danger-surface) 60%,
+      transparent
+    );
   }
-  .review-toolbar form > div {
-    display: flex;
-    gap: 0.375rem;
-  }
-  .review-toolbar input {
-    width: 13.125rem;
-    font-size: 0.75rem;
-  }
-  .review-toolbar button {
-    font-size: 0.75rem;
-  }
-  .revision-identities {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.375rem 1.125rem;
-    max-width: 30rem;
-    color: var(--lgtmd-muted-foreground);
-    font-size: 0.6875rem;
-  }
-  .revision-identities code {
-    font-size: 0.625rem;
-  }
-  .review-toolbar > .notice {
-    margin: 0;
-    flex-basis: 100%;
-  }
-  .site-change {
-    margin: 0;
-    color: var(--lgtmd-note);
-    font-size: 0.75rem;
+  .dev-context button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
   }
   .muted {
     padding: 0 0.75rem;
@@ -1466,9 +1508,6 @@
     .run-bar {
       padding: 0.625rem 1.25rem;
     }
-    .review-toolbar {
-      padding: 1rem 1.25rem;
-    }
     main {
       padding: 2rem 1.5rem 4rem;
     }
@@ -1494,14 +1533,6 @@
     }
     .run-message {
       flex-basis: 100%;
-    }
-    .review-toolbar form {
-      min-width: 0;
-      width: 100%;
-    }
-    .review-toolbar input {
-      flex: 1;
-      min-width: 0;
     }
     main {
       padding-inline: 1.25rem;

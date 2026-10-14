@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "files": [
+    "assets/dimensions/responsive.webp",
+    "assets/four-pixels/tiny-change.webp",
+    "assets/full-page/workspace.webp",
+    "assets/unchanged/identical.webp",
+    "bundle.json"
+  ]
+}

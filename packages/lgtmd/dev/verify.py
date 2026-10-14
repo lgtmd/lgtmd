@@ -565,6 +565,7 @@ def checks(root, cargo, environment, offline, install_browser, *, diagnostics_ro
     run([npm, "run", "test:filters", "--workspace", "@lgtmd/example-stay"], cwd=root, environment=environment)
     stay_example(root, node, environment, diagnostics_root or root / ".cache/lgtmd-web/diagnostics")
     run([node, "packages/viewer/tests/browser.mjs"], cwd=root, environment=environment)
+    run([node, "examples/review/showcase/verify.mjs"], cwd=root, environment=environment)
     run([node, "docs/authoring/verify.mjs", "verify"], cwd=root, environment=environment)
     cargo_consumer(root, cargo, environment, offline)
     npm_consumer(root, node, npm, environment, offline)

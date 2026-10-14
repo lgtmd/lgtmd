@@ -126,8 +126,11 @@ just docs-demo
 ```
 
 `just docs` runs the real own-guide flow and serves completed docs on port 4177.
-`just docs-demo` creates disposable, labeled A/B Git history and serves actual
-review on a free port, without changing this repository's history. Both print
+`just docs-demo` opens the canonical [viewer showcase](../examples/review/showcase/README.md)
+from retained Original/Revised bundles, without Git or fresh captures. It includes
+full-width screenshots and text, image, note and fallback examples.
+`just docs-git-demo` separately creates disposable, labeled A/B Git history to
+exercise actual Git review without changing this repository’s history. All print
 their local URL. Ctrl-C stops their owned processes.
 
 Own-guide and review-example screenshots use lossless WebP to reduce retained
@@ -206,3 +209,30 @@ checks; do not follow CSS `@import` or copy `url()` dependencies. The browser
 resolves CSS URLs from the published stylesheet. See the
 [authored customization guide](authoring/customize-the-site.mjs) for the supported
 tokens and hooks. Full component customization is deferred.
+
+### Local version history
+
+The source development viewer's **Versions** sheet browses repository commits
+across local Git refs, with commit subjects, dates, and optional branch/tag labels.
+The sheet opens on the right, or from the bottom on narrow screens, without
+reflowing the document. **Run again** lives in the bottom toolbar; the lgtmd
+status menu retains run diagnostics. Git references and candidate IDs are under
+**Advanced**.
+
+History includes commits that did not change documentation and commits with no saved
+documentation. **Older commits** and **Newer commits** page through 20 commits at
+a time. Traversal pins the local ref tips until **Refresh project history**, so
+new commits cannot shift page boundaries mid-session. Refreshing or paging does
+not change the selected baseline or run application code.
+
+Selection reads and validates the complete audience bundle and resources stored
+at that exact commit, including snapshots unchanged from a parent. Missing or
+invalid snapshots remain unavailable; the viewer never substitutes another
+revision or executes old source. No Git fetch, checkout, index write, or baseline
+acceptance occurs. This picker is not included in the published 0.2.0 viewer.
+
+Commit metadata is dev-host state. Static exports and canonical evidence hashes
+exclude it. Change summaries count added, removed and modified pages/assets;
+they are not line-level text diffs. Candidate IDs identify completed generated
+output for explicit recording and cannot be used as Git revisions. Keep accepted
+snapshots outside ignored cache directories when historical docs review is wanted.

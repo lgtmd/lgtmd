@@ -187,8 +187,11 @@ with pinned Sharp/libwebp and records that encoder in the profile. Keep the SDK
 format-agnostic and pass the actual image MIME explicitly. Verify decoded pixel
 preservation and fresh-run repeatability before recording changed evidence.
 
-Use `just docs` for local development and `just docs-demo` for the disposable
-Git-backed example. A missing snapshot at real HEAD remains unavailable until
+Use `just docs` for local development, `just docs-demo` for the canonical Git-free
+viewer showcase, and `just docs-git-demo` for the disposable Git-backed example.
+The showcase lives in `examples/review/showcase/`; edit its authoring and capture
+sources, then explicitly regenerate its snapshots. Normal launch only validates
+and serves retained bundles through the shared comparison engine and viewer. A missing snapshot at real HEAD remains unavailable until
 recorded source is committed; never invent it or commit automatically. Keep
 explanation capture one level deep: controlled A/B example -> real review UI ->
 final guide, with no dependency back from that final guide into the example.

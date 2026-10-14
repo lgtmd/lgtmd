@@ -1,7 +1,7 @@
 {
   "artifacts": [
     {
-      "bytes": 7572,
+      "bytes": 7580,
       "document": "review-changes",
       "id": "before-after",
       "kind": "resource",
@@ -9,10 +9,10 @@
       "path": "assets/review-changes/before-after.webp",
       "producer": "playwright/chromium+sharp",
       "profile": "playwright-1.64.0-darwin-arm64-1200x1000-cpu-full-raster-sharp-0.35.5-libwebp-1.6.0-lossless-effort6",
-      "sha256": "2adc1d5068400111d9bac793575a80f87132ccfecfdc080cfbcef01d03346422"
+      "sha256": "15f47f3da4203b593462f2f2416c10612a6a0630ac041fef0ffe2a21162b63fa"
     },
     {
-      "bytes": 7474,
+      "bytes": 7368,
       "document": "review-changes",
       "id": "changed-regions",
       "kind": "resource",
@@ -20,15 +20,15 @@
       "path": "assets/review-changes/changed-regions.webp",
       "producer": "playwright/chromium+sharp",
       "profile": "playwright-1.64.0-darwin-arm64-1200x1000-cpu-full-raster-sharp-0.35.5-libwebp-1.6.0-lossless-effort6",
-      "sha256": "5467b73358c4b91a14bc42010aae3f985100c5dc1a9261b5a0fe8fcec5ddc833"
+      "sha256": "233b6500ded361d877cddc73254f3866f126a7646de0ace80ef16892d118f45c"
     },
     {
-      "bytes": 4121,
+      "bytes": 4479,
       "document": "customize-the-site",
       "kind": "page",
       "mime": "text/markdown",
       "path": "customize-the-site.md",
-      "sha256": "2466abd582275a6ac06d1bef214d4857d33f65c121090ae537934de9db197d2e"
+      "sha256": "fcc872bc673f6d23a35542af71f8e6611d1eab6cd1422e893892616dad5a18aa"
     },
     {
       "bytes": 3117,
@@ -47,12 +47,12 @@
       "sha256": "cd43317cba961df9922171868b86d24a7f3105b89e1a3910d28e9d23389a1360"
     },
     {
-      "bytes": 3075,
+      "bytes": 5021,
       "document": "review-changes",
       "kind": "page",
       "mime": "text/markdown",
       "path": "review-changes.md",
-      "sha256": "7450a233f6d75a703e78fde0b234f3a1714f81193184ad34c3b03fe2ad2a8fc5"
+      "sha256": "e82084435a7f78d887e6c578c4a864dcde2832e072b115a1187b4be280226736"
     }
   ],
   "audience": "reader",

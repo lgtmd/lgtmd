@@ -6,7 +6,8 @@
   "scripts": {
     "build": "vite build",
     "docs": "node run.mjs",
-    "demo": "node demo.mjs"
+    "demo": "node showcase/demo.mjs",
+    "demo:git": "node demo.mjs"
   },
   "dependencies": {
     "lgtmd": "0.2.0",

@@ -203,8 +203,11 @@ AST, retaining typed resource references and Contributor note targets. Reader
 and Contributor projections have independent digests. A comparison matches page
 IDs and `(page ID, resource ID)` pairs, reports exact changes and capture
 compatibility, and carries each revision's own title/navigation. Presentation
-modes are absent from that protocol. Automatic block anchors are positional,
-so v1 promises whole-page Previous/Current review rather than paragraph matching.
+modes are absent from that protocol. Automatic block anchors are positional
+and cannot establish cross-version block identity. The source viewer's
+[text review adapter](../plans/text-diff-v1.md) uses bounded semantic matching
+for display-only word and line highlights, with explicit coarse fallbacks.
+These decorations never change the engine's exact page or resource status.
 
 The Rust CLI invokes an explicit argv flow. `completeRun` or Rust
 `handoff::complete_run` writes a unique guarded handoff; successful process exit

@@ -65,6 +65,8 @@ For a more focused change, target a supported styling hook:
 
 The supported `data-lgtmd-part` values are `shell`, `sidebar`, `toolbar`, `content`, `prose`, `code`, `notes`, and `image-comparison`. Prefer these hooks to generated utility classes or the exact nesting of elements. Hooks describe presentation areas; they do not promise an editable component API. Replacing layout components or adding client behavior remains future work.
 
+Source-development text review also exposes `text-change` and `block-change`, with `data-change="added|removed|modified"`. Their defaults use the success, danger and warning tokens. Keep typography, padding and borders unchanged in these overrides so enabling highlights preserves the document layout. These two hooks are not in the published 0.2.0 viewer.
+
 ## Preview and publish
 
 With `lgtmd dev` running, edit the configured CSS file and reload the browser. The server reads its latest bytes without running your application or recapturing evidence. Even with `--watch`, edits to this theme file do not queue a flow. Restart dev if you change the configured file path.

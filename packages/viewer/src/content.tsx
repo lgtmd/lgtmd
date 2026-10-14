@@ -1,6 +1,15 @@
+import type { Decoration } from "./text-diff.ts";
 import { ImageComparison } from "./image-comparison.tsx";
 import { ContributorComments } from "./contributor-comments.tsx";
-import { Fragment, useState, type ReactNode } from "react";
+import {
+  Fragment,
+  Children,
+  cloneElement,
+  isValidElement,
+  useState,
+  type ReactNode,
+  type ReactElement,
+} from "react";
 import {
   resourceUrl,
   type Bundle,
@@ -47,11 +56,13 @@ export function DocumentContent({
   resourceBase,
   notes = true,
   imageReview,
+  textReview,
 }: {
   page: Page;
   bundle: Bundle;
   resourceBase: string;
   notes?: boolean;
+  textReview?: Decoration[];
   imageReview?: {
     enabled: boolean;
     pairs: ResourcePair[];
@@ -61,10 +72,71 @@ export function DocumentContent({
     currentRevision: string;
   };
 }) {
+  const changes = new Map<ContentNode, Decoration>();
+  for (const decoration of textReview ?? []) {
+    let nodes = page.content;
+    let node: ContentNode | undefined;
+    for (const index of decoration.path) {
+      node = nodes[index];
+      nodes = node?.children ?? [];
+    }
+    if (node) changes.set(node, decoration);
+  }
+  function highlighted(node: ContentNode): ReactNode {
+    const text = node.text ?? "";
+    const change = changes.get(node);
+    if (!change?.ranges) return text;
+    const result: ReactNode[] = [];
+    let offset = 0;
+    const Tag = change.change === "removed" ? "del" : "ins";
+    for (const range of change.ranges) {
+      result.push(text.slice(offset, range.start));
+      result.push(
+        <Tag
+          key={range.start}
+          data-lgtmd-part="text-change"
+          data-change={change.change}
+        >
+          {text.slice(range.start, range.end)}
+        </Tag>,
+      );
+      offset = range.end;
+    }
+    result.push(text.slice(offset));
+    return result;
+  }
+  // Decorate existing block elements, including lifted image fragments, without
+  // adding wrappers that change prose margins, valid table markup or geometry.
+  function markBlock(content: ReactNode, change: Decoration): ReactNode {
+    return Children.map(content, (child) => {
+      if (!isValidElement(child)) return child;
+      const element = child as ReactElement<{ children?: ReactNode }>;
+      if (child.type === Fragment)
+        return cloneElement(
+          element,
+          {},
+          markBlock(element.props.children, change),
+        );
+      if (typeof child.type !== "string") return child;
+      if ((child.props as Record<string, unknown>)["data-lgtmd-part"])
+        return cloneElement(
+          element,
+          {},
+          markBlock(element.props.children, change),
+        );
+      return cloneElement(child as ReactElement<Record<string, unknown>>, {
+        "data-lgtmd-part": "block-change",
+        "data-change": change.change,
+        "data-change-reason": change.reason,
+        title: `${change.change === "modified" ? "Modified block" : change.change === "added" ? "Added block" : "Removed block"}${change.reason ? ` (${change.reason}; includes non-text or whitespace changes)` : ""}`,
+      });
+    });
+  }
   const imagePair = (node: ContentNode) =>
     node.type === "image"
       ? imageReview?.pairs.find(
           (pair) =>
+            pair.status !== "unchanged" &&
             pair.id === node.resource_id &&
             pair.page_id === (node.page_id ?? page.id),
         )
@@ -167,7 +239,7 @@ export function DocumentContent({
           content = children();
           break;
         case "text":
-          content = node.text;
+          content = highlighted(node);
           break;
         case "paragraph":
           content = imageReview ? (
@@ -246,15 +318,25 @@ export function DocumentContent({
           content = <s>{children()}</s>;
           break;
         case "key":
-          content = <kbd>{node.text ?? children()}</kbd>;
+          content = (
+            <kbd>
+              {node.text !== undefined ? highlighted(node) : children()}
+            </kbd>
+          );
           break;
         case "code":
-          content = <code>{node.text ?? children()}</code>;
+          content = (
+            <code>
+              {node.text !== undefined ? highlighted(node) : children()}
+            </code>
+          );
           break;
         case "code_block":
           content = (
             <pre data-lgtmd-part="code" data-language={node.language}>
-              <code>{node.text ?? children()}</code>
+              <code>
+                {node.text !== undefined ? highlighted(node) : children()}
+              </code>
             </pre>
           );
           break;
@@ -377,6 +459,8 @@ export function DocumentContent({
             <span className="notice warning">Unsupported content.</span>
           );
       }
+      const change = changes.get(node);
+      if (change && !change.ranges) content = markBlock(content, change);
       const notesHere = ownsNotes
         ? inNode(node).filter((note) => !emitted.has(note.id))
         : [];
