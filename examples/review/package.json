@@ -10,7 +10,7 @@
     "demo:git": "node demo.mjs"
   },
   "dependencies": {
-    "lgtmd": "0.2.0",
+    "lgtmd": "0.3.0",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },
