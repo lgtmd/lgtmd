@@ -178,12 +178,18 @@ comparison modes remain separate work.
 
 ## 3. Project website: landing page and documentation
 
-- [ ] Introduce `www/` for lgtmd's public website, serving both the product landing
-      page at `/` and user-facing documentation under `/docs`. **Astro is a
-      candidate**, not a selected dependency yet.
-- [ ] Start with a static deployment on **GitHub Pages**. Keep navigation and
-      resource URLs compatible with the deployment base path, including a Pages
-      project subpath if used before a root domain is configured.
+- [x] Add an isolated Astro placeholder in `www/`, with `/` and a `/docs/` guide
+      link page, a locked install, website build CI and Git-owned Vercel build
+      configuration. See [website setup](www/README.md). This is scaffolding;
+      the full landing page and embedded documentation remain unfinished.
+- [ ] Connect the website to **Vercel**, with `www` as its stable project root,
+      and verify production deployment after a merged PR. Automatic deployments
+      are limited to `main`; contributor previews use local builds. Vercel supersedes the
+      original GitHub Pages proposal. Domain and account setup remain separate
+      from the committed build configuration.
+- [ ] Replace the placeholder with the product landing page and the actual
+      user-facing documentation under `/docs`. Keep the framework replaceable
+      through source and deployment configuration changes.
 - [ ] Connect the landing page to the adoption guides in item 1 and complete
       examples. Clearly distinguish available features from planned capabilities.
 - [ ] Use the site to demonstrate the built-in docs experience from item 2 as it

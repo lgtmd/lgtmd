@@ -1,0 +1,53 @@
+---
+interface Props {
+  title: string;
+}
+const { title } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Code-authored documentation with executable evidence and reviewable changes." />
+    <title>{title}</title>
+  </head>
+  <body>
+    <header>
+      <a class="brand" href="/">lgtmd<span aria-hidden="true">.</span></a>
+      <nav aria-label="Main navigation">
+        <a href="/docs/">Docs</a>
+        <a href="https://github.com/lgtmd/lgtmd">GitHub ↗</a>
+      </nav>
+    </header>
+    <main><slot /></main>
+    <footer>Code. Evidence. Documentation.</footer>
+  </body>
+</html>
+
+<style is:global>
+  :root { color-scheme: light dark; font-family: system-ui, sans-serif; background: #f8f8f6; color: #20211f; }
+  * { box-sizing: border-box; }
+  body { max-width: 1120px; margin: auto; padding: 0 32px; }
+  header { display: flex; align-items: center; justify-content: space-between; padding: 32px 0; gap: 24px; }
+  a { color: inherit; text-underline-offset: 5px; }
+  a:focus-visible { outline: 2px solid currentColor; outline-offset: 6px; }
+  .brand { font-size: 28px; font-weight: 750; letter-spacing: -1.5px; text-decoration: none; }
+  .brand span { color: #657958; }
+  nav { display: flex; gap: 24px; font-size: 14px; }
+  main { min-height: 70vh; padding: 100px 0; }
+  .eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: #5c6357; }
+  h1 { max-width: 900px; font-size: clamp(40px, 7vw, 80px); line-height: 1.06; letter-spacing: -.055em; font-weight: 600; margin: 24px 0; }
+  p { max-width: 640px; font-size: 19px; line-height: 1.65; color: #565b53; }
+  .actions { display: flex; align-items: center; flex-wrap: wrap; gap: 24px; margin-top: 36px; }
+  .button { display: inline-block; border: 1px solid currentColor; padding: 12px 20px; border-radius: 6px; text-decoration: none; }
+  footer { padding: 24px 0; border-top: 1px solid #d9dcd5; font-size: 12px; color: #565b53; }
+  @media (max-width: 600px) { body { padding: 0 24px; } main { padding: 64px 0; } }
+  @media (prefers-color-scheme: dark) {
+    :root { background: #181a17; color: #f0f1ed; }
+    p, footer, .eyebrow { color: #b3b9ad; }
+    footer { border-color: #3a4035; }
+    .brand span { color: #b3cba0; }
+  }
+</style>

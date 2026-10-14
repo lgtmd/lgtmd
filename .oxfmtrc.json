@@ -12,6 +12,8 @@
     "/examples/review/showcase/snapshots/**",
     "/examples/stay/dist/**",
     "/docs/snapshots/**",
-    "/crates/lgtmd-cli/viewer/**"
+    "/crates/lgtmd-cli/viewer/**",
+    "/www/dist/**",
+    "/www/.astro/**"
   ]
 }
