@@ -1,6 +1,6 @@
 {
   "name": "lgtmd",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Code-authored documents compiled by lgtmd's shared Rust engine",
   "homepage": "https://github.com/lgtmd/lgtmd",
   "bugs": {
