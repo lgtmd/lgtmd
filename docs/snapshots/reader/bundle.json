@@ -1,6 +1,6 @@
 {
   "audience": "reader",
-  "digest": "532fdd4bb77a236a2cd9fc4e28a6ee8397ef6b9f7ac67b68aebd7eafe59df520",
+  "digest": "c7ad287416370efe4f27a38281e7a700362fba2d1e1eb594b56b6ff4d6e53f6c",
   "navigation": [
     "getting-started",
     "develop-and-record",
@@ -563,7 +563,7 @@
         {
           "children": [
             {
-              "text": "Source-development text review also exposes ",
+              "text": "Text review also exposes ",
               "type": "text"
             },
             {
@@ -587,7 +587,7 @@
               "type": "code"
             },
             {
-              "text": ". Their defaults use the success, danger and warning tokens. Keep typography, padding and borders unchanged in these overrides so enabling highlights preserves the document layout. These two hooks are not in the published 0.2.0 viewer.",
+              "text": ". Their defaults use the success, danger and warning tokens. Keep typography, padding and borders unchanged in these overrides so enabling highlights preserves the document layout. These two hooks are included in npm 0.3.0.",
               "type": "text"
             }
           ],
@@ -694,7 +694,7 @@
         {
           "children": [
             {
-              "text": "This customization is included in the npm 0.2.0 docs-site CLI and is also available from the prepared source checkout.",
+              "text": "This customization is included in the npm 0.3.0 docs-site CLI and is also available from the prepared source checkout.",
               "type": "text"
             }
           ],
@@ -1060,7 +1060,7 @@
             {
               "children": [
                 {
-                  "text": "lgtmd 0.2.0",
+                  "text": "lgtmd 0.3.0",
                   "type": "text"
                 }
               ],
@@ -1073,7 +1073,7 @@
             {
               "children": [
                 {
-                  "text": "next",
+                  "text": "latest",
                   "type": "text"
                 }
               ],
@@ -1332,7 +1332,7 @@
         {
           "children": [
             {
-              "text": "In the source development viewer, open the ",
+              "text": "In development, open the ",
               "type": "text"
             },
             {
@@ -1384,7 +1384,7 @@
               "type": "strong"
             },
             {
-              "text": " to enter a branch, tag or older commit, or to copy the current candidate ID. A candidate ID identifies completed generated documentation; it is not a Git revision. The published 0.2.0 viewer uses a Git reference field; this version picker is not released yet.",
+              "text": " to enter a branch, tag or older commit, or to copy the current candidate ID. A candidate ID identifies completed generated documentation; it is not a Git revision. The Versions sheet is included in npm 0.3.0.",
               "type": "text"
             }
           ],
@@ -1564,7 +1564,7 @@
               "type": "strong"
             },
             {
-              "text": " for the reason. Notes keep their existing comment presentation. Detailed text highlights are a source-development feature and are not in the published 0.2.0 viewer.",
+              "text": " for the reason. Notes keep their existing comment presentation. Detailed text highlights are included in npm 0.3.0.",
               "type": "text"
             }
           ],

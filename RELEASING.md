@@ -158,7 +158,7 @@ Version **0.2.0** was published to crates.io and npm's `next` tag on October 14,
 [release run](https://github.com/lgtmd/lgtmd/actions/runs/38516229314) passed both
 native builds and installed npm consumers before protected human approval and
 OIDC publication. npm includes the docs-site CLI and embedded frontend; the
-Rust crate remains the SDK library. npm's `latest` tag remains `0.0.0`.
+Rust crate remains the SDK library. At that release, npm's `latest` tag remained `0.0.0`.
 
 Public downloads matched the reviewed candidate SHA-256 values:
 
@@ -168,5 +168,28 @@ Public downloads matched the reviewed candidate SHA-256 values:
 Fresh macOS arm64 consumers passed against these public packages: npm core and
 CLI with Rust absent from `PATH` and Playwright not installed, followed by the
 optional Playwright integration, and a Rust 1.95.0 consumer resolving exactly `lgtmd = "=0.2.0"`
+from crates.io with the reviewed checksum. APIs and schema-v1 input remain
+experimental; verified native targets remain macOS 15 arm64 and Ubuntu 24.04 x64.
+
+Version **0.3.0** was published to crates.io and npm's **`latest`** tag on
+October 14, 2026 from source `dfaf7c2c2d4df0f9c75be422004040e1cf66eeb6`.
+The [release run](https://github.com/lgtmd/lgtmd/actions/runs/38553022571)
+passed both native builds and installed consumers before the protected approval
+and OIDC publication. The maintainer explicitly authorized this version selection,
+`latest` publication and approval of the CI release run. npm's `next` tag remains
+at `0.2.0`.
+
+The npm viewer includes commit history in the Versions sheet and rendered
+word/line text review. The source repository also includes the Git-free evergreen
+showcase and expanded Stay example. The Rust crate remains the SDK library.
+
+Public downloads matched the reviewed candidate SHA-256 values:
+
+- `lgtmd-0.3.0.crate`: `ee5b340735ed1ab1c7f689894b9a2b452169f4110598db5b0952f2972203d806`
+- `lgtmd-0.3.0.tgz`: `f477b044b8382c9ead7cadfdfbaeb1bd7e1b68728add4b5671e99a4838edd1f2`
+
+Fresh macOS arm64 consumers passed against both public packages: npm core and
+CLI with Rust and Playwright absent, followed by the optional Playwright
+integration, and a Rust 1.95.0 consumer resolving exactly `lgtmd = "=0.3.0"`
 from crates.io with the reviewed checksum. APIs and schema-v1 input remain
 experimental; verified native targets remain macOS 15 arm64 and Ubuntu 24.04 x64.

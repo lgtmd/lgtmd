@@ -2,7 +2,7 @@
 
 Date: 2026-10-14
 
-Status: **Implemented in the source checkout; not released.**
+Status: **Implemented and released in npm 0.3.0.**
 
 This fixes the high-return first implementation of rendered text review. It
 extends [the docs-site contract](../decisions/0002-docs-site-and-git-review.md)

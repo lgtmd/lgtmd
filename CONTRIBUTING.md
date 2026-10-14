@@ -60,7 +60,7 @@ Keep the existing cover artwork and the N3 usage link.
 CI verifies Node 24 ESM on macOS 15 arm64 and Ubuntu 24.04 x64. Release packaging
 combines both native binaries into one npm tarball that runs without a Rust
 compiler, install-time build, or fallback download. Broader platform support and
-signing remain release work. Version 0.2.0 is published on npm under `next` and
+signing remain release work. Version 0.3.0 is published on npm under `latest` and
 on crates.io. APIs and schema-v1 compiler input remain experimental.
 
 Read the [release runbook](RELEASING.md) for packaging, trusted publishers,

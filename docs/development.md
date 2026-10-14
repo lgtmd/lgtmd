@@ -93,7 +93,7 @@ capture is not a new browser run or an accepted baseline.
 ## Distribution and integration
 
 The SDK manifests identify their public registries; the CLI crate and example
-packages remain private. Version 0.2.0 is published on npm under `next` and on crates.io.
+packages remain private. Version 0.3.0 is published on npm under `latest` and on crates.io.
 CI verifies macOS 15 arm64 and Ubuntu 24.04 x64 with Node 24 ESM; ordinary
 verification does not publish packages. APIs and schema-v1 compiler input remain
 experimental. CommonJS and browser-hosted SDK packages have no support promise.
@@ -212,7 +212,7 @@ tokens and hooks. Full component customization is deferred.
 
 ### Local version history
 
-The source development viewer's **Versions** sheet browses repository commits
+The development viewer's **Versions** sheet browses repository commits
 across local Git refs, with commit subjects, dates, and optional branch/tag labels.
 The sheet opens on the right, or from the bottom on narrow screens, without
 reflowing the document. **Run again** lives in the bottom toolbar; the lgtmd
@@ -229,7 +229,7 @@ Selection reads and validates the complete audience bundle and resources stored
 at that exact commit, including snapshots unchanged from a parent. Missing or
 invalid snapshots remain unavailable; the viewer never substitutes another
 revision or executes old source. No Git fetch, checkout, index write, or baseline
-acceptance occurs. This picker is not included in the published 0.2.0 viewer.
+acceptance occurs. This picker is included in npm 0.3.0.
 
 Commit metadata is dev-host state. Static exports and canonical evidence hashes
 exclude it. Change summaries count added, removed and modified pages/assets;
