@@ -66,7 +66,7 @@ For a more focused change, target a supported styling hook:
 
 The supported \`data-lgtmd-part\` values are \`shell\`, \`sidebar\`, \`toolbar\`, \`content\`, \`prose\`, \`code\`, \`notes\`, and \`image-comparison\`. Prefer these hooks to generated utility classes or the exact nesting of elements. Hooks describe presentation areas; they do not promise an editable component API. Replacing layout components or adding client behavior remains future work.
 
-Source-development text review also exposes \`text-change\` and \`block-change\`, with \`data-change="added|removed|modified"\`. Their defaults use the success, danger and warning tokens. Keep typography, padding and borders unchanged in these overrides so enabling highlights preserves the document layout. These two hooks are not in the published 0.2.0 viewer.
+Text review also exposes \`text-change\` and \`block-change\`, with \`data-change="added|removed|modified"\`. Their defaults use the success, danger and warning tokens. Keep typography, padding and borders unchanged in these overrides so enabling highlights preserves the document layout. These two hooks are included in npm 0.3.0.
 
 ## Preview and publish
 
@@ -78,6 +78,6 @@ Theme paths and bytes do not change a completed document's identity or invalidat
 
 Keep overrides self-contained. lgtmd copies only the configured CSS file: it does not follow \`@import\`, copy fonts or images mentioned in \`url()\`, or rewrite their paths. Relative URLs resolve from the served stylesheet; use assets your deployment actually serves, or browser-supported absolute and data URLs. External resources follow the reader's browser and network rules. A missing, unreadable or unsafe theme input makes dev/build fail visibly. CSS syntax is interpreted by the browser; the CLI does not compile or validate stylesheet rules.
 
-This customization is included in the npm 0.2.0 docs-site CLI and is also available from the prepared source checkout.`;
+This customization is included in the npm 0.3.0 docs-site CLI and is also available from the prepared source checkout.`;
   },
 );

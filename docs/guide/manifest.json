@@ -23,12 +23,12 @@
       "sha256": "233b6500ded361d877cddc73254f3866f126a7646de0ace80ef16892d118f45c"
     },
     {
-      "bytes": 4479,
+      "bytes": 4448,
       "document": "customize-the-site",
       "kind": "page",
       "mime": "text/markdown",
       "path": "customize-the-site.md",
-      "sha256": "fcc872bc673f6d23a35542af71f8e6611d1eab6cd1422e893892616dad5a18aa"
+      "sha256": "eb0b97c3577bf7f9bad62088b4e3ea4273742dc3c62eb4c8a14e44c657ee4362"
     },
     {
       "bytes": 3117,
@@ -39,20 +39,20 @@
       "sha256": "4bac2f645538a979afb7f78d758d6c17651492786af8e545e579285ee7d673e2"
     },
     {
-      "bytes": 2808,
+      "bytes": 2810,
       "document": "getting-started",
       "kind": "page",
       "mime": "text/markdown",
       "path": "getting-started.md",
-      "sha256": "cd43317cba961df9922171868b86d24a7f3105b89e1a3910d28e9d23389a1360"
+      "sha256": "883c9f8c0ae3054a6ab202f0d3622d10e0f1a467e664519e617d2596bba44be4"
     },
     {
-      "bytes": 5021,
+      "bytes": 4903,
       "document": "review-changes",
       "kind": "page",
       "mime": "text/markdown",
       "path": "review-changes.md",
-      "sha256": "e82084435a7f78d887e6c578c4a864dcde2832e072b115a1187b4be280226736"
+      "sha256": "33538078db9bf1513ebf1e25ff4aa10678342320705577572451a15aef7e2e58"
     }
   ],
   "audience": "reader",

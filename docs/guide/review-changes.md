@@ -4,7 +4,7 @@
 
 Choose **View diff** to compare your current completed guide with its recorded version in Git. By default the baseline is the exact snapshot at **HEAD**. Select another revision to inspect an earlier result.
 
-In the source development viewer, open the **Versions** sheet to browse project commits by their message and date. History includes all commits reachable from local branches and tags, whether or not they changed documentation. Use **Older commits** and **Newer commits** to browse 20 at a time. Selecting a commit reads the documentation snapshot stored at that exact revision; a commit without one remains visible and explains why no comparison is available. Hover a date for its full timestamp. Use **Advanced** to enter a branch, tag or older commit, or to copy the current candidate ID. A candidate ID identifies completed generated documentation; it is not a Git revision. The published 0.2.0 viewer uses a Git reference field; this version picker is not released yet.
+In development, open the **Versions** sheet to browse project commits by their message and date. History includes all commits reachable from local branches and tags, whether or not they changed documentation. Use **Older commits** and **Newer commits** to browse 20 at a time. Selecting a commit reads the documentation snapshot stored at that exact revision; a commit without one remains visible and explains why no comparison is available. Hover a date for its full timestamp. Use **Advanced** to enter a branch, tag or older commit, or to copy the current candidate ID. A candidate ID identifies completed generated documentation; it is not a Git revision. The Versions sheet is included in npm 0.3.0.
 
 The change summary counts added, removed and modified **pages** and **assets**. These are documentation counts, not Git line counts. Selecting a version does not check out old code, run your app, or accept a baseline.
 
@@ -12,7 +12,7 @@ The change summary counts added, removed and modified **pages** and **assets**. 
 
 Use **Previous** and **Current** to read the rendered guide. Changed-page navigation identifies additions, removals and changes. With **View diff** enabled, Current highlights additions in its own text and Previous highlights deletions in its own text. Headings and paragraphs show word changes; small corrections can show individual characters without splitting emoji or combining marks. Code blocks highlight changed lines. Switching highlights on or off keeps the selected version’s text and layout intact.
 
-The demonstration also adds a paragraph above unchanged content, changes **draft** to **final**, corrects **descripton** to **description**, and updates one code line. Lists, tables, changed formatting and ambiguous replacements use whole-block markers. **Partial text diff** means some changes need whole-block or page-level review; open **Versions → Advanced** for the reason. Notes keep their existing comment presentation. Detailed text highlights are a source-development feature and are not in the published 0.2.0 viewer.
+The demonstration also adds a paragraph above unchanged content, changes **draft** to **final**, corrects **descripton** to **description**, and updates one code line. Lists, tables, changed formatting and ambiguous replacements use whole-block markers. **Partial text diff** means some changes need whole-block or page-level review; open **Versions → Advanced** for the reason. Notes keep their existing comment presentation. Detailed text highlights are included in npm 0.3.0.
 
 ## Compare the screenshots
 

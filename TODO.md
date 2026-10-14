@@ -142,14 +142,14 @@ example is unnecessary for this milestone.
       exact line highlights for code, and coarse fallback for complex blocks.
       The source viewer highlights each side’s own text without changing layout.
       Bounded workers, privacy, browser and exact own-guide checks cover v1;
-      this implementation is not released.
+      this implementation is included in npm 0.3.0.
 - [ ] Evaluate accessible image enlargement or original-size inspection on small
       screens. Stay dogfooding showed that desktop captures fit a mobile reading
       column but their UI text becomes small. Keep ordinary reading, focus,
       download access and image comparison coherent; no gallery or resource
       protocol is selected. See [the observed feedback](examples/stay/feedbacks.md).
 
-### Text diff research (2026-10-14; v1 implemented, not released)
+### Text diff research (2026-10-14; v1 included in npm 0.3.0)
 
 The [v1 contract](docs/plans/text-diff-v1.md) selects jsdiff `diff` 9.0.0.
 The following shortlist records the alternatives considered; it no longer
