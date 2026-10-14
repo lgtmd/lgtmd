@@ -6,7 +6,7 @@ Date: 2026-10-14
 
 This is the execution contract for the first usable docs site. It refines
 [Decision 0002](../decisions/0002-docs-site-and-git-review.md) and the
-[user guide](../guide/develop-and-record.md). The approved GO covered all
+[user guide](../../docs/guide/develop-and-record.md). The approved GO covered all
 acceptance gates below, including the complete working CLI and browser experience.
 This is a feature milestone, not a package version or release authorization.
 

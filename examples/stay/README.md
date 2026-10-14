@@ -210,7 +210,8 @@ example makes no cross-platform pixel-identity claim.
 Generated candidates, disposable comparison snapshots, and static output live
 under ignored `.cache/`; Vite writes to ignored `dist/`. A fresh candidate is not
 an accepted baseline. This dogfooding example does not update the repository's
-tracked own-guide snapshots. Consult [feedbacks.md](feedbacks.md) for observed
+tracked own-guide snapshots. Consult the
+[archived dogfooding feedback](https://github.com/lgtmd/lgtmd/issues/13) for observed
 friction, fixes, deferred ideas, and verification evidence.
 
 ## Demo limits and assets

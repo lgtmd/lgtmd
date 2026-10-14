@@ -212,3 +212,32 @@ Delivery review added a sixteenth viewer regression for 40 levels of nested
 inline markup. Block signatures now serialize their tree once at the root,
 avoiding repeated string escaping that could exhaust the worker's budget on a
 small document. Exact word highlights remain available for this case.
+
+## Historical research shortlist
+
+Preserved from the former root backlog. These alternatives are historical
+research; the selected v1 contract and recorded implementation above remain
+authoritative.
+
+### Text diff research (2026-10-14; v1 included in npm 0.3.0)
+
+The [v1 contract](text-diff-v1.md) selects jsdiff `diff` 9.0.0.
+The following shortlist records the alternatives considered; it no longer
+requires a broad comparison project. The contract records implementation and
+verification evidence.
+
+Initial shortlist and references:
+
+| Candidate or precedent                                                                                                                                                        | Evidence and fit to investigate                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [jsdiff (`diff`)](https://github.com/kpdecker/jsdiff)                                                                                                                         | BSD-3-Clause core with word, line and token-array comparison. A starting candidate for block alignment plus inline edits in our existing content tree. Word mode ignores whitespace by default; choose explicit policies for prose and code. Evaluate Unicode segmentation and consistency across browsers.                                                                                                                                                                        |
+| [Sanity's `@sanity/diff-match-patch`](https://github.com/sanity-io/diff-match-patch)                                                                                          | Apache-2.0 TypeScript fork with diff functions, semantic cleanup and surrogate-pair fixes. [Sanity documents use of the algorithm](https://www.sanity.io/docs/changelog/7847d0f0-521b-4766-b8b3-4d4b91868fee). Compare its readable edit ranges with jsdiff; plain-text comparison still needs our block/markup mapping. The [original Google repository](https://github.com/google/diff-match-patch) is archived, so evaluate the fork rather than assuming upstream maintenance. |
+| [Read the Docs Visual Diff](https://docs.readthedocs.com/platform/stable/visual-diff.html)                                                                                    | A documentation precedent for highlights in rendered content and next/previous change navigation. Its [addon dependency manifest](https://github.com/readthedocs/addons/blob/main/package.json) lists `visual-dom-diff` and `diff-match-patch`. Study the approach and documented table/link limitations; dependency presence alone does not establish each package's exact role. Prefer evaluating our structured content before adopting DOM mutation.                           |
+| [ProseMirror changeset](https://github.com/ProseMirror/prosemirror-changeset) and [Tiptap Snapshot Compare](https://tiptap.dev/docs/collaboration/documents/snapshot-compare) | Rich-text references, not the default integration choice. The MIT changeset module consumes document editing steps/maps; lgtmd retains completed snapshots, not editor history. Tiptap's comparison extension is distributed through its private registry and tied to its editor model. Do not assume it uses the changeset package internally or import an editor stack just for review.                                                                                          |
+
+Implementation and acceptance now follow the [v1 contract](text-diff-v1.md).
+Keep our alignment and rendering layer small; reuse the selected algorithm core.
+Fine-grained tables/lists, move detection and source diff panes are deferred.
+Library or budget failure must produce a truthful coarse fallback, never change
+Rust's exact comparison or the recorded evidence. The viewer now includes the
+pinned dependency and its license notice.
