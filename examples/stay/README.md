@@ -47,8 +47,8 @@ serves its fresh candidate. It does not reuse the interactive demo's workspace o
 ports. Test collections serve the production application build on an independently
 selected loopback port; ordinary development keeps Vite and hot reload.
 
-The docs-site commands used here are available in this source checkout. They are
-not included in the published `lgtmd@0.1.0` package.
+The docs-site commands used here are included in the published `lgtmd@0.2.0`
+npm package. Running this maintained example still requires a source checkout.
 
 ## Adopt the pattern
 

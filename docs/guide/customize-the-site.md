@@ -75,5 +75,5 @@ Theme paths and bytes do not change a completed document's identity or invalidat
 
 Keep overrides self-contained. lgtmd copies only the configured CSS file: it does not follow `@import`, copy fonts or images mentioned in `url()`, or rewrite their paths. Relative URLs resolve from the served stylesheet; use assets your deployment actually serves, or browser-supported absolute and data URLs. External resources follow the reader's browser and network rules. A missing, unreadable or unsafe theme input makes dev/build fail visibly. CSS syntax is interpreted by the browser; the CLI does not compile or validate stylesheet rules.
 
-This customization is available in the prepared source checkout alongside the docs-site CLI. It is not included in the published 0.1.0 SDK.
+This customization is included in the npm 0.2.0 docs-site CLI and is also available from the prepared source checkout.
 

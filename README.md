@@ -62,7 +62,7 @@ a controlled browser, fonts, platform, and data.
 
 ## Get started
 
-**Experimental release: 0.1.0.** Install the Node SDK from npm's `next` tag:
+**Experimental release: 0.2.0.** Install the Node SDK from npm's `next` tag:
 
 ```sh
 npm install --save-dev lgtmd@next
@@ -71,7 +71,7 @@ npm install --save-dev lgtmd@next
 For Rust projects, add the SDK as a development dependency (Rust 1.95 or newer):
 
 ```sh
-cargo add --dev lgtmd@0.1.0
+cargo add --dev lgtmd@0.2.0
 ```
 
 The APIs and schema-v1 compiler input remain experimental.
@@ -96,9 +96,8 @@ recorded Git versions. Switch between Previous and Current, compare captures
 side by side, or outline changed image regions. `lgtmd build` exports the same
 reading experience as a static site.
 
-The docs-site CLI is implemented in this checkout and its packed candidate;
-**it is not included in the published 0.1.0 packages yet**. See the
-[getting-started guide](docs/guide/getting-started.md),
+The docs-site CLI and embedded frontend are included in the npm 0.2.0 package.
+See the [getting-started guide](docs/guide/getting-started.md),
 [development workflow](docs/guide/develop-and-record.md), and
 [real visual-review demonstration](docs/guide/review-changes.md).
 Markdown exports remain available for your existing docs stack.

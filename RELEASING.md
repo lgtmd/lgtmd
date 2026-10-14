@@ -152,3 +152,21 @@ The first completed release was **0.1.0**, published to crates.io and npm's
 both native builds, the shared npm archive, installed consumers, the protected
 approval gate, OIDC publication, and npm provenance. Registry downloads matched
 the reviewed archives and passed subsequent consumer checks.
+
+Version **0.2.0** was published to crates.io and npm's `next` tag on October 14,
+2026 from source `6ff4b727aaf0641771262ebb4119e21b8e70207e`. Its
+[release run](https://github.com/lgtmd/lgtmd/actions/runs/38516229314) passed both
+native builds and installed npm consumers before protected human approval and
+OIDC publication. npm includes the docs-site CLI and embedded frontend; the
+Rust crate remains the SDK library. npm's `latest` tag remains `0.0.0`.
+
+Public downloads matched the reviewed candidate SHA-256 values:
+
+- `lgtmd-0.2.0.crate`: `fbb5c4f032a148a6135e583ca83da5579ee77f6550a08a8b467ea4311df9dfe8`
+- `lgtmd-0.2.0.tgz`: `8b3cab7eb258405b405b70792caeed5272ee6fddc62a9f4762bc2676ad921a21`
+
+Fresh macOS arm64 consumers passed against these public packages: npm core and
+CLI with Rust absent from `PATH` and Playwright not installed, followed by the
+optional Playwright integration, and a Rust 1.95.0 consumer resolving exactly `lgtmd = "=0.2.0"`
+from crates.io with the reviewed checksum. APIs and schema-v1 input remain
+experimental; verified native targets remain macOS 15 arm64 and Ubuntu 24.04 x64.

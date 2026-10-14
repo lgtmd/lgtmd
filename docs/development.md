@@ -92,8 +92,8 @@ capture is not a new browser run or an accepted baseline.
 
 ## Distribution and integration
 
-The SDK manifests identify their public registries; CLI and example packages
-remain private. Version 0.1.0 is published on npm under `next` and on crates.io.
+The SDK manifests identify their public registries; the CLI crate and example
+packages remain private. Version 0.2.0 is published on npm under `next` and on crates.io.
 CI verifies macOS 15 arm64 and Ubuntu 24.04 x64 with Node 24 ESM; ordinary
 verification does not publish packages. APIs and schema-v1 compiler input remain
 experimental. CommonJS and browser-hosted SDK packages have no support promise.

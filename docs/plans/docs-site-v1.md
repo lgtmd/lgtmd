@@ -1,6 +1,6 @@
 # Docs site v1 implementation plan
 
-Status: **V1 implemented and verified with one native CLI; not released**
+Status: **V1 implemented and verified with one native CLI; included in npm 0.2.0**
 
 Date: 2026-10-14
 
@@ -518,8 +518,9 @@ a screenshot of the diff UI alone does not prove correctness.
 
 Final delivery states how to start own docs and the demo, shows the captured
 guide, reports checks and platform limits, and identifies any manual review
-remaining. Availability text must distinguish the implemented checkout/packed
-candidate from registry 0.1.0; no new release is implied by implementing commands.
+remaining. At the original v1 delivery, availability text distinguished the
+implemented checkout/packed candidate from registry 0.1.0; implementing commands
+did not imply a new release.
 No implementation item above may silently become deferred styling.
 
 ## 11. Explicit follow-up scope
