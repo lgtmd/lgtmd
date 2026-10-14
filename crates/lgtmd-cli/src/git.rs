@@ -16,6 +16,8 @@ const MAX_BLOB: usize = 64 * 1024 * 1024;
 const MAX_SNAPSHOT: usize = 256 * 1024 * 1024;
 #[derive(Clone, Debug, Serialize)]
 pub struct GitBaseline {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub commit: Option<GitCommit>,
     pub status: String,
     #[serde(rename = "ref")]
     pub reference: String,
@@ -36,6 +38,7 @@ impl GitBaseline {
         message: impl Into<String>,
     ) -> Self {
         Self {
+            commit: None,
             status: "unavailable".into(),
             reference: reference.into(),
             revision,
@@ -199,9 +202,11 @@ async fn read_inner(config: &Config, audience: &str, reference: &str) -> GitBase
         );
     };
     let prefix = format!("{}/", relative.replace('\\', "/"));
+    let commit = read_commit(&root, &revision).await.ok();
     let result = read_snapshot(&root, &revision, &prefix, audience).await;
-    match result {
+    let mut baseline = match result {
         Ok(Some(projection)) => GitBaseline {
+            commit: None,
             status: "available".into(),
             reference: reference.into(),
             revision: Some(revision),
@@ -221,7 +226,9 @@ async fn read_inner(config: &Config, audience: &str, reference: &str) -> GitBase
             "invalid-snapshot",
             format!("Cannot compare this recorded snapshot: {error}"),
         ),
-    }
+    };
+    baseline.commit = commit;
+    baseline
 }
 async fn read_snapshot(
     root: &Path,
@@ -287,4 +294,136 @@ async fn read_snapshot(
         return Err("Historical snapshot audience mismatch".into());
     }
     Ok(Some(projection))
+}
+
+/// Presentation metadata belongs to the local host, never canonical evidence.
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GitCommit {
+    pub revision: String,
+    pub subject: String,
+    pub committed_at: i64,
+    pub decorations: String,
+}
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GitHistory {
+    pub commits: Vec<GitCommit>,
+    pub truncated: bool,
+    pub offset: usize,
+    // Pin traversal to the same local tips while paging, even if branches move.
+    #[serde(skip)]
+    pub tips: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+const COMMIT_FORMAT: &str = "--format=%H%x00%s%x00%ct%x00%D";
+fn parse_commits(bytes: Vec<u8>) -> Result<Vec<GitCommit>> {
+    let text = String::from_utf8(bytes).map_err(|_| "Git metadata is not UTF-8")?;
+    let fields: Vec<_> = text.split_terminator('\0').collect();
+    if !fields.len().is_multiple_of(4) {
+        return Err("Git returned invalid commit metadata".into());
+    }
+    fields
+        .chunks_exact(4)
+        .map(|fields| {
+            if !hex_object(fields[0]) {
+                return Err("Git returned invalid commit identity".into());
+            }
+            Ok(GitCommit {
+                revision: fields[0].into(),
+                subject: fields[1].into(),
+                committed_at: fields[2]
+                    .parse()
+                    .map_err(|_| "Git returned invalid commit time")?,
+                decorations: fields[3].into(),
+            })
+        })
+        .collect()
+}
+async fn read_commit(root: &Path, revision: &str) -> Result<GitCommit> {
+    let bytes = git(
+        root,
+        &[
+            "log",
+            "-z",
+            "-1",
+            "--no-show-signature",
+            COMMIT_FORMAT,
+            revision,
+            "--",
+        ],
+        1024 * 1024,
+    )
+    .await?;
+    parse_commits(bytes)?
+        .pop()
+        .ok_or_else(|| "Commit metadata is unavailable".into())
+}
+/// A bounded page of repository history from local refs; never fetch or replay.
+pub async fn read_history(
+    config: &Config,
+    previous: Option<&GitHistory>,
+    offset: usize,
+) -> GitHistory {
+    let result = tokio::time::timeout(Duration::from_secs(30), async {
+        let cwd = config.git.root.as_deref().unwrap_or(&config.root);
+        let root = std::path::PathBuf::from(text(
+            git(cwd, &["rev-parse", "--show-toplevel"], 64 * 1024).await?,
+        )?);
+        let tips = if let Some(previous) = previous.filter(|p| !p.tips.is_empty()) {
+            previous.tips.clone()
+        } else {
+            let output = text(git(&root, &["rev-parse", "--all", "HEAD"], 64 * 1024).await?)?;
+            let mut tips: Vec<String> = output.lines().map(String::from).collect();
+            if tips.iter().any(|tip| !hex_object(tip)) {
+                return Err("Git returned invalid history roots".into());
+            }
+            tips.sort();
+            tips.dedup();
+            tips
+        };
+        let skip = format!("--skip={offset}");
+        let mut args = vec![
+            "log",
+            "-z",
+            "--max-count=21",
+            "--date-order",
+            "--no-show-signature",
+            COMMIT_FORMAT,
+            &skip,
+        ];
+        args.extend(tips.iter().map(String::as_str));
+        args.push("--");
+        let bytes = git(&root, &args, 1024 * 1024).await?;
+        Ok((parse_commits(bytes)?, tips))
+    })
+    .await;
+    match result {
+        Ok(Ok((mut commits, tips))) => {
+            let truncated = commits.len() > 20;
+            commits.truncate(20);
+            GitHistory {
+                commits,
+                truncated,
+                offset,
+                tips,
+                message: None,
+            }
+        }
+        result => {
+            let mut history = previous.cloned().unwrap_or(GitHistory {
+                commits: Vec::new(),
+                truncated: false,
+                offset: 0,
+                tips: Vec::new(),
+                message: None,
+            });
+            history.message = Some(match result {
+                Ok(Err(error)) => error,
+                _ => "Reading local version history timed out".into(),
+            });
+            history
+        }
+    }
 }

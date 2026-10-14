@@ -88,7 +88,26 @@ export interface Comparison {
   pages: { id: string; status: Change; before?: Page; after?: Page }[];
   resources: ResourcePair[];
 }
+export interface GitCommit {
+  revision: string;
+  subject: string;
+  committedAt: number;
+  decorations: string;
+}
 export interface SiteState {
+  /** Retained comparison fixtures; no Git identity or live execution. */
+  reviewSource?: {
+    kind: "fixture";
+    beforeLabel: string;
+    afterLabel: string;
+    description: string;
+  };
+  history?: {
+    commits: GitCommit[];
+    truncated: boolean;
+    offset: number;
+    message?: string;
+  };
   mode: "dev" | "static";
   title: string;
   audience: Audience;
@@ -105,6 +124,8 @@ export interface SiteState {
     status: "available" | "unavailable" | "loading";
     ref: string;
     revision?: string;
+    commit?: GitCommit;
+    code?: string;
     message?: string;
     bundle?: Bundle;
     resourceBase?: string;
@@ -114,7 +135,7 @@ export interface SiteState {
   token?: string;
 }
 export interface Boot {
-  mode: "dev" | "static";
+  mode: "dev" | "static" | "review";
   basePath: string;
   dataUrl: string;
 }

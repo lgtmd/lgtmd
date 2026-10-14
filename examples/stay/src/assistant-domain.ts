@@ -11,3 +11,8 @@ export interface AssistantConversation {
   messages: AssistantMessage[];
   preferences: StayFilters;
 }
+
+export type AssistantEvent =
+  | { type: "text"; text: string }
+  | { type: "done"; conversation: AssistantConversation }
+  | { type: "error"; message: string };

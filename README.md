@@ -76,6 +76,8 @@ cargo add --dev lgtmd@0.2.0
 
 The APIs and schema-v1 compiler input remain experimental.
 
+- [Viewer showcase](examples/review/showcase/README.md) (source checkout) —
+  run `just docs-demo` for retained text and full-page image comparisons, without Git history.
 - [React + Vite walkthrough](examples/lgtmd-web/README.md) — client, HTTP API,
   Playwright setup, and the complete guide workflow.
 - [Stay example](examples/stay/README.md) (source checkout) — detailed filters,

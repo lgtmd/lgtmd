@@ -83,6 +83,7 @@ test("Review the text and screenshot from a real Git revision", async ({
     const before = await geometry();
     for (let toggle = 0; toggle < 2; toggle++) {
       await diffToggle.check();
+      await expect(page.locator(".prose ins").first()).toBeVisible();
       expect(await geometry()).toEqual(before);
       await expect(
         page.getByRole("slider", { name: "Image reveal: project-card" }),
@@ -95,7 +96,7 @@ test("Review the text and screenshot from a real Git revision", async ({
   await page.setViewportSize({ width: 1200, height: 1000 });
   await diffToggle.check();
   const tools = page.getByRole("button", {
-    name: "Development tools",
+    name: "Version history",
     exact: true,
   });
   await expect(page.getByRole("main").getByRole("tablist")).toHaveCount(0);
@@ -103,13 +104,12 @@ test("Review the text and screenshot from a real Git revision", async ({
   await expect(
     page.getByRole("region", { name: "Review revisions" }),
   ).toBeVisible();
-  await expect(page.getByLabel("Compare against Git revision")).toHaveValue(
-    "before",
-  );
+  await page.getByText("Advanced", { exact: true }).click();
+  await expect(page.getByLabel("Branch, tag, or commit")).toHaveValue("before");
   await expect(
     page.getByRole("checkbox", { name: "Changed pages" }),
   ).toBeVisible();
-  await page.getByLabel("Compare against Git revision").press("Escape");
+  await page.getByLabel("Branch, tag, or commit").press("Escape");
   await expect(tools).toBeFocused();
   await expect(tools).toHaveAttribute("aria-expanded", "false");
   await expect(page.getByRole("checkbox", { name: "View diff" })).toBeChecked();
@@ -119,6 +119,13 @@ test("Review the text and screenshot from a real Git revision", async ({
   await expect(page.getByTestId("review-panel")).toContainText(
     "Ready for review",
   );
+  await expect(page.locator(".prose ins")).toHaveText([
+    "Ready",
+    "for review",
+    "final",
+    "i",
+    'const status = "ready";\n',
+  ]);
   const comparison = page.getByTestId("image-comparison");
   const reveal = comparison.getByRole("slider", {
     name: "Image reveal: project-card",
@@ -349,11 +356,15 @@ test("Review the text and screenshot from a real Git revision", async ({
   );
   doc.md`Choose **View diff** to compare your current completed guide with its recorded version in Git. By default the baseline is the exact snapshot at **HEAD**. Select another revision to inspect an earlier result.
 
-The site shows the resolved revision and current candidate. Selecting a version does not check out old code, run your app, or accept a baseline.
+In the source development viewer, open the **Versions** sheet to browse project commits by their message and date. History includes all commits reachable from local branches and tags, whether or not they changed documentation. Use **Older commits** and **Newer commits** to browse 20 at a time. Selecting a commit reads the documentation snapshot stored at that exact revision; a commit without one remains visible and explains why no comparison is available. Hover a date for its full timestamp. Use **Advanced** to enter a branch, tag or older commit, or to copy the current candidate ID. A candidate ID identifies completed generated documentation; it is not a Git revision. The published 0.2.0 viewer uses a Git reference field; this version picker is not released yet.
+
+The change summary counts added, removed and modified **pages** and **assets**. These are documentation counts, not Git line counts. Selecting a version does not check out old code, run your app, or accept a baseline.
 
 ## Read both versions
 
-Use **Previous** and **Current** to read the rendered guide. Changed-page navigation identifies additions, removals and changes. This first version compares whole pages; it does not infer paragraph identity or promise inline word highlighting.
+Use **Previous** and **Current** to read the rendered guide. Changed-page navigation identifies additions, removals and changes. With **View diff** enabled, Current highlights additions in its own text and Previous highlights deletions in its own text. Headings and paragraphs show word changes; small corrections can show individual characters without splitting emoji or combining marks. Code blocks highlight changed lines. Switching highlights on or off keeps the selected version’s text and layout intact.
+
+The demonstration also adds a paragraph above unchanged content, changes **draft** to **final**, corrects **descripton** to **description**, and updates one code line. Lists, tables, changed formatting and ambiguous replacements use whole-block markers. **Partial text diff** means some changes need whole-block or page-level review; open **Versions → Advanced** for the reason. Notes keep their existing comment presentation. Detailed text highlights are a source-development feature and are not in the published 0.2.0 viewer.
 
 ## Compare the screenshots
 
@@ -375,7 +386,9 @@ Start with **Reader** for user-facing content. An explicit Contributor session c
 
 ## Try the demonstration
 
-In a prepared lgtmd checkout, run **just docs-demo**. It starts this real comparison against a disposable, clearly labeled example history. Its sample notes are intentionally public. The example never creates commits in your project.
+In a prepared lgtmd checkout, run **just docs-git-demo**. It starts this real comparison against a disposable, clearly labeled example history. Its sample notes are intentionally public. The example never creates commits in your project.
+
+For an evergreen, Git-free tour of the same viewer, run **just docs-demo**. Its retained Original and Revised versions cover text, full-width page captures, a four-pixel image change, mismatched dimensions, notes, unchanged content and added or removed pages. Browsing does not rerun captures.
 
 This page is itself authored with lgtmd. Its browser scenario asserts the real revision and changes, operates the comparison controls, then captures these images. The final guide is not an input to the example it explains.`;
 });

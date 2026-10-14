@@ -126,18 +126,35 @@ example is unnecessary for this milestone.
 - [ ] Offer optional editable viewer components or a custom frontend build path
       for structural and behavioral customization, without requiring an engine
       fork. Keep ordinary CSS theming independent of this later interface.
-- [ ] Research text-level change highlighting: align document blocks, then show
-      word insertions/deletions and useful line diffs for code. Current review
-      only switches between **Previous / Current** documents; it does not render
-      inline text edits. Keep the UI authored in lgtmd; evaluate reusing a diff
-      algorithm core rather than embedding another product's diff viewer.
+- [x] Provide a canonical Git-free viewer showcase with retained versions,
+      full-page captures, subtle pixel changes and focused edge-case pages.
+      `just docs-demo` opens it; `just docs-git-demo` retains real Git integration.
+- [ ] Evaluate simpler history recording and browsing of pre-existing docs from
+      the [unratified demo feedback](FEEDBACKS.md). Current Git review requires
+      committed site snapshots; ordinary source commits alone do not contain
+      executable evidence. Automatic recording and legacy-document import remain
+      proposals, not part of the implemented history browser.
+- [x] Select text-diff tooling and a bounded first-version contract: jsdiff
+      `diff` 9.0.0, existing React rendering, conservative block matching,
+      Unicode-safe ranges and explicit work limits. See the
+      [text diff v1 contract](docs/plans/text-diff-v1.md).
+- [x] Implement that contract: word/limited character highlights for prose,
+      exact line highlights for code, and coarse fallback for complex blocks.
+      The source viewer highlights each side’s own text without changing layout.
+      Bounded workers, privacy, browser and exact own-guide checks cover v1;
+      this implementation is not released.
 - [ ] Evaluate accessible image enlargement or original-size inspection on small
       screens. Stay dogfooding showed that desktop captures fit a mobile reading
       column but their UI text becomes small. Keep ordinary reading, focus,
       download access and image comparison coherent; no gallery or resource
       protocol is selected. See [the observed feedback](examples/stay/feedbacks.md).
 
-### Text diff research (2026-10-14; proposal, no dependency selected)
+### Text diff research (2026-10-14; v1 implemented, not released)
+
+The [v1 contract](docs/plans/text-diff-v1.md) selects jsdiff `diff` 9.0.0.
+The following shortlist records the alternatives considered; it no longer
+requires a broad comparison project. The contract records implementation and
+verification evidence.
 
 Initial shortlist and references:
 
@@ -148,30 +165,12 @@ Initial shortlist and references:
 | [Read the Docs Visual Diff](https://docs.readthedocs.com/platform/stable/visual-diff.html)                                                                                    | A documentation precedent for highlights in rendered content and next/previous change navigation. Its [addon dependency manifest](https://github.com/readthedocs/addons/blob/main/package.json) lists `visual-dom-diff` and `diff-match-patch`. Study the approach and documented table/link limitations; dependency presence alone does not establish each package's exact role. Prefer evaluating our structured content before adopting DOM mutation.                           |
 | [ProseMirror changeset](https://github.com/ProseMirror/prosemirror-changeset) and [Tiptap Snapshot Compare](https://tiptap.dev/docs/collaboration/documents/snapshot-compare) | Rich-text references, not the default integration choice. The MIT changeset module consumes document editing steps/maps; lgtmd retains completed snapshots, not editor history. Tiptap's comparison extension is distributed through its private registry and tied to its editor model. Do not assume it uses the changeset package internally or import an editor stack just for review.                                                                                          |
 
-Proposed evaluation, pending implementation approval:
-
-- [ ] Compare jsdiff and Sanity's core on the same retained A/B document pairs.
-      Measure readable results, installed/bundled size, runtime on long documents,
-      cancellation/budgets, maintenance and license notices before selecting one.
-- [ ] Design a small custom adapter for block alignment and mapping edit ranges
-      back to safe content nodes. Cover headings, paragraphs, lists, tables,
-      links, emphasis, code and adjacent images. Treat generated positional IDs
-      as insufficient proof of matching blocks; test insertions near the start,
-      repeated paragraphs, reordered sections and formatting-only changes.
-- [ ] Compare rendered inline highlighting with an optional line-oriented source
-      view using complete examples. Keep our image widgets and comment markers,
-      accessible additions/deletions, change navigation, themes and mobile layout.
-      Avoid raw HTML injection and distinguish changed link destinations from
-      unchanged visible labels.
-- [ ] Exercise whitespace, Korean/CJK, emoji and combining characters, whole
-      added/removed pages, and both audiences. Diff only the already-filtered
-      bundles. Client display heuristics must not alter Rust's exact comparison,
-      candidate identity, snapshot acceptance or recorded evidence.
-
-Working recommendation: own the alignment/rendering layer and reuse a small diff
-core if the fixtures justify it. A fully custom core remains an option if these
-libraries do not meet the measured requirements. This research does not authorize
-implementation or change the current support claim.
+Implementation and acceptance now follow the [v1 contract](docs/plans/text-diff-v1.md).
+Keep our alignment and rendering layer small; reuse the selected algorithm core.
+Fine-grained tables/lists, move detection and source diff panes are deferred.
+Library or budget failure must produce a truthful coarse fallback, never change
+Rust's exact comparison or the recorded evidence. The viewer now includes the
+pinned dependency and its license notice.
 
 Git supplies revisions; the frontend consumes completed documents. Managed
 hosting, collaborative comments, remote evidence storage, and additional image

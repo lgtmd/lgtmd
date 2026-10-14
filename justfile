@@ -62,9 +62,17 @@ docs-build:
 docs-preview *args:
     node packages/lgtmd/dist/src/cli.js preview "$@"
 
-# Demonstrate real Git-backed review without modifying source repository history.
-docs-demo:
-    node examples/review/demo.mjs
+# Canonical retained viewer showcase: no Git history or capture required.
+docs-demo *args:
+    node examples/review/showcase/demo.mjs "$@"
+
+# Exercise real Git history separately from the evergreen showcase.
+docs-git-demo *args:
+    node examples/review/demo.mjs "$@"
+
+# Explicit fresh capture verification for the retained showcase fixtures.
+docs-showcase-check:
+    node examples/review/showcase/generate.mjs --check
 
 # Try pronounced A/B image changes in a disposable local review site.
 docs-playground *args:

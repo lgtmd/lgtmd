@@ -17,7 +17,11 @@ import type {
 } from "../src/domain.ts";
 import { actors, FIXED_TIME, listings } from "../fixtures/scenario.ts";
 import { ReplyProvider, type ProviderOptions } from "./provider.ts";
-import { AssistantError, StayAssistant } from "./assistant.ts";
+import {
+  AssistantError,
+  StayAssistant,
+  type AssistantModelFactory,
+} from "./assistant.ts";
 
 interface OwnedRequest {
   value: StayRequest;
@@ -172,6 +176,7 @@ export interface ServerOptions {
   port?: number;
   fixtureKey?: string;
   staticRoot?: string;
+  assistantModelFactory?: AssistantModelFactory;
 }
 
 export async function startServer(options: ServerOptions = {}) {
@@ -352,7 +357,10 @@ export async function startServer(options: ServerOptions = {}) {
             throw new HttpError(403, "Only a guest can use the stay finder.");
           let assistant = workspace.assistants.get(actor.id);
           if (!assistant) {
-            assistant = new StayAssistant(listingData);
+            assistant = new StayAssistant(
+              listingData,
+              options.assistantModelFactory,
+            );
             workspace.assistants.set(actor.id, assistant);
           }
           if (method === "GET") {
@@ -368,7 +376,56 @@ export async function startServer(options: ServerOptions = {}) {
           }
           if (Object.keys(input).some((key) => key !== "message"))
             throw new HttpError(400, "Send only the message field.");
-          send(response, 200, await assistant.send(input.message));
+          const streaming = request.headers.accept === "application/x-ndjson";
+          const controller = new AbortController();
+          let stopped!: () => void;
+          activeStreams.set(
+            controller,
+            new Promise<void>((resolve) => {
+              stopped = resolve;
+            }),
+          );
+          workspace.streams.add(controller);
+          const abort = () => {
+            if (!response.writableEnded) controller.abort();
+          };
+          response.on("close", abort);
+          try {
+            for await (const event of assistant.stream(
+              input.message,
+              controller.signal,
+            )) {
+              if (response.destroyed) break;
+              if (streaming) {
+                if (!response.headersSent)
+                  response.writeHead(200, {
+                    "Content-Type": "application/x-ndjson; charset=utf-8",
+                    "Cache-Control": "no-store",
+                    "X-Content-Type-Options": "nosniff",
+                  });
+                response.write(JSON.stringify(event) + "\n");
+              } else if (event.type === "done") {
+                send(response, 200, event.conversation);
+              }
+            }
+            response.end();
+          } catch (error) {
+            if (!response.headersSent) throw error;
+            if (!response.destroyed)
+              response.end(
+                JSON.stringify({
+                  type: "error",
+                  message:
+                    "The local assistant could not finish. Please try again.",
+                }) + "\n",
+              );
+          } finally {
+            controller.abort();
+            response.off("close", abort);
+            activeStreams.delete(controller);
+            workspace.streams.delete(controller);
+            stopped();
+          }
           return;
         }
         const listingMatch = /^\/api\/listings\/([^/]+)$/.exec(path);

@@ -1,0 +1,1204 @@
+{
+  "audience": "contributor",
+  "digest": "b0964221e818560a6443c313a60b53cd75a84a61a621b8139f08abe1e109ce75",
+  "navigation": [
+    "welcome",
+    "text",
+    "full-page",
+    "four-pixels",
+    "dimensions",
+    "structure",
+    "notes",
+    "unchanged",
+    "new-page"
+  ],
+  "pages": [
+    {
+      "anchors": [
+        "block-0001"
+      ],
+      "content": [
+        {
+          "children": [
+            {
+              "text": "Different dimensions",
+              "type": "text"
+            }
+          ],
+          "level": 1,
+          "type": "heading"
+        },
+        {
+          "id": "block-0001",
+          "type": "anchor"
+        },
+        {
+          "children": [
+            {
+              "text": "Both images capture the entire page width. Original uses a ",
+              "type": "text"
+            },
+            {
+              "children": [
+                {
+                  "text": "1280px",
+                  "type": "text"
+                }
+              ],
+              "type": "strong"
+            },
+            {
+              "text": " viewport; Revised uses ",
+              "type": "text"
+            },
+            {
+              "children": [
+                {
+                  "text": "1100px",
+                  "type": "text"
+                }
+              ],
+              "type": "strong"
+            },
+            {
+              "text": ". This is an intentional responsive-layout comparison, not a pixel-aligned pair.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "page_id": "dimensions",
+              "resource_id": "responsive",
+              "text": "Complete workspace at two different viewport widths",
+              "type": "image"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "The viewer keeps both captures readable with side-by-side review. It explains why aligned comparison is unavailable instead of inventing meaningful pixel annotations.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        }
+      ],
+      "id": "dimensions",
+      "notes": [],
+      "title": "Different dimensions"
+    },
+    {
+      "anchors": [
+        "block-0001"
+      ],
+      "content": [
+        {
+          "children": [
+            {
+              "text": "Four pixels",
+              "type": "text"
+            }
+          ],
+          "level": 1,
+          "type": "heading"
+        },
+        {
+          "id": "block-0001",
+          "type": "anchor"
+        },
+        {
+          "children": [
+            {
+              "text": "These full-width captures look almost identical. A ",
+              "type": "text"
+            },
+            {
+              "children": [
+                {
+                  "text": "2 × 2 pixel",
+                  "type": "text"
+                }
+              ],
+              "type": "strong"
+            },
+            {
+              "text": " marker near the top-right changes color: exactly ",
+              "type": "text"
+            },
+            {
+              "children": [
+                {
+                  "text": "four pixels",
+                  "type": "text"
+                }
+              ],
+              "type": "strong"
+            },
+            {
+              "text": " at the original capture resolution. The rest of the screen is byte-for-byte identical after decoding.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "page_id": "four-pixels",
+              "resource_id": "tiny-change",
+              "text": "Full desktop workspace with a deliberately tiny four-pixel difference",
+              "type": "image"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "Open the image controls and enable ",
+              "type": "text"
+            },
+            {
+              "children": [
+                {
+                  "text": "Annotations",
+                  "type": "text"
+                }
+              ],
+              "type": "strong"
+            },
+            {
+              "text": ", then open ",
+              "type": "text"
+            },
+            {
+              "children": [
+                {
+                  "text": "Details",
+                  "type": "text"
+                }
+              ],
+              "type": "strong"
+            },
+            {
+              "text": " to see the changed-pixel count. Region boxes are coarser than individual pixels. Exact comparison reports a changed asset even when the change is hard to see at reading size.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        }
+      ],
+      "id": "four-pixels",
+      "notes": [],
+      "title": "Four pixels"
+    },
+    {
+      "anchors": [
+        "block-0001"
+      ],
+      "content": [
+        {
+          "children": [
+            {
+              "text": "A full page",
+              "type": "text"
+            }
+          ],
+          "level": 1,
+          "type": "heading"
+        },
+        {
+          "id": "block-0001",
+          "type": "anchor"
+        },
+        {
+          "children": [
+            {
+              "text": "Compare a complete desktop workspace, captured at ",
+              "type": "text"
+            },
+            {
+              "children": [
+                {
+                  "text": "1280px wide",
+                  "type": "text"
+                }
+              ],
+              "type": "strong"
+            },
+            {
+              "text": ", including the full page height. The revised fixture changes the completed-task count, the final chart bar and the project status. Header, navigation and surrounding context stay in the capture.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "page_id": "full-page",
+              "resource_id": "workspace",
+              "text": "Full desktop workspace with navigation, metrics, activity and projects",
+              "type": "image"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "Use the slider to inspect changes in place. Side by side preserves image proportions and scrolls horizontally. Annotations group changed pixels; they do not identify product semantics.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        }
+      ],
+      "id": "full-page",
+      "notes": [],
+      "title": "A full page"
+    },
+    {
+      "anchors": [
+        "block-0001"
+      ],
+      "content": [
+        {
+          "children": [
+            {
+              "text": "A new page",
+              "type": "text"
+            }
+          ],
+          "level": 1,
+          "type": "heading"
+        },
+        {
+          "id": "block-0001",
+          "type": "anchor"
+        },
+        {
+          "children": [
+            {
+              "text": "This entire page was added in Revised. Switch to Original to see an explicit missing-side message. The viewer never fills that gap with current content.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        }
+      ],
+      "id": "new-page",
+      "notes": [],
+      "title": "A new page"
+    },
+    {
+      "anchors": [
+        "block-0001",
+        "block-0002",
+        "note-0001"
+      ],
+      "content": [
+        {
+          "children": [
+            {
+              "text": "Contributor notes",
+              "type": "text"
+            }
+          ],
+          "level": 1,
+          "type": "heading"
+        },
+        {
+          "id": "block-0001",
+          "type": "anchor"
+        },
+        {
+          "children": [
+            {
+              "text": "Notes keep implementation details alongside the explanation without interrupting ordinary reading. Open the small comment button to read a note.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "This visible passage stays the same in both versions.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "id": "block-0002",
+          "type": "anchor"
+        },
+        {
+          "children": [
+            {
+              "text": "Contributor notes are excluded from Reader bundles before delivery. This showcase defaults to Contributor so you can inspect the comment behavior. Start it with ",
+              "type": "text"
+            },
+            {
+              "children": [
+                {
+                  "text": "--audience reader",
+                  "type": "text"
+                }
+              ],
+              "type": "strong"
+            },
+            {
+              "text": " to inspect the filtered version. Note changes keep their normal presentation and report partial detailed-text coverage.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        }
+      ],
+      "id": "notes",
+      "notes": [
+        {
+          "anchor": "block-0001",
+          "content": [
+            {
+              "children": [
+                {
+                  "children": [
+                    {
+                      "children": [
+                        {
+                          "text": "Contributor note on ",
+                          "type": "text"
+                        },
+                        {
+                          "children": [
+                            {
+                              "text": "block",
+                              "type": "text"
+                            },
+                            {
+                              "text": "-0001",
+                              "type": "text"
+                            }
+                          ],
+                          "id": "block-0001",
+                          "page_id": "notes",
+                          "type": "link"
+                        },
+                        {
+                          "text": ":",
+                          "type": "text"
+                        }
+                      ],
+                      "type": "strong"
+                    },
+                    {
+                      "text": " Public sample note: the revised fixture includes the completed review",
+                      "type": "text"
+                    },
+                    {
+                      "text": ". This is deliberately public demo content",
+                      "type": "text"
+                    },
+                    {
+                      "text": ".",
+                      "type": "text"
+                    }
+                  ],
+                  "type": "paragraph"
+                }
+              ],
+              "type": "blockquote"
+            }
+          ],
+          "id": "note-0001",
+          "target": {
+            "id": "block-0001",
+            "kind": "block"
+          }
+        }
+      ],
+      "targets": [
+        {
+          "id": "block-0001",
+          "kind": "block"
+        }
+      ],
+      "title": "Contributor notes"
+    },
+    {
+      "anchors": [
+        "block-0001"
+      ],
+      "content": [
+        {
+          "children": [
+            {
+              "text": "Structured content",
+              "type": "text"
+            }
+          ],
+          "level": 1,
+          "type": "heading"
+        },
+        {
+          "id": "block-0001",
+          "type": "anchor"
+        },
+        {
+          "children": [
+            {
+              "text": "Complex structures receive whole-block markers. The viewer does not pretend that table cells or list items have stable identities.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "A table",
+              "type": "text"
+            }
+          ],
+          "level": 2,
+          "type": "heading"
+        },
+        {
+          "align": [
+            "none",
+            "none"
+          ],
+          "children": [
+            {
+              "children": [
+                {
+                  "children": [
+                    {
+                      "text": "Stage",
+                      "type": "text"
+                    }
+                  ],
+                  "type": "table_cell"
+                },
+                {
+                  "children": [
+                    {
+                      "text": "Owner",
+                      "type": "text"
+                    }
+                  ],
+                  "type": "table_cell"
+                }
+              ],
+              "type": "table_head"
+            },
+            {
+              "children": [
+                {
+                  "children": [
+                    {
+                      "text": "Review",
+                      "type": "text"
+                    }
+                  ],
+                  "type": "table_cell"
+                },
+                {
+                  "children": [
+                    {
+                      "text": "Alex",
+                      "type": "text"
+                    }
+                  ],
+                  "type": "table_cell"
+                }
+              ],
+              "type": "table_row"
+            },
+            {
+              "children": [
+                {
+                  "children": [
+                    {
+                      "text": "Delivery",
+                      "type": "text"
+                    }
+                  ],
+                  "type": "table_cell"
+                },
+                {
+                  "children": [
+                    {
+                      "text": "Morgan",
+                      "type": "text"
+                    }
+                  ],
+                  "type": "table_cell"
+                }
+              ],
+              "type": "table_row"
+            }
+          ],
+          "type": "table"
+        },
+        {
+          "children": [
+            {
+              "text": "A list",
+              "type": "text"
+            }
+          ],
+          "level": 2,
+          "type": "heading"
+        },
+        {
+          "children": [
+            {
+              "children": [
+                {
+                  "text": "Prepare the brief.",
+                  "type": "text"
+                }
+              ],
+              "type": "item"
+            },
+            {
+              "children": [
+                {
+                  "text": "Approve the proposal.",
+                  "type": "text"
+                }
+              ],
+              "type": "item"
+            },
+            {
+              "children": [
+                {
+                  "text": "Share the result.",
+                  "type": "text"
+                }
+              ],
+              "type": "item"
+            }
+          ],
+          "type": "list"
+        },
+        {
+          "children": [
+            {
+              "text": "Same label, different destination",
+              "type": "text"
+            }
+          ],
+          "level": 2,
+          "type": "heading"
+        },
+        {
+          "children": [
+            {
+              "children": [
+                {
+                  "text": "Project handbook",
+                  "type": "text"
+                }
+              ],
+              "type": "link",
+              "url": "https://example.com/handbook-v2"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "Whitespace matters",
+              "type": "text"
+            }
+          ],
+          "level": 2,
+          "type": "heading"
+        },
+        {
+          "children": [
+            {
+              "text": "  saveProject();\n",
+              "type": "text"
+            }
+          ],
+          "language": "js",
+          "type": "code_block"
+        },
+        {
+          "children": [
+            {
+              "text": "Repeated passages",
+              "type": "text"
+            }
+          ],
+          "level": 2,
+          "type": "heading"
+        },
+        {
+          "children": [
+            {
+              "text": "Repeated explanation.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "Updated explanation",
+              "type": "text"
+            },
+            {
+              "text": ".",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "Repeated passages can be ambiguous. A whole-block indication is more honest than guessing which paragraph the author meant.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        }
+      ],
+      "id": "structure",
+      "notes": [],
+      "title": "Structured content"
+    },
+    {
+      "anchors": [
+        "block-0001",
+        "block-0002",
+        "block-0003"
+      ],
+      "content": [
+        {
+          "children": [
+            {
+              "text": "Text and code",
+              "type": "text"
+            }
+          ],
+          "level": 1,
+          "type": "heading"
+        },
+        {
+          "id": "block-0001",
+          "type": "anchor"
+        },
+        {
+          "children": [
+            {
+              "text": "This page changes prose while retaining each version’s original text. Toggle ",
+              "type": "text"
+            },
+            {
+              "children": [
+                {
+                  "text": "View diff",
+                  "type": "text"
+                }
+              ],
+              "type": "strong"
+            },
+            {
+              "text": " without moving the reading layout.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "id": "block-0002",
+          "type": "anchor"
+        },
+        {
+          "children": [
+            {
+              "text": "This paragraph was added above the existing instructions.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "id": "block-0003",
+          "type": "anchor"
+        },
+        {
+          "children": [
+            {
+              "text": "A word replacement",
+              "type": "text"
+            }
+          ],
+          "level": 2,
+          "type": "heading"
+        },
+        {
+          "children": [
+            {
+              "text": "Review the ",
+              "type": "text"
+            },
+            {
+              "children": [
+                {
+                  "text": "final",
+                  "type": "text"
+                }
+              ],
+              "type": "strong"
+            },
+            {
+              "text": " project description before sharing.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "A small correction",
+              "type": "text"
+            }
+          ],
+          "level": 2,
+          "type": "heading"
+        },
+        {
+          "children": [
+            {
+              "text": "Check the description carefully.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "Unicode remains intact",
+              "type": "text"
+            }
+          ],
+          "level": 2,
+          "type": "heading"
+        },
+        {
+          "children": [
+            {
+              "text": "부산 여행 · 明亮的小屋 · 👨🏽‍💻",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "Exact code lines",
+              "type": "text"
+            }
+          ],
+          "level": 2,
+          "type": "heading"
+        },
+        {
+          "children": [
+            {
+              "text": "const status = \"ready\";\nsaveProject(status);\n",
+              "type": "text"
+            }
+          ],
+          "language": "js",
+          "type": "code_block"
+        },
+        {
+          "children": [
+            {
+              "text": "The unchanged second line keeps its ordinary appearance. Selection and copy preserve the original text on the selected side.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        }
+      ],
+      "id": "text",
+      "notes": [],
+      "title": "Text and code"
+    },
+    {
+      "anchors": [
+        "block-0001"
+      ],
+      "content": [
+        {
+          "children": [
+            {
+              "text": "Nothing changed",
+              "type": "text"
+            }
+          ],
+          "level": 1,
+          "type": "heading"
+        },
+        {
+          "id": "block-0001",
+          "type": "anchor"
+        },
+        {
+          "children": [
+            {
+              "text": "This page and its full-width capture are identical in both versions. Enable ",
+              "type": "text"
+            },
+            {
+              "children": [
+                {
+                  "text": "Changed pages",
+                  "type": "text"
+                }
+              ],
+              "type": "strong"
+            },
+            {
+              "text": " in Versions to hide it from navigation. Enabling diff should introduce no text highlights or changed-region claims.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "page_id": "unchanged",
+              "resource_id": "identical",
+              "text": "Unchanged full desktop workspace",
+              "type": "image"
+            }
+          ],
+          "type": "paragraph"
+        }
+      ],
+      "id": "unchanged",
+      "notes": [],
+      "title": "Nothing changed"
+    },
+    {
+      "anchors": [
+        "block-0001"
+      ],
+      "content": [
+        {
+          "children": [
+            {
+              "text": "Start here",
+              "type": "text"
+            }
+          ],
+          "level": 1,
+          "type": "heading"
+        },
+        {
+          "id": "block-0001",
+          "type": "anchor"
+        },
+        {
+          "children": [
+            {
+              "text": "A small, permanent place to explore the lgtmd viewer. Every comparison uses two named, retained versions: ",
+              "type": "text"
+            },
+            {
+              "children": [
+                {
+                  "text": "Original",
+                  "type": "text"
+                }
+              ],
+              "type": "strong"
+            },
+            {
+              "text": " and ",
+              "type": "text"
+            },
+            {
+              "children": [
+                {
+                  "text": "Revised",
+                  "type": "text"
+                }
+              ],
+              "type": "strong"
+            },
+            {
+              "text": ". The same viewer and exact comparison engine power normal project documentation.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "No repository history, account, external service or fresh capture is needed to browse. These are deliberate demonstration fixtures, not evidence about a production application.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "Explore the examples",
+              "type": "text"
+            }
+          ],
+          "level": 2,
+          "type": "heading"
+        },
+        {
+          "children": [
+            {
+              "children": [
+                {
+                  "children": [
+                    {
+                      "text": "Text and code",
+                      "type": "text"
+                    }
+                  ],
+                  "type": "strong"
+                },
+                {
+                  "text": ": words, a typo, Unicode and exact code lines.",
+                  "type": "text"
+                }
+              ],
+              "type": "item"
+            },
+            {
+              "children": [
+                {
+                  "children": [
+                    {
+                      "text": "A full page",
+                      "type": "text"
+                    }
+                  ],
+                  "type": "strong"
+                },
+                {
+                  "text": ": meaningful changes across a complete desktop screen.",
+                  "type": "text"
+                }
+              ],
+              "type": "item"
+            },
+            {
+              "children": [
+                {
+                  "children": [
+                    {
+                      "text": "Four pixels",
+                      "type": "text"
+                    }
+                  ],
+                  "type": "strong"
+                },
+                {
+                  "text": ": an almost identical screen with a tiny, measurable difference.",
+                  "type": "text"
+                }
+              ],
+              "type": "item"
+            },
+            {
+              "children": [
+                {
+                  "children": [
+                    {
+                      "text": "Different dimensions",
+                      "type": "text"
+                    }
+                  ],
+                  "type": "strong"
+                },
+                {
+                  "text": ": honest fallback when captures cannot align.",
+                  "type": "text"
+                }
+              ],
+              "type": "item"
+            },
+            {
+              "children": [
+                {
+                  "children": [
+                    {
+                      "text": "Structured content",
+                      "type": "text"
+                    }
+                  ],
+                  "type": "strong"
+                },
+                {
+                  "text": ": tables, lists, URLs and whitespace.",
+                  "type": "text"
+                }
+              ],
+              "type": "item"
+            },
+            {
+              "children": [
+                {
+                  "children": [
+                    {
+                      "text": "Contributor notes",
+                      "type": "text"
+                    }
+                  ],
+                  "type": "strong"
+                },
+                {
+                  "text": ": comments attached to the explanation.",
+                  "type": "text"
+                }
+              ],
+              "type": "item"
+            },
+            {
+              "children": [
+                {
+                  "children": [
+                    {
+                      "text": "Nothing changed",
+                      "type": "text"
+                    }
+                  ],
+                  "type": "strong"
+                },
+                {
+                  "text": ": identical text and image bytes.",
+                  "type": "text"
+                }
+              ],
+              "type": "item"
+            }
+          ],
+          "type": "list"
+        },
+        {
+          "children": [
+            {
+              "text": "The toolbar switches ",
+              "type": "text"
+            },
+            {
+              "children": [
+                {
+                  "text": "Original / Revised",
+                  "type": "text"
+                }
+              ],
+              "type": "strong"
+            },
+            {
+              "text": ". Image controls belong to each image: slider, side by side, and annotations. Open ",
+              "type": "text"
+            },
+            {
+              "children": [
+                {
+                  "text": "Versions",
+                  "type": "text"
+                }
+              ],
+              "type": "strong"
+            },
+            {
+              "text": " to show only changed pages.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        },
+        {
+          "children": [
+            {
+              "text": "A new page exists only in Revised; a retired page exists only in Original. Missing content stays explicit. Use Light, Dark or System appearance, resize the window, and try keyboard navigation.",
+              "type": "text"
+            }
+          ],
+          "type": "paragraph"
+        }
+      ],
+      "id": "welcome",
+      "notes": [],
+      "title": "Start here"
+    }
+  ],
+  "resources": [
+    {
+      "bytes": 36420,
+      "id": "responsive",
+      "mime": "image/webp",
+      "page_id": "dimensions",
+      "path": "assets/dimensions/responsive.webp",
+      "producer": "playwright/chromium+sharp",
+      "profile": "playwright-1.64.0-darwin-arm64-desktop-1100x800-sharp-0.35.5-libwebp-1.6.0-lossless-effort6",
+      "sha256": "20c29a7ddf72ceca99c39a5b004c74b882915ad47eab345f56e4de87f6b9d9e1"
+    },
+    {
+      "bytes": 36668,
+      "id": "tiny-change",
+      "mime": "image/webp",
+      "page_id": "four-pixels",
+      "path": "assets/four-pixels/tiny-change.webp",
+      "producer": "playwright/chromium+sharp",
+      "profile": "playwright-1.64.0-darwin-arm64-desktop-1280x800-sharp-0.35.5-libwebp-1.6.0-lossless-effort6",
+      "sha256": "36a3bc6bc1f9b5895d09b7aa2a4847efc5fac0a69c412a98f9757cb286ed9a3d"
+    },
+    {
+      "bytes": 37008,
+      "id": "workspace",
+      "mime": "image/webp",
+      "page_id": "full-page",
+      "path": "assets/full-page/workspace.webp",
+      "producer": "playwright/chromium+sharp",
+      "profile": "playwright-1.64.0-darwin-arm64-desktop-1280x800-sharp-0.35.5-libwebp-1.6.0-lossless-effort6",
+      "sha256": "473bae08abd561d17824e56a57fd1dfb8ebd1d51d7848396dc0e186d15e27f2c"
+    },
+    {
+      "bytes": 36678,
+      "id": "identical",
+      "mime": "image/webp",
+      "page_id": "unchanged",
+      "path": "assets/unchanged/identical.webp",
+      "producer": "playwright/chromium+sharp",
+      "profile": "playwright-1.64.0-darwin-arm64-desktop-1280x800-sharp-0.35.5-libwebp-1.6.0-lossless-effort6",
+      "sha256": "37ed213b0c53a4f6c7331599212cc3436ecc796f2d1d2c80070ac5f502828b0e"
+    }
+  ],
+  "schema_version": 1,
+  "title": "lgtmd viewer showcase"
+}

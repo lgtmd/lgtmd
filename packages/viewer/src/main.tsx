@@ -1,15 +1,18 @@
+import { useTextReview } from "./use-text-review.ts";
+import { TEXT_DIFF_VERSION } from "./text-diff.ts";
 import {
   useCallback,
   useEffect,
   useLayoutEffect,
   useRef,
   useState,
-  type FormEvent,
   type KeyboardEvent,
 } from "react";
 import { createRoot } from "react-dom/client";
 import { DocumentContent, pageHref } from "./content.tsx";
 import type { Boot, SiteState } from "./protocol.ts";
+import { RevisionReview } from "./revision-review.tsx";
+import { History, RotateCw, X } from "lucide-react";
 import { ThemeSelect } from "./theme.tsx";
 import "./style.css";
 
@@ -48,8 +51,37 @@ function App() {
   const [connected, setConnected] = useState(true);
   const [currentRoute, setRoute] = useState(route);
   const lastNavigation = useRef<{ page: string; anchor?: string }>(undefined);
-  const [diff, setDiff] = useState(false);
+  const [diff, setDiff] = useState(boot.mode === "review");
   const [toolsOpen, setToolsOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const historyRef = useRef<HTMLElement>(null);
+  const historyButton = useRef<HTMLButtonElement>(null);
+  const historyClose = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!historyOpen) return;
+    historyClose.current?.focus({ preventScroll: true });
+    const dismiss = (event: PointerEvent) => {
+      if (
+        event.target instanceof Node &&
+        !historyRef.current?.contains(event.target) &&
+        !historyButton.current?.contains(event.target)
+      )
+        setHistoryOpen(false);
+    };
+    const escape = (event: globalThis.KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setHistoryOpen(false);
+        historyButton.current?.focus({ preventScroll: true });
+      }
+    };
+    document.addEventListener("pointerdown", dismiss);
+    document.addEventListener("keydown", escape);
+    return () => {
+      document.removeEventListener("pointerdown", dismiss);
+      document.removeEventListener("keydown", escape);
+    };
+  }, [historyOpen]);
   const toolsRef = useRef<HTMLDivElement>(null);
   const toolsButton = useRef<HTMLButtonElement>(null);
   useEffect(() => {
@@ -68,11 +100,9 @@ function App() {
   const [mobileOpen, setMobileOpen] = useState(false);
   useEffect(() => setMobileOpen(false), [currentRoute.page]);
   const [side, setSide] = useState<"previous" | "current">("current");
-  const [changedOnly, setChangedOnly] = useState(true);
-  const [ref, setRef] = useState("HEAD");
+  const [changedOnly, setChangedOnly] = useState(boot.mode !== "review");
   const [selecting, setSelecting] = useState(false);
   const [running, setRunning] = useState(false);
-  const [copyResult, setCopyResult] = useState<"copied" | "unavailable">();
   const generation = useRef(0);
   const refresh = useCallback(async () => {
     const ticket = ++generation.current;
@@ -112,9 +142,6 @@ function App() {
     return () => window.removeEventListener("hashchange", update);
   }, []);
   useEffect(() => {
-    if (state?.baseline?.ref) setRef(state.baseline.ref);
-  }, [state?.baseline?.ref]);
-  useEffect(() => {
     if (state) document.title = `${state.title} · lgtmd`;
   }, [state?.title]);
   const current = state?.current;
@@ -130,6 +157,13 @@ function App() {
     currentRoute.page && allIds.includes(currentRoute.page)
       ? currentRoute.page
       : allIds[0];
+  const textPair = comparison?.pages.find((page) => page.id === pageId);
+  const textReview = useTextReview(
+    `${TEXT_DIFF_VERSION}:${state?.audience}:${comparison?.before}:${comparison?.after}:${pageId}`,
+    diff && !!comparison,
+    textPair?.before,
+    textPair?.after,
+  );
   const selectedBundle = diff && side === "previous" ? previous : current;
   const selectedPage = selectedBundle?.pages.find((p) => p.id === pageId);
   const hasTitle =
@@ -186,11 +220,21 @@ function App() {
     );
     await refresh();
   }
-  async function chooseRef(event: FormEvent) {
-    event.preventDefault();
+  async function chooseRef(ref: string) {
     setSelecting(true);
     try {
       await action("base", { ref });
+      setDiff(true);
+    } catch (error) {
+      setFailure(errorText(error));
+    } finally {
+      setSelecting(false);
+    }
+  }
+  async function browseHistory(direction: "refresh" | "older" | "newer") {
+    setSelecting(true);
+    try {
+      await action("history", { direction });
     } catch (error) {
       setFailure(errorText(error));
     } finally {
@@ -207,16 +251,6 @@ function App() {
       setRunning(false);
     }
   }
-  async function copyCandidate() {
-    if (!state?.candidateId) return;
-    try {
-      await navigator.clipboard.writeText(state.candidateId);
-      setCopyResult("copied");
-    } catch {
-      setCopyResult("unavailable");
-    }
-  }
-  useEffect(() => setCopyResult(undefined), [state?.candidateId]);
   function tabKeys(event: KeyboardEvent<HTMLButtonElement>) {
     if (["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) {
       event.preventDefault();
@@ -228,11 +262,14 @@ function App() {
             : side === "current"
               ? "previous"
               : "current";
+      if (next === "previous" && !previous) return;
       setSide(next);
       document.getElementById(`tab-${next}`)?.focus();
     }
   }
   const isDev = boot.mode === "dev";
+  const canReview = isDev || boot.mode === "review";
+  const fixture = state?.reviewSource;
   return (
     <div
       className="viewer-shell bg-background text-foreground"
@@ -367,7 +404,7 @@ function App() {
           </p>
         ) : null}
         <footer className="sidebar-footer" data-lgtmd-part="footer">
-          {!isDev && state?.audience === "contributor" ? (
+          {!canReview && state?.audience === "contributor" ? (
             <div>Contributor documentation</div>
           ) : null}
           <div>Built with lgtmd</div>
@@ -412,6 +449,22 @@ function App() {
               <div className="page-heading">
                 {!hasTitle ? <h1>{pageTitle}</h1> : null}
               </div>
+              {diff && comparison ? (
+                <p
+                  className="sr-only"
+                  role="status"
+                  data-testid="text-review-status"
+                >
+                  {side === "previous"
+                    ? `Deletions in ${fixture?.beforeLabel ?? "previous documentation"}.`
+                    : `Additions in ${fixture?.afterLabel ?? "current documentation"}.`}
+                  {!textReview
+                    ? " Preparing text highlights."
+                    : textReview.coverage !== "complete"
+                      ? " Some changes use whole-block or page-level review. Details in Versions, Advanced."
+                      : " Text highlights ready."}
+                </p>
+              ) : null}
               <article
                 id="document-version"
                 role={diff ? "tabpanel" : undefined}
@@ -423,6 +476,9 @@ function App() {
                     page={selectedPage}
                     bundle={selectedBundle}
                     resourceBase={resourceBase}
+                    textReview={
+                      textReview?.[side === "previous" ? "before" : "after"]
+                    }
                     imageReview={
                       comparison
                         ? {
@@ -431,8 +487,10 @@ function App() {
                             beforeBase: state?.baseline?.resourceBase ?? "",
                             afterBase: state?.currentResourceBase ?? "",
                             previousRevision:
-                              state?.baseline?.ref ?? "Previous",
-                            currentRevision: "Current",
+                              fixture?.beforeLabel ??
+                              state?.baseline?.ref ??
+                              "Previous",
+                            currentRevision: fixture?.afterLabel ?? "Current",
                           }
                         : undefined
                     }
@@ -451,7 +509,7 @@ function App() {
           )}
         </main>
       </div>
-      {isDev ? (
+      {canReview ? (
         <div
           ref={toolsRef}
           className="dev-tools fixed z-50 flex flex-col items-center gap-2"
@@ -469,17 +527,31 @@ function App() {
               role="tablist"
               aria-label="Document version"
             >
+              {textReview && textReview.coverage !== "complete" ? (
+                <span
+                  className="px-2 text-xs"
+                  title="Some changes use whole-block or page-level review. Details in Versions, Advanced."
+                >
+                  Partial text diff
+                </span>
+              ) : null}
               <button
                 type="button"
                 id="tab-previous"
                 role="tab"
                 aria-selected={side === "previous"}
                 aria-controls="document-version"
+                disabled={!previous}
+                title={
+                  fixture?.beforeLabel ??
+                  state?.baseline?.commit?.subject ??
+                  "Choose a recorded version to view previous documentation"
+                }
                 tabIndex={side === "previous" ? 0 : -1}
                 onKeyDown={tabKeys}
                 onClick={() => setSide("previous")}
               >
-                Previous
+                {fixture?.beforeLabel ?? "Previous"}
               </button>
               <button
                 type="button"
@@ -491,54 +563,88 @@ function App() {
                 onKeyDown={tabKeys}
                 onClick={() => setSide("current")}
               >
-                Current
+                {fixture?.afterLabel ?? "Current"}
               </button>
             </div>
           ) : null}
           <div
-            className="dev-dock flex items-center gap-3"
-            aria-label="Development toolbar"
+            className="dev-dock flex items-center gap-1"
+            aria-label={fixture ? "Review toolbar" : "Development toolbar"}
           >
             <button
               ref={toolsButton}
               type="button"
               className="dev-tools-toggle flex items-center gap-2"
-              aria-label="Development tools"
+              aria-label={fixture ? "About this showcase" : "Development tools"}
               aria-expanded={toolsOpen}
               aria-controls="development-panel"
-              onClick={() => setToolsOpen(!toolsOpen)}
+              onClick={() => {
+                setToolsOpen(!toolsOpen);
+                setHistoryOpen(false);
+              }}
             >
               <strong>lgtmd</strong>
               <span
                 className={`status-dot ${!connected || failure ? "failed" : (state?.run.status ?? "idle")}`}
               />
               <span className="dev-status" role="status">
-                {!connected
-                  ? "Disconnected"
-                  : failure
-                    ? "Error"
-                    : state?.run.status === "running"
-                      ? "Running…"
-                      : state?.run.status === "failed"
-                        ? state.run.stale
-                          ? "Failed · stale"
-                          : "Failed"
-                        : state?.run.status === "cancelled"
+                {fixture
+                  ? "Showcase"
+                  : !connected
+                    ? "Disconnected"
+                    : failure
+                      ? "Error"
+                      : state?.run.status === "running"
+                        ? "Running…"
+                        : state?.run.status === "failed"
                           ? state.run.stale
-                            ? "Cancelled · stale"
-                            : "Cancelled"
-                          : state?.run.retained
-                            ? "Retained"
-                            : state?.run.stale
-                              ? "Stale"
-                              : state?.run.status === "succeeded"
-                                ? "Ready"
-                                : "Waiting…"}
+                            ? "Failed · stale"
+                            : "Failed"
+                          : state?.run.status === "cancelled"
+                            ? state.run.stale
+                              ? "Cancelled · stale"
+                              : "Cancelled"
+                            : state?.run.retained
+                              ? "Retained"
+                              : state?.run.stale
+                                ? "Stale"
+                                : state?.run.status === "succeeded"
+                                  ? "Ready"
+                                  : "Waiting…"}
               </span>
               <span aria-hidden="true" className="dev-chevron">
                 {toolsOpen ? "⌄" : "⌃"}
               </span>
             </button>
+            <button
+              ref={historyButton}
+              type="button"
+              className="dev-tools-toggle flex items-center gap-1.5"
+              aria-label="Version history"
+              aria-expanded={historyOpen}
+              aria-controls="version-sheet"
+              onClick={() => {
+                setHistoryOpen(!historyOpen);
+                setToolsOpen(false);
+              }}
+            >
+              <History size={14} aria-hidden="true" />
+              Versions
+            </button>
+            {isDev ? (
+              <button
+                type="button"
+                className="dev-tools-toggle"
+                aria-label="Run again"
+                title="Run again"
+                disabled={
+                  !state?.canRun || running || state.run.status === "running"
+                }
+                onClick={() => void rerun()}
+              >
+                <RotateCw size={14} aria-hidden="true" />
+              </button>
+            ) : null}
             <label className="diff-toggle">
               <input
                 type="checkbox"
@@ -552,11 +658,13 @@ function App() {
             <section
               id="development-panel"
               className="dev-panel"
-              aria-label="Development tools"
+              aria-label={fixture ? "About this showcase" : "Development tools"}
             >
               <header className="dev-panel-heading flex items-center justify-between gap-3">
                 <div>
-                  <strong>Development tools</strong>
+                  <strong>
+                    {fixture ? "Viewer showcase" : "Development tools"}
+                  </strong>
                   <p className="mt-1 text-xs text-muted-foreground">
                     Audience:{" "}
                     {state?.audience === "contributor"
@@ -575,46 +683,41 @@ function App() {
                   Close
                 </button>
               </header>
-              <div className="run-bar" aria-live="polite">
-                <div>
-                  <span
-                    className={`status-dot ${state?.run.status ?? "idle"}`}
-                  />
-                  <strong>
-                    {state?.run.status === "running"
-                      ? "Running flow…"
-                      : state?.run.retained
-                        ? "Retained output"
-                        : state?.run.status === "succeeded"
-                          ? "Flow completed"
-                          : state?.run.status === "failed"
-                            ? "Flow failed"
-                            : state?.run.status === "cancelled"
-                              ? "Flow cancelled"
-                              : "Waiting for documentation"}
-                  </strong>
-                  {state?.run.retained ? (
-                    <span>Not freshly verified.</span>
-                  ) : null}
-                  {state?.run.stale ? (
-                    <span className="stale">
-                      Showing the previous successful result.
-                    </span>
-                  ) : null}
-                  {state?.run.message ? (
-                    <span className="run-message">{state.run.message}</span>
-                  ) : null}
+              {fixture ? (
+                <p className="text-sm">{fixture.description}</p>
+              ) : (
+                <div className="run-bar" aria-live="polite">
+                  <div>
+                    <span
+                      className={`status-dot ${state?.run.status ?? "idle"}`}
+                    />
+                    <strong>
+                      {state?.run.status === "running"
+                        ? "Running flow…"
+                        : state?.run.retained
+                          ? "Retained output"
+                          : state?.run.status === "succeeded"
+                            ? "Flow completed"
+                            : state?.run.status === "failed"
+                              ? "Flow failed"
+                              : state?.run.status === "cancelled"
+                                ? "Flow cancelled"
+                                : "Waiting for documentation"}
+                    </strong>
+                    {state?.run.retained ? (
+                      <span>Not freshly verified.</span>
+                    ) : null}
+                    {state?.run.stale ? (
+                      <span className="stale">
+                        Showing the previous successful result.
+                      </span>
+                    ) : null}
+                    {state?.run.message ? (
+                      <span className="run-message">{state.run.message}</span>
+                    ) : null}
+                  </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => void rerun()}
-                  disabled={
-                    !state?.canRun || running || state.run.status === "running"
-                  }
-                >
-                  Run again
-                </button>
-              </div>
+              )}
               {!connected ? (
                 <div className="notice warning" role="status">
                   Connection interrupted. Displayed documentation may be stale;
@@ -629,96 +732,58 @@ function App() {
                   </button>
                 </div>
               ) : null}
-              {diff ? (
-                <section
-                  className="review-toolbar"
-                  aria-label="Review revisions"
-                >
-                  {comparison ? (
-                    <label className="filter-label">
-                      <input
-                        type="checkbox"
-                        checked={changedOnly}
-                        onChange={(event) =>
-                          setChangedOnly(event.target.checked)
-                        }
-                      />
-                      Changed pages
-                    </label>
-                  ) : null}
-                  <form onSubmit={(event) => void chooseRef(event)}>
-                    <label htmlFor="revision">
-                      Compare against Git revision
-                    </label>
-                    <div>
-                      <input
-                        id="revision"
-                        name="revision"
-                        value={ref}
-                        onChange={(event) => setRef(event.target.value)}
-                        spellCheck={false}
-                        autoComplete="off"
-                        required
-                      />
-                      <button type="submit" disabled={selecting}>
-                        {selecting ? "Loading…" : "Compare"}
-                      </button>
-                    </div>
-                  </form>
-                  <div className="revision-identities">
-                    <span>
-                      Previous:{" "}
-                      <code title={state?.baseline?.revision}>
-                        {state?.baseline?.revision?.slice(0, 12) ??
-                          state?.baseline?.ref ??
-                          "unavailable"}
-                      </code>
-                    </span>
-                    <span>
-                      Candidate:{" "}
-                      <code title={state?.candidateId}>
-                        {state?.candidateId?.slice(0, 12) ?? "pending"}
-                      </code>
-                    </span>
-                    {state?.candidateId ? (
-                      <button
-                        type="button"
-                        onClick={() => void copyCandidate()}
-                      >
-                        Copy candidate ID
-                      </button>
-                    ) : null}
-                    {copyResult === "copied" ? (
-                      <span role="status">Candidate ID copied.</span>
-                    ) : null}
-                    {copyResult === "unavailable" ? (
-                      <label>
-                        Copy this candidate ID
-                        <input
-                          aria-label="Candidate ID"
-                          readOnly
-                          value={state?.candidateId}
-                          onFocus={(event) => event.currentTarget.select()}
-                        />
-                      </label>
-                    ) : null}
-                  </div>
-                  {state?.baseline?.status !== "available" ? (
-                    <p className="notice">
-                      {state?.baseline?.message ??
-                        "No recorded docs at this revision."}
-                    </p>
-                  ) : null}
-                  {comparison?.site_changed ? (
-                    <p className="site-change">
-                      Site title or navigation changed.
-                    </p>
-                  ) : null}
-                </section>
-              ) : null}
             </section>
           ) : null}
         </div>
+      ) : null}
+      {canReview && historyOpen ? (
+        <aside
+          ref={historyRef}
+          id="version-sheet"
+          role="dialog"
+          aria-label="Version history"
+          className="version-sheet fixed z-50 flex flex-col overflow-hidden border border-border bg-surface text-foreground"
+        >
+          <header className="flex shrink-0 items-center justify-between border-b border-border px-5 py-4">
+            <div>
+              <h2 className="text-sm font-semibold">Versions</h2>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Compare with current docs
+              </p>
+            </div>
+            <button
+              ref={historyClose}
+              type="button"
+              className="sheet-icon-button"
+              aria-label="Close version history"
+              onClick={() => {
+                setHistoryOpen(false);
+                historyButton.current?.focus({ preventScroll: true });
+              }}
+            >
+              <X size={16} aria-hidden="true" />
+            </button>
+          </header>
+          {failure || !connected ? (
+            <p
+              role="alert"
+              className="px-5 py-3 text-xs text-[var(--lgtmd-danger)]"
+            >
+              {failure ?? "Disconnected. Displayed history may be stale."}
+            </p>
+          ) : null}
+          {state ? (
+            <RevisionReview
+              state={state}
+              textReview={textReview}
+              onSelect={chooseRef}
+              onHistory={browseHistory}
+              selecting={selecting}
+              changedOnly={changedOnly}
+              onChangedOnly={setChangedOnly}
+            />
+          ) : null}
+        </aside>
       ) : null}
     </div>
   );

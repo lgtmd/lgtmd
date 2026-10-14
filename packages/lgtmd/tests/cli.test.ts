@@ -34,7 +34,24 @@ interface State {
   currentResourceBase: string;
   current?: { digest: string; resources: { path: string }[] };
   run: { status: string; stale: boolean; retained: boolean; message?: string };
-  baseline: { status: string; message?: string; revision?: string };
+  baseline: {
+    status: string;
+    message?: string;
+    revision?: string;
+    code?: string;
+    commit?: {
+      revision: string;
+      subject: string;
+      committedAt: number;
+      decorations: string;
+    };
+  };
+  history?: {
+    commits: { revision: string; subject: string; committedAt: number }[];
+    truncated: boolean;
+    offset: number;
+    message?: string;
+  };
   comparison?: unknown;
 }
 async function run(root: string, args: string[], mode: Mode = "native") {
@@ -188,7 +205,14 @@ async function git(root: string, args: string[]) {
       "core.hooksPath=/dev/null",
       ...args,
     ],
-    { cwd: root },
+    {
+      cwd: root,
+      env: {
+        ...process.env,
+        GIT_AUTHOR_DATE: "2026-01-01T00:00:00Z",
+        GIT_COMMITTER_DATE: "2026-01-01T00:00:00Z",
+      },
+    },
   );
 }
 
@@ -526,10 +550,17 @@ test("Git exact-object review preserves worktree/index and reports absent histor
     try {
       const state = await waitFor(
         missing.state,
-        (s) => s.baseline.status !== "loading",
+        (s) => s.baseline.status !== "loading" && !!s.history,
       );
       assert.equal(state.baseline.status, "unavailable");
       assert.match(state.baseline.message ?? "", /No recorded/i);
+      assert.equal(state.baseline.code, "missing-snapshot");
+      assert.equal(state.baseline.commit?.subject, "Initial");
+      assert.deepEqual(
+        state.history?.commits.map((c) => c.subject),
+        ["Initial"],
+      );
+      assert.equal(state.history?.message, undefined);
     } finally {
       await missing.stop();
     }
@@ -542,9 +573,18 @@ test("Git exact-object review preserves worktree/index and reports absent histor
     try {
       const state = await waitFor(
         server.state,
-        (s) => s.baseline.status === "available",
+        (s) => s.baseline.status === "available" && !!s.history,
       );
       assert.equal(state.baseline.revision, sha);
+      assert.equal(state.baseline.commit?.subject, "Record");
+      assert.equal(state.baseline.commit?.revision, sha);
+      assert.ok(Number.isInteger(state.baseline.commit?.committedAt));
+      assert.match(state.baseline.commit?.decorations ?? "", /HEAD/);
+      assert.deepEqual(
+        state.history?.commits.map((c) => c.subject),
+        ["Record", "Initial"],
+      );
+      assert.equal(state.history?.truncated, false);
       assert.ok(state.comparison);
       await fetch(new URL("__lgtmd/base", server.url), {
         method: "POST",
@@ -552,6 +592,19 @@ test("Git exact-object review preserves worktree/index and reports absent histor
         body: JSON.stringify({ token: state.token, ref: "unknown-ref" }),
       });
       assert.equal((await server.state()).baseline.status, "unavailable");
+      await fetch(new URL("__lgtmd/base", server.url), {
+        method: "POST",
+        headers: { Origin: new URL(server.url).origin },
+        body: JSON.stringify({ token: state.token, ref: id }),
+      });
+      const confused = await server.state();
+      assert.equal(confused.baseline.code, "candidate-id");
+      assert.match(
+        confused.baseline.message ?? "",
+        /candidate ID, not a Git revision/,
+      );
+      assert.equal(confused.comparison, undefined);
+      assert.equal(confused.history?.commits[0]?.subject, "Record");
     } finally {
       await server.stop();
     }
@@ -694,7 +747,7 @@ test("many Git revisions retain current resource bytes and coherent comparison s
   const f = await fixture();
   try {
     await git(f.root, ["init", "--quiet"]);
-    for (let i = 0; i < 14; i++) {
+    for (let i = 0; i < 21; i++) {
       await writeFile(
         join(f.root, "flow.mjs"),
         f.source.replace("Visible text", `Version ${i}`),
@@ -704,6 +757,7 @@ test("many Git revisions retain current resource bytes and coherent comparison s
       await git(f.root, ["add", "docs"]);
       await git(f.root, ["commit", "--quiet", "-m", `Version ${i}`]);
     }
+    await git(f.root, ["branch", "before", "HEAD~20"]);
     await writeFile(
       join(f.root, "flow.mjs"),
       `import{Doc,completeRun}from ${JSON.stringify(sdk)};const doc=new Doc('hello','Hello');const asset=doc.assets.image('current',Uint8Array.of(1,2,3),{producer:'fixture',profile:'v1'});doc.md\`\${asset.embed('Current version')}\`;await completeRun([doc.finish()]);`,
@@ -713,8 +767,68 @@ test("many Git revisions retain current resource bytes and coherent comparison s
     try {
       const initial = await waitFor(
         server.state,
-        (s) => s.baseline.status === "available" && !!s.comparison,
+        (s) =>
+          s.baseline.status === "available" && !!s.comparison && !!s.history,
       );
+      assert.equal(initial.history?.commits.length, 20);
+      assert.equal(initial.history?.truncated, true);
+      assert.equal(initial.history?.commits[0]?.subject, "Version 20");
+      assert.equal(initial.history?.commits[19]?.subject, "Version 1");
+      const historyPage = async (direction: string) => {
+        const response = await fetch(new URL("__lgtmd/history", server.url), {
+          method: "POST",
+          headers: { Origin: new URL(server.url).origin },
+          body: JSON.stringify({ token: initial.token, direction }),
+        });
+        assert.equal(response.status, 200);
+        return (await server.state()).history!;
+      };
+      // Branches moving between requests must not shift the pinned pagination.
+      await git(f.root, [
+        "commit",
+        "--allow-empty",
+        "--quiet",
+        "-m",
+        "Unrelated project change",
+      ]);
+      const older = await historyPage("older");
+      assert.equal(older.offset, 20);
+      assert.equal(older.truncated, false);
+      assert.deepEqual(
+        older.commits.map((c) => c.subject),
+        ["Version 0"],
+      );
+      assert.equal(
+        (await server.state()).baseline.revision,
+        initial.baseline.revision,
+      );
+      const newer = await historyPage("newer");
+      assert.deepEqual(
+        newer.commits.map((c) => c.revision),
+        initial.history!.commits.map((c) => c.revision),
+      );
+      const refreshed = await historyPage("refresh");
+      assert.equal(refreshed.commits[0]?.subject, "Unrelated project change");
+      // This commit did not touch the snapshot, but still contains its docs.
+      await fetch(new URL("__lgtmd/base", server.url), {
+        method: "POST",
+        headers: { Origin: new URL(server.url).origin },
+        body: JSON.stringify({
+          token: initial.token,
+          ref: refreshed.commits[0]!.revision,
+        }),
+      });
+      assert.equal((await server.state()).baseline.status, "available");
+      const refreshedOlder = await historyPage("older");
+      assert.deepEqual(
+        refreshedOlder.commits.map((c) => c.subject),
+        ["Version 1", "Version 0"],
+      );
+      const unauthorized = await fetch(new URL("__lgtmd/history", server.url), {
+        method: "POST",
+        body: JSON.stringify({ direction: "refresh" }),
+      });
+      assert.equal(unauthorized.status, 403);
       for (let i = 1; i < 14; i++) {
         const response = await fetch(new URL("__lgtmd/base", server.url), {
           method: "POST",

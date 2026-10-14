@@ -1,4 +1,11 @@
-# Review a real text and screenshot change
+# Viewer examples
+
+The canonical, Git-free [viewer showcase](showcase/README.md) starts with
+`just docs-demo`. It uses retained Original/Revised fixtures and the same shared
+viewer and Rust comparison engine. Start there for viewer development or a tour
+after cloning.
+
+## Review a real Git-backed text and screenshot change
 
 This small React/Vite app demonstrates lgtmd's docs-site review workflow. Version
 A shows a saved project **In progress**; version B shows it **Ready for review**.
@@ -9,7 +16,7 @@ From a prepared repository checkout:
 
 ```sh
 npm run build
-just docs-demo
+just docs-git-demo
 ```
 
 Open the printed URL and enable **View diff**. Switch **Previous / Current** to

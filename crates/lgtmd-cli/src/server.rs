@@ -4,7 +4,7 @@ use crate::{
     candidate::{Candidate, latest_candidate},
     config::{Config, read_theme_css},
     flow::{WatchState, execute_flow, validate_watch},
-    git::read_baseline,
+    git::{read_baseline, read_history},
 };
 use axum::{
     Router,
@@ -45,6 +45,7 @@ struct Mutable {
     resources: BTreeMap<String, Arc<Projection>>,
     resource_order: VecDeque<String>,
     selection: u64,
+    history_selection: u64,
     retained_failure: Option<String>,
 }
 struct DevHost {
@@ -314,6 +315,32 @@ impl DevHost {
     fn changed(&self) {
         let _ = self.changes.send(());
     }
+    async fn history_page(&self, direction: &str) {
+        let (ticket, previous, offset) = {
+            let mut mutable = self.mutable.lock().await;
+            let previous = mutable.state.history.clone();
+            let offset = match (direction, &previous) {
+                ("older", Some(page)) if page.truncated => page.offset.saturating_add(20),
+                ("newer", Some(page)) => page.offset.saturating_sub(20),
+                ("refresh", _) => 0,
+                _ => return,
+            };
+            mutable.history_selection += 1;
+            (mutable.history_selection, previous, offset)
+        };
+        let history = tokio::select! {
+            biased;
+            _=self.cancel.cancelled()=>return,
+            result=read_history(&self.config, if direction == "refresh" { None } else { previous.as_ref() }, offset)=>result,
+        };
+        let mut mutable = self.mutable.lock().await;
+        if mutable.history_selection != ticket || self.cancel.is_cancelled() {
+            return;
+        }
+        mutable.state.history = Some(history);
+        drop(mutable);
+        self.changed();
+    }
     async fn select_base(&self, reference: String) {
         let ticket = {
             let mut mutable = self.mutable.lock().await;
@@ -323,7 +350,7 @@ impl DevHost {
             mutable.selection
         };
         self.changed();
-        let result = tokio::select! {
+        let mut result = tokio::select! {
             biased;
             _=self.cancel.cancelled()=>return,
             result=read_baseline(&self.config,&self.audience,&reference)=>result,
@@ -335,7 +362,17 @@ impl DevHost {
             }
             mutable.candidate.clone()
         };
+        if result.code.as_deref() == Some("unknown-revision")
+            && candidate
+                .as_ref()
+                .is_some_and(|c| c.candidate_id == reference)
+        {
+            result.code = Some("candidate-id".into());
+            result.message = Some("This is the current documentation candidate ID, not a Git revision. Choose a commit from project history or enter a branch, tag, or commit.".into());
+        }
         let mut baseline = BaselineState {
+            commit: result.commit,
+            code: result.code,
             status: result.status,
             reference,
             revision: result.revision,
@@ -411,6 +448,7 @@ pub async fn run_dev(config: Config, options: DevOptions, cancel: CancellationTo
         .map_err(|e| e.to_string())?;
     let token = crate::util::token()?;
     let state = SiteState {
+        history: None,
         mode: "dev".into(),
         title: config.title.clone(),
         audience: options.audience.clone(),
@@ -434,6 +472,7 @@ pub async fn run_dev(config: Config, options: DevOptions, cancel: CancellationTo
         resources: BTreeMap::new(),
         resource_order: VecDeque::new(),
         selection: 0,
+        history_selection: 0,
         retained_failure: None,
     };
     match retained {
@@ -469,7 +508,10 @@ pub async fn run_dev(config: Config, options: DevOptions, cancel: CancellationTo
     let queue = tokio::spawn(run_queue(host.clone(), receiver));
     let initial_host = host.clone();
     let initial = tokio::spawn(async move {
-        initial_host.select_base(options.base).await;
+        tokio::join!(
+            initial_host.select_base(options.base),
+            initial_host.history_page("refresh")
+        );
     });
     if !options.reuse {
         let _ = host.runs.try_send(());
@@ -661,7 +703,12 @@ async fn dev_request(State(host): State<Arc<DevHost>>, request: Request) -> Resp
         public_headers(&mut response);
         return response;
     }
-    if method == Method::POST && matches!(path.as_str(), "__lgtmd/run" | "__lgtmd/base") {
+    if method == Method::POST
+        && matches!(
+            path.as_str(),
+            "__lgtmd/run" | "__lgtmd/base" | "__lgtmd/history"
+        )
+    {
         if request
             .headers()
             .get("origin")
@@ -686,6 +733,17 @@ async fn dev_request(State(host): State<Arc<DevHost>>, request: Request) -> Resp
             }
             let _ = host.runs.try_send(());
             return json_response(json!({"queued":true}));
+        }
+        if path == "__lgtmd/history" {
+            let direction = data.get("direction").and_then(Value::as_str).unwrap_or("");
+            if !matches!(direction, "refresh" | "older" | "newer") {
+                return text(
+                    StatusCode::BAD_REQUEST,
+                    "direction must be refresh, older, or newer",
+                );
+            }
+            host.history_page(direction).await;
+            return json_response(&host.mutable.lock().await.state.history);
         }
         let Some(reference) = data.get("ref").and_then(Value::as_str) else {
             return text(StatusCode::BAD_REQUEST, "ref must be a Git revision string");

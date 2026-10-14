@@ -22,6 +22,10 @@ pub struct RunState {
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BaselineState {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub commit: Option<crate::git::GitCommit>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
     pub status: String,
     #[serde(rename = "ref")]
     pub reference: String,
@@ -37,6 +41,8 @@ pub struct BaselineState {
 impl BaselineState {
     pub fn loading(reference: String) -> Self {
         Self {
+            commit: None,
+            code: None,
             status: "loading".into(),
             reference,
             revision: None,
@@ -49,6 +55,8 @@ impl BaselineState {
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SiteState {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub history: Option<crate::git::GitHistory>,
     pub mode: String,
     pub title: String,
     pub audience: String,
@@ -115,6 +123,7 @@ pub fn static_files(
     theme_css: Option<&[u8]>,
 ) -> Result<Files> {
     let state = SiteState {
+        history: None,
         mode: "static".into(),
         title: projection.bundle.title.clone(),
         audience: projection.bundle.audience.clone(),

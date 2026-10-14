@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { MockLanguageModelV4 } from "ai/test";
+import { assistantStreamGate } from "../fixtures/assistant-stream.ts";
 import { listings } from "../fixtures/scenario.ts";
 import type { AssistantConversation } from "../src/assistant-domain.ts";
 import type { DemoSession, Sessions } from "../src/domain.ts";
@@ -12,22 +13,34 @@ import {
 } from "./assistant.ts";
 import { startServer } from "./index.ts";
 
-type GenerateResult = Awaited<ReturnType<MockLanguageModelV4["doGenerate"]>>;
+type StreamResult = Awaited<ReturnType<MockLanguageModelV4["doStream"]>>;
+type StreamPart =
+  StreamResult["stream"] extends ReadableStream<infer Part> ? Part : never;
 
-function generated(text: string): GenerateResult {
+function generated(text: string): StreamResult {
   return {
-    content: [{ type: "text", text }],
-    finishReason: { unified: "stop", raw: undefined },
-    usage: {
-      inputTokens: {
-        total: 0,
-        noCache: 0,
-        cacheRead: undefined,
-        cacheWrite: undefined,
+    stream: new ReadableStream<StreamPart>({
+      start(controller) {
+        controller.enqueue({ type: "stream-start", warnings: [] });
+        controller.enqueue({ type: "text-start", id: "reply" });
+        controller.enqueue({ type: "text-delta", id: "reply", delta: text });
+        controller.enqueue({ type: "text-end", id: "reply" });
+        controller.enqueue({
+          type: "finish",
+          finishReason: { unified: "stop", raw: undefined },
+          usage: {
+            inputTokens: {
+              total: 0,
+              noCache: 0,
+              cacheRead: undefined,
+              cacheWrite: undefined,
+            },
+            outputTokens: { total: 0, text: 0, reasoning: undefined },
+          },
+        });
+        controller.close();
       },
-      outputTokens: { total: 0, text: 0, reasoning: undefined },
-    },
-    warnings: [],
+    }),
   };
 }
 
@@ -297,7 +310,7 @@ test("failed or inconsistent mock output does not append messages or preferences
     listings,
     (response) =>
       new MockLanguageModelV4({
-        doGenerate: async (options) => {
+        doStream: async (options) => {
           promptsSeen.push(structuredClone(options.prompt));
           if (outcome === "error") throw new Error("Declared provider failure");
           return generated(
@@ -339,7 +352,7 @@ test("concurrent sends and reset cannot overwrite a pending turn", async () => {
     listings,
     (response) =>
       new MockLanguageModelV4({
-        doGenerate: async () => {
+        doStream: async () => {
           await gate;
           return generated(response);
         },
@@ -586,4 +599,87 @@ test("assistant rejects malformed input and client-selected history without muta
   });
   assert.equal(malformed.status, 400);
   assert.deepEqual(await (await api(server.url, token)).json(), retained);
+});
+
+test("partial streams do not commit; errors, truncation and cancellation preserve history", async () => {
+  for (const outcome of ["success", "error", "truncated", "abort"] as const) {
+    const gate = assistantStreamGate();
+    const assistant = new StayAssistant(listings, gate.model);
+    const controller = new AbortController();
+    const stream = assistant.stream(prompts[0], controller.signal);
+    try {
+      const first = await stream.next();
+      assert.equal(first.value?.type, "text");
+      assert.deepEqual(assistant.read().messages, []);
+      assert.throws(() => assistant.reset(), { status: 409 });
+      if (outcome === "abort") controller.abort();
+      else gate.finish(outcome);
+      const events = [];
+      if (outcome === "error" || outcome === "truncated") {
+        await assert.rejects(
+          async () => {
+            for await (const event of stream) events.push(event);
+          },
+          { status: 503 },
+        );
+      } else {
+        for await (const event of stream) events.push(event);
+      }
+      if (outcome === "success") {
+        assert.equal(events.at(-1)?.type, "done");
+        assert.deepEqual(recommendations(assistant.read()), ["cedar-house"]);
+      } else {
+        assert.deepEqual(assistant.read(), {
+          messages: [],
+          preferences: defaultFilters(),
+        });
+        assert(!events.some((event) => event.type === "done"));
+      }
+      assistant.reset();
+    } finally {
+      controller.abort();
+      gate.finish("truncated");
+      await stream.return(undefined);
+    }
+  }
+});
+
+test("assistant HTTP streams text before completion and shutdown cancels pending work", async () => {
+  const gate = assistantStreamGate();
+  const server = await startServer({
+    port: 0,
+    fixtureKey,
+    assistantModelFactory: gate.model,
+  });
+  try {
+    const workspace = await provision(server.url);
+    const token = workspace.sessions.guest.token;
+    const response = await fetch(server.url + "/api/assistant/messages", {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${token}`,
+        "content-type": "application/json",
+        accept: "application/x-ndjson",
+      },
+      body: JSON.stringify({ message: prompts[0] }),
+    });
+    assert.equal(response.status, 200);
+    assert.match(
+      response.headers.get("content-type")!,
+      /application\/x-ndjson/,
+    );
+    const reader = response.body!.getReader();
+    const first = await reader.read();
+    assert.match(new TextDecoder().decode(first.value), /"type":"text"/);
+    assert.deepEqual(
+      (await (await api(server.url, token)).json()).messages,
+      [],
+    );
+    await server.close();
+    await gate.cancelled;
+    await reader.cancel().catch(() => {});
+  } finally {
+    gate.finish("truncated");
+    await server.close();
+  }
 });
