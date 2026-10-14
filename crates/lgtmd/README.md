@@ -38,7 +38,7 @@ assert!(String::from_utf8_lossy(&contributor["trim-text.md"]).contains("fixture"
 Add a published version as a development dependency:
 
 ```sh
-cargo add --dev lgtmd@0.1.0
+cargo add --dev lgtmd
 ```
 
 Source consumers can use a local path instead. A standalone copy of this directory

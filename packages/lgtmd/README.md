@@ -11,7 +11,7 @@ input are experimental.
 Install a published version as a development dependency with Node.js 24 ESM:
 
 ```sh
-npm install --save-dev lgtmd@0.1.0
+npm install --save-dev lgtmd@next
 ```
 
 The prepared npm package includes its native compiler and requires no Rust
@@ -145,10 +145,10 @@ and AI-assisted execution remain later work. Repository extraction is complete. 
 [release workflow](../../RELEASING.md) prepares one npm archive containing
 both native targets and requires human approval before publication.
 
-## Docs-site CLI in the source checkout
+## Docs-site CLI
 
-The current checkout adds `lgtmd dev`, `build`, `preview`, `check`, and
-`update --candidate ID`; these are not included in registry version 0.1.0.
+The package provides `lgtmd dev`, `build`, `preview`, `check`, and
+`update --candidate ID`.
 See the [user workflow](../../docs/guide/develop-and-record.md).
 The CLI is a thin launcher for the shared Rust executable, which includes its
 built browser assets. Consumers do not need to build React or install Rust.
