@@ -11,6 +11,7 @@ import {
   type Page,
 } from "@playwright/test";
 import { startServer } from "../server/index.ts";
+import { assistantStreamGate } from "../fixtures/assistant-stream.ts";
 import { actors, listings, stayInput } from "../fixtures/scenario.ts";
 import {
   ROLE_KEY,
@@ -366,6 +367,9 @@ async function assistantRecovery(
   await expect(
     page.getByRole("main").getByRole("link").filter({ hasText: "Cedar House" }),
   ).toHaveCount(1);
+  const chatHeight = await page
+    .locator(".assistant-chat")
+    .evaluate((element) => element.getBoundingClientRect().height);
   await composer.fill("Actually 2 guests and under $150");
   // Completion must not leave a delayed focus callback that can override the
   // user's next focus target (or the documentation capture's neutral target).
@@ -404,8 +408,38 @@ async function assistantRecovery(
   await expect(main).toBeFocused();
   await expect(composer).toBeInViewport();
   await expect(send).toBeInViewport();
+  expect(
+    await page
+      .locator(".assistant-chat")
+      .evaluate((element) => element.getBoundingClientRect().height),
+  ).toBe(chatHeight);
+  async function verifyChatScroll() {
+    const log = page.getByRole("log", { name: "Conversation with Stay" });
+    await expect
+      .poll(() => log.evaluate((element) => element.scrollTop))
+      .toBeGreaterThan(0);
+    const before = await composer.boundingBox();
+    const headerBefore = await page
+      .locator(".assistant-chat-header")
+      .boundingBox();
+    const pageScroll = await page.evaluate(() => window.scrollY);
+    await log.evaluate((element) => {
+      element.scrollTop = 0;
+    });
+    await expect(log.getByTestId("assistant-turn").first()).toBeInViewport();
+    expect(await composer.boundingBox()).toEqual(before);
+    expect(await page.locator(".assistant-chat-header").boundingBox()).toEqual(
+      headerBefore,
+    );
+    expect(await page.evaluate(() => window.scrollY)).toBe(pageScroll);
+    await log.evaluate((element) => {
+      element.scrollTop = element.scrollHeight;
+    });
+  }
+  await verifyChatScroll();
   await saveReview(page, "acceptance-assistant-mobile");
   await page.setViewportSize({ width: 1280, height: 900 });
+  await verifyChatScroll();
   await saveReview(page, "acceptance-assistant-desktop");
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole("button", { name: "New chat", exact: true }).click();
@@ -426,6 +460,10 @@ async function validationAndRequest(
   await saveReview(page, "acceptance-property-mobile");
 
   const checkIn = page.getByLabel("Check-in", { exact: true });
+  await page.getByRole("button", { name: "Choose dates", exact: true }).click();
+  await expect(checkIn).toBeFocused();
+  await expect(checkIn).toBeInViewport();
+  await expect(page).toHaveURL(/#\/stays\/cedar-house$/);
   const checkOut = page.getByLabel("Check-out", { exact: true });
   const guests = page.getByLabel("Guests", { exact: true });
   const message = page.getByLabel("Message to host", { exact: true });
@@ -678,6 +716,101 @@ async function staleRoleRefresh(page: Page, url: string, workspace: Workspace) {
   }
 }
 
+async function streamingAssistant(browser: Browser) {
+  let stream = assistantStreamGate();
+  const key = randomUUID();
+  const server = await startServer({
+    port: 0,
+    fixtureKey: key,
+    staticRoot: resolve(root, "dist"),
+    assistantModelFactory: (response) => stream.model(response),
+  });
+  let context: BrowserContext | undefined;
+  let workspace: Workspace | undefined;
+  try {
+    workspace = await provision(server.url, key, "A");
+    context = await contextFor(browser, server.url, workspace, "guest");
+    const page = await context.newPage();
+    const errors: Error[] = [];
+    page.on("pageerror", (error) => errors.push(error));
+    await page.goto("/#/assistant");
+    const composer = page.getByRole("textbox", {
+      name: "What are you looking for?",
+      exact: true,
+    });
+    const send = page.getByRole("button", {
+      name: "Send message",
+      exact: true,
+    });
+    const partial = page.getByTestId("assistant-streaming");
+    const prompt = "A quiet stay for 3 guests under $200 with a kitchen";
+    const read = async () => {
+      const response = await fetch(`${server.url}/api/assistant`, {
+        headers: { authorization: `Bearer ${workspace!.sessions.guest.token}` },
+      });
+      return response.json() as Promise<AssistantConversation>;
+    };
+    await composer.fill(prompt);
+    await send.click();
+    await expect(partial).toContainText("I found 1 stay");
+    await expect(page.getByTestId("assistant-turn")).toHaveCount(0);
+    await expect(send).toBeDisabled();
+    await expect(
+      page.getByRole("button", { name: "New chat", exact: true }),
+    ).toBeDisabled();
+    expect((await read()).messages).toEqual([]);
+    await saveReview(page, "acceptance-assistant-streaming-mobile");
+    stream.finish("error");
+    await expect(page.getByRole("alert")).toContainText("could not finish");
+    await expect(partial).toHaveCount(0);
+    await expect(composer).toHaveValue(prompt);
+    expect((await read()).messages).toEqual([]);
+
+    stream = assistantStreamGate();
+    await send.click();
+    await expect(partial).toContainText("I found 1 stay");
+    stream.finish("success");
+    await expect(composer).toHaveValue("");
+    await expect(partial).toHaveCount(0);
+    await expect(page.getByTestId("assistant-turn")).toHaveCount(1);
+    const retained = await read();
+    expect(retained.messages).toHaveLength(2);
+
+    await page.route("**/api/assistant/messages", (route) =>
+      route.fulfill({
+        contentType: "application/x-ndjson",
+        body: '{"type":"text","text":"Incomplete reply"}\n',
+      }),
+    );
+    await composer.fill("Actually 2 guests and under $150");
+    await send.click();
+    await expect(page.getByRole("alert")).toContainText("ended early");
+    await expect(composer).toHaveValue("Actually 2 guests and under $150");
+    await expect(partial).toHaveCount(0);
+    expect(await read()).toEqual(retained);
+    await page.unroute("**/api/assistant/messages");
+
+    stream = assistantStreamGate();
+    await send.click();
+    await expect(partial).toContainText("I found 1 stay");
+    await page.getByRole("button", { name: "Host view", exact: true }).click();
+    await bounded(
+      stream.cancelled,
+      "Leaving the chat did not cancel its provider stream",
+    );
+    expect(await read()).toEqual(retained);
+    expect(errors).toEqual([]);
+  } finally {
+    stream.finish("truncated");
+    await context?.close();
+    try {
+      if (workspace) await dispose(server.url, key, workspace);
+    } finally {
+      await server.close();
+    }
+  }
+}
+
 /** Additional UI gates, independent of documentation collection and its output. */
 export async function runAcceptance() {
   const key = randomUUID();
@@ -696,6 +829,7 @@ export async function runAcceptance() {
     browser = await chromium.launch({
       args: ["--disable-gpu-rasterization", "--disable-partial-raster"],
     });
+    await streamingAssistant(browser);
     const guest = await contextFor(browser, server.url, workspace, "guest");
     contexts.push(guest);
     const host = await contextFor(browser, server.url, workspace, "host");

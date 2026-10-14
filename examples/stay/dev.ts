@@ -18,7 +18,7 @@ async function close() {
 try {
   app = await createServer({ root, configFile: `${root}vite.config.ts` });
   await app.listen();
-  console.log("Stay demo: http://127.0.0.1:4190/ (API: http://127.0.0.1:4191)");
+  console.log("Stay demo: http://127.0.0.1:4300/ (API: http://127.0.0.1:4191)");
   console.log(
     "Fictional stays, in-memory requests, and a scripted AI provider. Choose Guest or Host to try both sides.",
   );

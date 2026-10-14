@@ -109,7 +109,7 @@ test("Find a stay with AI", async ({ application, baseURL, doc }) => {
   };
 
   expect((await readConversation()).messages).toEqual([]);
-  const introduction = doc.md`Open **Ask Stay** to describe the kind of place you want. Mention your nightly budget, the size of your group and amenities that matter to you. Stay keeps those preferences as the conversation continues.
+  const introduction = doc.md`Open **Ask Stay** to describe the kind of place you want. Mention your nightly budget, the size of your group and amenities that matter to you. The reply appears as it streams in. Stay keeps those preferences after the reply completes, and you can scroll back through earlier replies while the message box stays in place.
 
 This example uses a **scripted demo**, not a live AI service. It matches the three sample stays in this local app; it does not check dates or real availability.
 

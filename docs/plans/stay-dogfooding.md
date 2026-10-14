@@ -201,7 +201,7 @@ Add these proposed entry points and document their actual resulting URLs:
 
 Use separate ignored `.cache/` and `dist/` paths under the example. Prefer
 ephemeral test ports selected by the application harness and passed explicitly
-to Vite/Playwright. Interactive defaults may be 4190/4191, but must fail clearly
+to Vite/Playwright. Interactive defaults may be 4300/4191, but must fail clearly
 on collision rather than attach to or kill another server. Test app servers use
 the production build; ordinary interactive development retains Vite.
 
@@ -345,7 +345,7 @@ framework or new protocol was added.
 
 Live review and restart:
 
-- [App](http://127.0.0.1:4190/): `just stay` (API 4191).
+- [App](http://127.0.0.1:4300/): `just stay` (API 4191).
 - [Guest guide](http://127.0.0.1:4192/#/request-a-stay) and
   [host guide](http://127.0.0.1:4192/#/respond-to-a-request): `just stay-docs`.
 - Verify with `just stay-test`.
@@ -443,7 +443,7 @@ The three-guide identities supersede Section 12:
 The shared A Reader digest is
 `a09ce3959254ff7b2c62e5462171a486468ae42148d48d6a6bf2d93faad0dad7`.
 
-Review the [application](http://127.0.0.1:4190/#/) and
+Review the [application](http://127.0.0.1:4300/#/) and
 [filter guide](http://127.0.0.1:4192/#/find-a-stay). Captures and candidates remain
 under ignored `examples/stay/.cache/`. All changes remain local; HEAD, the index,
 tracked own-guide baselines and N3 are unchanged.
@@ -488,7 +488,7 @@ All four guides repeat exactly within each fixture mode, and Reader output
 matches across modes. A/B host reply changes leave the stay-finder guide
 unchanged. Reader privacy and failed-run/cleanup handoff checks pass.
 
-Review [Ask Stay](http://127.0.0.1:4190/#/assistant) and its
+Review [Ask Stay](http://127.0.0.1:4300/#/assistant) and its
 [guide](http://127.0.0.1:4192/#/find-with-ai). The application service was
 restarted to load the new endpoints, clearing its temporary demo state.
 The local and source-only web gates pass, including all 23 API/provider tests,

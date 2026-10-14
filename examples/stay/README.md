@@ -13,6 +13,11 @@ The example demonstrates a useful boundary: React and the server own the product
 ordinary Playwright fixtures own its state; lgtmd turns the completed run into
 reviewable documentation. The browser application has no lgtmd imports.
 
+The interface uses Tailwind CSS v4 through the Vite plugin. Component utilities
+live beside the JSX; shared colors, typography, and native-control defaults live
+in `src/styles.css`. Existing descriptive class names remain as browser-test and
+capture hooks. Keep those hooks when changing utility classes.
+
 ## Start here
 
 Use the repository's Rust 1.95.0, Node.js 24 ESM, Python 3.11+, and just setup.
@@ -29,7 +34,7 @@ Start the interactive application:
 just stay
 ```
 
-Open <http://127.0.0.1:4190>. The API listens at <http://127.0.0.1:4191>;
+Open <http://127.0.0.1:4300>. The API listens at <http://127.0.0.1:4191>;
 Vite proxies `/api` requests to it. Use the guest/host switch to follow the same
 conversation from both sides. Each browser session gets an isolated demo
 workspace. These ports must be free: startup fails on collision rather than
@@ -112,7 +117,11 @@ taxes, fees, or dates.
 
 Open **Ask Stay** in the guest menu. Describe your group, nightly budget,
 location or amenities, then refine those preferences in follow-up messages. The
-server keeps the conversation and returns links to matching local listings.
+server streams each reply through the AI SDK mock, then returns links to matching
+local listings. The fixed-height chat keeps its header and composer visible while
+messages scroll. Partial replies are previews; only a completed reply is saved.
+A failed or interrupted stream keeps the saved conversation and your draft intact.
+Leaving the chat cancels an unfinished stream.
 Opening a listing and returning, or reloading the page, keeps the chat while
 the service is running. **New chat** clears its history and preferences without
 changing stay requests.

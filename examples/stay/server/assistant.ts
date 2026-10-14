@@ -1,6 +1,10 @@
-import { generateText } from "ai";
+import { streamText } from "ai";
+import { setTimeout as delay } from "node:timers/promises";
 import { MockLanguageModelV4 } from "ai/test";
-import type { AssistantConversation } from "../src/assistant-domain.ts";
+import type {
+  AssistantConversation,
+  AssistantEvent,
+} from "../src/assistant-domain.ts";
 import type { Listing } from "../src/domain.ts";
 import {
   defaultFilters,
@@ -183,24 +187,62 @@ function reply(
   return `I found ${matches.length} ${matches.length === 1 ? "stay" : "stays"} in this demo collection ${description(preferences)}. ${matches.map((listing) => `${listing.title} is $${listing.nightlyRate} per night and sleeps ${listing.capacity}.`).join(" ")}`;
 }
 
+type StreamResult = Awaited<ReturnType<MockLanguageModelV4["doStream"]>>;
+type StreamPart =
+  StreamResult["stream"] extends ReadableStream<infer Part> ? Part : never;
+export type AssistantModelFactory = (response: string) => MockLanguageModelV4;
+
 function scriptedModel(response: string): MockLanguageModelV4 {
   return new MockLanguageModelV4({
     provider: "stay-scripted-mock",
     modelId: "stay-finder",
-    doGenerate: async () => ({
-      content: [{ type: "text", text: response }],
-      finishReason: { unified: "stop", raw: undefined },
-      usage: {
-        inputTokens: {
-          total: 0,
-          noCache: 0,
-          cacheRead: undefined,
-          cacheWrite: undefined,
+    doStream: async ({ abortSignal }) => {
+      const parts: StreamPart[] = [
+        { type: "stream-start", warnings: [] },
+        { type: "text-start", id: "reply" },
+        ...response.match(/\S+\s*/g)!.map((delta) => ({
+          type: "text-delta" as const,
+          id: "reply",
+          delta,
+        })),
+        { type: "text-end", id: "reply" },
+        {
+          type: "finish",
+          finishReason: { unified: "stop", raw: undefined },
+          usage: {
+            inputTokens: {
+              total: 0,
+              noCache: 0,
+              cacheRead: undefined,
+              cacheWrite: undefined,
+            },
+            outputTokens: { total: 0, text: 0, reasoning: undefined },
+          },
         },
-        outputTokens: { total: 0, text: 0, reasoning: undefined },
-      },
-      warnings: [],
-    }),
+      ];
+      let index = 0;
+      let cancelled = false;
+      return {
+        stream: new ReadableStream<StreamPart>({
+          async pull(controller) {
+            try {
+              const part = parts[index++];
+              // Pace the local mock so interactive guests can see each text chunk.
+              if (part?.type === "text-delta")
+                await delay(25, undefined, { signal: abortSignal });
+              if (cancelled) return;
+              if (part) controller.enqueue(part);
+              else controller.close();
+            } catch (error) {
+              if (!cancelled) controller.error(error);
+            }
+          },
+          cancel() {
+            cancelled = true;
+          },
+        }),
+      };
+    },
   });
 }
 
@@ -220,12 +262,12 @@ export class StayAssistant {
     preferences: defaultFilters(),
   };
   private listings: Listing[];
-  private modelFactory: (response: string) => MockLanguageModelV4;
+  private modelFactory: AssistantModelFactory;
   private active = false;
 
   constructor(
     listings: readonly Listing[],
-    modelFactory: (response: string) => MockLanguageModelV4 = scriptedModel,
+    modelFactory: AssistantModelFactory = scriptedModel,
   ) {
     this.listings = structuredClone([...listings]);
     this.modelFactory = modelFactory;
@@ -243,6 +285,22 @@ export class StayAssistant {
   }
 
   async send(input: unknown): Promise<AssistantConversation> {
+    for await (const event of this.stream(
+      input,
+      new AbortController().signal,
+    )) {
+      if (event.type === "done") return event.conversation;
+    }
+    throw new AssistantError(
+      503,
+      "The local assistant could not finish. Please try again.",
+    );
+  }
+
+  async *stream(
+    input: unknown,
+    signal: AbortSignal,
+  ): AsyncGenerator<AssistantEvent> {
     if (typeof input !== "string" || !input.trim())
       throw new AssistantError(400, "Message cannot be empty.");
     const message = input.trim();
@@ -266,9 +324,11 @@ export class StayAssistant {
     const response = reply(preferences, matches, recognized);
     this.active = true;
     try {
-      const generated = await generateText({
+      const generated = streamText({
         model: this.modelFactory(response),
         maxRetries: 0,
+        abortSignal: signal,
+        onError: () => {},
         prompt: [
           "This is a deterministic accommodation search demo, not a live assistant.",
           "Only return the scripted reply derived from the supplied collection.",
@@ -279,7 +339,21 @@ export class StayAssistant {
           `Scripted reply: ${response}`,
         ].join("\n"),
       });
-      if (generated.text !== response || generated.finishReason !== "stop")
+      let text = "";
+      let finished = false;
+      for await (const part of generated.fullStream) {
+        if (signal.aborted) return;
+        if (part.type === "text-delta") {
+          text += part.text;
+          yield { type: "text", text: part.text };
+        } else if (part.type === "error") {
+          throw part.error;
+        } else if (part.type === "finish") {
+          finished = part.finishReason === "stop";
+        }
+      }
+      if (signal.aborted) return;
+      if (text !== response || !finished)
         throw new Error(
           "The scripted assistant did not complete its declared reply.",
         );
@@ -296,15 +370,16 @@ export class StayAssistant {
           {
             id: `assistant-message-${String(count + 2).padStart(3, "0")}`,
             role: "assistant",
-            text: generated.text,
+            text,
             ...(recognized
               ? { listingIds: matches.map((listing) => listing.id) }
               : {}),
           },
         ],
       };
-      return this.read();
+      yield { type: "done", conversation: this.read() };
     } catch {
+      if (signal.aborted) return;
       throw new AssistantError(
         503,
         "The local assistant could not finish. Please try again.",

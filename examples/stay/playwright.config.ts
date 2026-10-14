@@ -9,7 +9,16 @@ export default defineConfig({
   fullyParallel: false,
   retries: 0,
   timeout: 30_000,
-  reporter: docsReporter(),
+  reporter: docsReporter({
+    reporters: [
+      {
+        onTestEnd(_test, result) {
+          for (const error of result.errors)
+            process.stderr.write(`${error.stack ?? error.message}\n`);
+        },
+      },
+    ],
+  }),
   projects: [{ name: "chromium" }],
   use: {
     baseURL: process.env.STAY_APP_URL,
