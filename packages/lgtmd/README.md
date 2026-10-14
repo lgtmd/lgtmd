@@ -11,7 +11,7 @@ input are experimental.
 Install a published version as a development dependency with Node.js 24 ESM:
 
 ```sh
-npm install --save-dev lgtmd@next
+npm install --save-dev lgtmd@0.3.0
 ```
 
 The prepared npm package includes its native compiler and requires no Rust
