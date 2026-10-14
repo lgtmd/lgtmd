@@ -35,19 +35,70 @@ fn clock_ms() -> u128 {
         .as_millis()
 }
 #[cfg(unix)]
-fn signal_group(pid: u32, signal: i32) -> Result<()> {
+fn group_signal(pid: u32, signal: i32) -> std::io::Result<()> {
     // The child was explicitly started in a new group with its own PID.
     if unsafe { libc::kill(-(pid as i32), signal) } == -1 {
-        let error = std::io::Error::last_os_error();
-        if error.raw_os_error() != Some(libc::ESRCH) {
-            return Err(format!("Signal owned flow process group: {error}"));
-        }
+        return Err(std::io::Error::last_os_error());
     }
     Ok(())
 }
 #[cfg(not(unix))]
-fn signal_group(_pid: u32, _signal: i32) -> Result<()> {
-    Err("Flow process groups are supported on Unix targets in v1".into())
+fn group_signal(_pid: u32, _signal: i32) -> std::io::Result<()> {
+    Err(std::io::Error::new(
+        std::io::ErrorKind::Unsupported,
+        "Flow process groups are supported on Unix targets in v1",
+    ))
+}
+fn signal_group(pid: u32, signal: i32) -> Result<()> {
+    match group_signal(pid, signal) {
+        Err(error) if error.raw_os_error() == Some(libc::ESRCH) => Ok(()),
+        result => result.map_err(|error| format!("Signal owned flow process group: {error}")),
+    }
+}
+fn signal_group_before_reap(pid: u32, signal: i32) -> Result<Option<std::io::Error>> {
+    match group_signal(pid, signal) {
+        Ok(()) => Ok(None),
+        Err(error) if error.raw_os_error() == Some(libc::ESRCH) => Ok(None),
+        // XNU can report EPERM for a group containing only unreaped zombies.
+        // Keep the error until after our direct child is reaped; waiting for
+        // group disappearance here could wait on our own pending child.wait().
+        #[cfg(target_os = "macos")]
+        Err(error) if error.raw_os_error() == Some(libc::EPERM) => Ok(Some(error)),
+        Err(error) => Err(format!("Signal owned flow process group: {error}")),
+    }
+}
+async fn wait_for_group_disappearance(
+    pid: u32,
+    error: std::io::Error,
+    budget: Duration,
+) -> Result<()> {
+    let deadline = tokio::time::Instant::now() + budget;
+    loop {
+        match group_signal(pid, 0) {
+            Err(probe) if probe.raw_os_error() == Some(libc::ESRCH) => return Ok(()),
+            Ok(()) => {}
+            Err(probe) if probe.raw_os_error() == Some(libc::EPERM) => {}
+            Err(probe) => {
+                return Err(format!(
+                    "Signal owned flow process group: {error}; check group disappearance: {probe}"
+                ));
+            }
+        }
+        let now = tokio::time::Instant::now();
+        if now >= deadline {
+            return Err(format!("Signal owned flow process group: {error}"));
+        }
+        tokio::time::sleep_until(deadline.min(now + Duration::from_millis(10))).await;
+    }
+}
+async fn finish_group(pid: u32, pending_error: Option<std::io::Error>) -> Result<()> {
+    let error = signal_group_before_reap(pid, libc::SIGKILL)?.or(pending_error);
+    if let Some(error) = error {
+        // An EPERM is never treated as successful termination. Only ESRCH
+        // proves the group disappeared; a live or inaccessible group still fails.
+        wait_for_group_disappearance(pid, error, Duration::from_secs(1)).await?;
+    }
+    Ok(())
 }
 struct GroupGuard {
     pid: u32,
@@ -145,14 +196,40 @@ async fn run_process(
         ()=cancel.cancelled()=>Err("Run cancelled".into()),
         ()=tokio::time::sleep(Duration::from_millis(config.flow.timeout_ms))=>Err(format!("Flow exceeded {}ms timeout",config.flow.timeout_ms)),
     };
-    signal_group(pid, libc::SIGTERM)?;
-    if outcome.is_err()
-        && tokio::time::timeout(Duration::from_secs(1), child.wait())
-            .await
-            .is_err()
-    {
-        signal_group(pid, libc::SIGKILL)?;
-        child.wait().await.map_err(|e| e.to_string())?;
+    let cleanup_error = |error: String| match &outcome {
+        Err(outcome) => format!("{outcome}; {error}"),
+        Ok(status) if !status.success() => format!("Flow failed ({status}); {error}"),
+        Ok(_) => error,
+    };
+    let mut pending_signal_error =
+        signal_group_before_reap(pid, libc::SIGTERM).map_err(&cleanup_error)?;
+    let force_kill = if outcome.is_err() {
+        match tokio::time::timeout(Duration::from_secs(1), child.wait()).await {
+            Ok(status) => {
+                status.map_err(|e| cleanup_error(format!("Wait for flow: {e}")))?;
+                false
+            }
+            Err(_) => true,
+        }
+    } else {
+        false
+    };
+    if force_kill {
+        let error = signal_group_before_reap(pid, libc::SIGKILL).map_err(&cleanup_error)?;
+        if let Some(error) = error {
+            // A genuine permission failure cannot turn the wait into an
+            // unbounded shutdown. A just-exited direct child can still be reaped.
+            tokio::time::timeout(Duration::from_secs(1), child.wait())
+                .await
+                .map_err(|_| cleanup_error(format!("Signal owned flow process group: {error}")))?
+                .map_err(|e| cleanup_error(format!("Wait for flow: {e}")))?;
+            pending_signal_error.get_or_insert(error);
+        } else {
+            child
+                .wait()
+                .await
+                .map_err(|e| cleanup_error(format!("Wait for flow: {e}")))?;
+        }
     }
     let output_result = tokio::time::timeout(Duration::from_secs(1), async {
         let (a, b) = tokio::join!(&mut outputs.stdout, &mut outputs.stderr);
@@ -160,7 +237,9 @@ async fn run_process(
         joined(b)
     })
     .await;
-    signal_group(pid, libc::SIGKILL)?;
+    finish_group(pid, pending_signal_error)
+        .await
+        .map_err(cleanup_error)?;
     guard.armed = false;
     let status = outcome?;
     output_result.map_err(|_| "Flow descendants kept output pipes open after shutdown")??;
@@ -436,7 +515,11 @@ with open(os.environ['LGTMD_OUTPUT'],'x') as f: json.dump(payload,f)
         }
         let pid: i32 = fs::read_to_string(&path).unwrap().parse().unwrap();
         signal.cancel();
-        assert!(run.await.unwrap().unwrap_err().contains("cancelled"));
+        let error = run.await.unwrap().unwrap_err();
+        assert_eq!(
+            error, "Run cancelled",
+            "Unexpected cleanup failure: {error}"
+        );
         for _ in 0..100 {
             let status = std::process::Command::new("ps")
                 .args(["-p", &pid.to_string(), "-o", "stat="])
@@ -450,6 +533,116 @@ with open(os.environ['LGTMD_OUTPUT'],'x') as f: json.dump(payload,f)
             tokio::time::sleep(Duration::from_millis(10)).await;
         }
         panic!("Owned descendant remained running after cancellation");
+    }
+    #[cfg(target_os = "macos")]
+    struct ZombieGroup {
+        pid: libc::pid_t,
+        reaped: bool,
+    }
+    #[cfg(target_os = "macos")]
+    impl ZombieGroup {
+        fn new() -> Self {
+            // The forked child calls only async-signal-safe functions before
+            // exiting. WNOWAIT observes that exit without reaping the group.
+            let pid = unsafe { libc::fork() };
+            assert!(pid >= 0, "fork: {}", std::io::Error::last_os_error());
+            if pid == 0 {
+                unsafe {
+                    let status = if libc::setpgid(0, 0) == 0 { 0 } else { 1 };
+                    libc::_exit(status);
+                }
+            }
+            let group = Self { pid, reaped: false };
+            let mut info = unsafe { std::mem::zeroed::<libc::siginfo_t>() };
+            loop {
+                let observed = unsafe {
+                    libc::waitid(
+                        libc::P_PID,
+                        pid as libc::id_t,
+                        &mut info,
+                        libc::WEXITED | libc::WNOWAIT,
+                    )
+                };
+                if observed == -1
+                    && std::io::Error::last_os_error().raw_os_error() == Some(libc::EINTR)
+                {
+                    continue;
+                }
+                assert_eq!(observed, 0, "waitid: {}", std::io::Error::last_os_error());
+                break;
+            }
+            group
+        }
+        fn reap(&mut self) {
+            let mut status = 0;
+            loop {
+                let reaped = unsafe { libc::waitpid(self.pid, &mut status, 0) };
+                if reaped == -1
+                    && std::io::Error::last_os_error().raw_os_error() == Some(libc::EINTR)
+                {
+                    continue;
+                }
+                assert_eq!(reaped, self.pid);
+                self.reaped = true;
+                assert_eq!(status, 0, "The child must create its own group and exit");
+                return;
+            }
+        }
+    }
+    #[cfg(target_os = "macos")]
+    impl Drop for ZombieGroup {
+        fn drop(&mut self) {
+            if !self.reaped {
+                // Always reap the test-owned child, including failed assertions.
+                while unsafe { libc::waitpid(self.pid, std::ptr::null_mut(), 0) } == -1 {
+                    if std::io::Error::last_os_error().raw_os_error() != Some(libc::EINTR) {
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    #[cfg(target_os = "macos")]
+    #[tokio::test]
+    async fn zombie_group_permission_error_waits_for_actual_disappearance() {
+        let mut group = ZombieGroup::new();
+        let pid = group.pid as u32;
+        assert_eq!(
+            group_signal(pid, libc::SIGKILL).unwrap_err().raw_os_error(),
+            Some(libc::EPERM)
+        );
+        let pending = signal_group_before_reap(pid, libc::SIGTERM)
+            .unwrap()
+            .expect("Defer XNU's zombie-only EPERM until after direct-child reaping");
+        let cleanup = finish_group(pid, Some(pending));
+        tokio::pin!(cleanup);
+        assert!(futures_util::poll!(&mut cleanup).is_pending());
+        group.reap();
+        cleanup.await.unwrap();
+        assert_eq!(
+            group_signal(pid, 0).unwrap_err().raw_os_error(),
+            Some(libc::ESRCH)
+        );
+    }
+    #[cfg(target_os = "macos")]
+    #[tokio::test]
+    async fn zombie_group_permission_error_remains_failure_without_reaping() {
+        let mut group = ZombieGroup::new();
+        let pid = group.pid as u32;
+        let error = group_signal(pid, libc::SIGKILL).unwrap_err();
+        assert_eq!(error.raw_os_error(), Some(libc::EPERM));
+        let expected = format!("Signal owned flow process group: {error}");
+        assert_eq!(
+            wait_for_group_disappearance(pid, error, Duration::from_millis(20))
+                .await
+                .unwrap_err(),
+            expected
+        );
+        assert_eq!(
+            group_signal(pid, 0).unwrap_err().raw_os_error(),
+            Some(libc::EPERM)
+        );
+        group.reap();
     }
     #[test]
     fn watches_content_atomic_saves_and_excludes_outputs() {
