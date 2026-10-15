@@ -10,6 +10,7 @@ other project guidance rather than maintaining another directory inventory.
 | [README.md](README.md)                                 | Short product introduction, example, installation, and next steps.                    |
 | [CONTRIBUTING.md](CONTRIBUTING.md)                     | Contributor entry point, setup, change review, and verification expectations.         |
 | [AGENTS.md](AGENTS.md)                                 | Repository instructions for agents, including execution and authorization boundaries. |
+| [AGENT_READINESS.md](AGENT_READINESS.md)               | Placeholder for assessing the agent experience across adoption and contribution.      |
 | [TODO.md](TODO.md)                                     | Epic and milestone index; link to individual work in issues.                          |
 | [GitHub Issues](https://github.com/lgtmd/lgtmd/issues) | Feedback, bugs, feature requests, discussion, and individual work items.              |
 | [RELEASING.md](RELEASING.md)                           | Release preparation, verification, and explicitly authorized publication.             |
